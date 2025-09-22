@@ -1,8 +1,8 @@
 <mat-toolbar color="primary">
-    <button mat-icon-button>
+    <button mat-icon-button (click)="toggleSidenav.emit()">
         <mat-icon>menu</mat-icon>
     </button>
-    <span>DMC ERP</span>
+    <span>TOPS</span>
     <span class="flex-spacer"></span>
-    <button mat-button>Login</button>
+    <button mat-button routerLink="/login">Login</button>
 </mat-toolbar>

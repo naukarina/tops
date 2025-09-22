@@ -1,8 +1,9 @@
+/* We can reuse the same styles from the login component for consistency */
 .auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 64px); // Adjust for header
+  height: 100vh;
   background-color: #f5f5f5;
 
   mat-card {
@@ -11,6 +12,12 @@
 
   mat-form-field, button {
     width: 100%;
+  }
+  
+  mat-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
   }
 
   mat-card-actions {

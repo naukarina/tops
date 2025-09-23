@@ -1,7 +1,16 @@
 <mat-nav-list>
-    <a mat-list-item routerLink="/home" routerLinkActive="active-link">Dashboard</a>
-    <h3 mat-subheader>Management</h3>
-    <a mat-list-item routerLink="/products" routerLinkActive="active-link">Products</a>
-    <a mat-list-item routerLink="/partners" routerLinkActive="active-link">Partners</a>
-    <a mat-list-item routerLink="/resources" routerLinkActive="active-link">Resources</a>
+    <a mat-list-item routerLink="/home" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">
+        <mat-icon matListItemIcon>dashboard</mat-icon>
+        <span matListItemTitle>Dashboard</span>
+    </a>
+    <mat-divider></mat-divider>
+    <h3 mat-subheader>MANAGEMENT</h3>
+    <a mat-list-item routerLink="/products" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>category</mat-icon>
+        <span matListItemTitle>Products</span>
+    </a>
+    <a mat-list-item routerLink="/partners" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>handshake</mat-icon>
+        <span matListItemTitle>Partners</span>
+    </a>
 </mat-nav-list>

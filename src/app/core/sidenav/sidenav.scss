@@ -1,0 +1,31 @@
+:host {
+  height: 100%;
+  background-color: #212121; // Dark background for the sidenav container
+  display: block;
+}
+
+::ng-deep .mat-list-base {
+  padding-top: 0 !important;
+}
+
+.mat-list-item {
+  color: #b0bec5; // Light text for inactive items
+
+  .mat-icon {
+    color: #b0bec5; // Light icon for inactive items
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.active-link {
+  background-color: rgba(255, 255, 255, 0.1);
+  // Use CSS variables provided by Angular Material for theme colors
+  color: var(--mat-toolbar-standard-text-color); // Use accent color from the theme
+
+  .mat-icon {
+    color: var(--mat-toolbar-standard-text-color); // Use accent color from the theme
+  }
+}

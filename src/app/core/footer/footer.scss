@@ -4,7 +4,5 @@
   font-size: 14px;
   height: 48px;
   justify-content: center;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
+  flex-shrink: 0; /* Prevents the footer from shrinking */
 }

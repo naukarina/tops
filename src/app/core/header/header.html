@@ -2,7 +2,23 @@
     <button mat-icon-button (click)="toggleSidenav.emit()">
         <mat-icon>menu</mat-icon>
     </button>
-    <span>TOPS</span>
+    <span>DMC ERP</span>
     <span class="flex-spacer"></span>
-    <button mat-button routerLink="/login">Login</button>
+
+    <ng-container *ngIf="user$ | async as user; else showLogin">
+        <button mat-button [matMenuTriggerFor]="userMenu">
+            <mat-icon>account_circle</mat-icon>
+            {{ user.email }}
+        </button>
+        <mat-menu #userMenu="matMenu">
+            <button mat-menu-item (click)="onLogout()">
+                <mat-icon>logout</mat-icon>
+                <span>Logout</span>
+            </button>
+        </mat-menu>
+    </ng-container>
+
+    <ng-template #showLogin>
+        <button mat-button routerLink="/login">Login</button>
+    </ng-template>
 </mat-toolbar>

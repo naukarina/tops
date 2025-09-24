@@ -2,20 +2,43 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 64px); // Adjust for header
-  background-color: #f5f5f5;
+  height: 100vh;
+  background: #fafafa;
+}
 
-  mat-card {
-    width: 400px;
-  }
+.auth-card {
+  width: 400px;
+  padding: 16px;
+}
 
-  mat-form-field, button {
-    width: 100%;
-  }
+.auth-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
 
-  mat-card-actions {
-    display: flex;
-    justify-content: center;
-    padding-bottom: 16px;
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    margin-bottom: 16px;
+    color: var(--mat-spec-palette-amber-A400);
   }
+}
+
+mat-card-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+mat-form-field, button {
+  width: 100%;
+}
+
+mat-card-actions {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 0;
 }

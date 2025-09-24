@@ -1,31 +1,58 @@
 :host {
   height: 100%;
-  background-color: #212121; // Dark background for the sidenav container
-  display: block;
+  background-color: #1a1a1a; // Darker background for more contrast
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.1); // Subtle border for separation
 }
 
-::ng-deep .mat-list-base {
-  padding-top: 0 !important;
+.sidenav-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .logo {
+    height: 32px;
+  }
+
+  .app-name {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #fff;
+    margin: 0;
+  }
 }
 
 .mat-list-item {
-  color: #b0bec5; // Light text for inactive items
+  color: #c5c5c5; // Lighter text for inactive items
 
   .mat-icon {
-    color: #b0bec5; // Light icon for inactive items
+    color: #c5c5c5; // Lighter icon for inactive items
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.08);
   }
 }
 
+// Style for the active route
 .active-link {
-  background-color: rgba(255, 255, 255, 0.1);
-  // Use CSS variables provided by Angular Material for theme colors
-  color: var(--mat-toolbar-standard-text-color); // Use accent color from the theme
+  background-color: rgba(255, 193, 7, 0.1); // Use accent color with transparency
+  color: #FFC107; // Firebase Amber Accent
 
   .mat-icon {
-    color: var(--mat-toolbar-standard-text-color); // Use accent color from the theme
+    color: #FFC107;
   }
+}
+
+.mat-divider {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+.mat-subheader {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  letter-spacing: 1px;
 }

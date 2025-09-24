@@ -6,6 +6,7 @@ import { RegisterComponent } from './pages/register/register';
 import { ProductListComponent } from './pages/products/product-list/product-list';
 import { ProductEditComponent } from './pages/products/product-edit/product-edit';
 import { authGuard } from './core/auth/auth-guard';
+import { AppComponent } from './app';
 
 export const routes: Routes = [
   {

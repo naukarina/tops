@@ -1,24 +1,29 @@
-<mat-toolbar>
-    <button mat-icon-button (click)="toggleSidenav.emit()">
-        <mat-icon>menu</mat-icon>
-    </button>
-    <span>DMC ERP</span>
-    <span class="flex-spacer"></span>
-
-    <ng-container *ngIf="user$ | async as user; else showLogin">
-        <button mat-button [matMenuTriggerFor]="userMenu">
-            <mat-icon>account_circle</mat-icon>
-            {{ user.email }}
+<header class="bg-white dark:bg-gray-800 shadow-md p-4 flex items-center justify-between z-40 shrink-0">
+    <div class="flex items-center">
+        <button (click)="sidenavToggle.emit()"
+            class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
         </button>
-        <mat-menu #userMenu="matMenu">
-            <button mat-menu-item (click)="onLogout()">
-                <mat-icon>logout</mat-icon>
-                <span>Logout</span>
-            </button>
-        </mat-menu>
-    </ng-container>
-
-    <ng-template #showLogin>
-        <button mat-button routerLink="/login">Login</button>
-    </ng-template>
-</mat-toolbar>
+        <h1 class="text-xl font-bold ml-4 text-gray-900 dark:text-white">My App</h1>
+    </div>
+    <div class="flex items-center space-x-4">
+        <button (click)="themeToggle.emit()"
+            class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <svg *ngIf="isDarkMode()" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg *ngIf="!isDarkMode()" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+        </button>
+        <span class="text-sm font-medium hidden sm:block">John Doe</span>
+        <img class="h-8 w-8 rounded-full" src="https://placehold.co/100x100/E2E8F0/4A5568?text=JD" alt="User avatar">
+    </div>
+</header>

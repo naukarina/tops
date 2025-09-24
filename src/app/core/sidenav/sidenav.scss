@@ -1,58 +1,7 @@
+// src/app/core/sidenav/sidenav.scss
 :host {
-  height: 100%;
-  background-color: #1a1a1a; // Darker background for more contrast
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.1); // Subtle border for separation
+  display: block; // Keep host styling if necessary
 }
 
-.sidenav-header {
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-  .logo {
-    height: 32px;
-  }
-
-  .app-name {
-    font-size: 1.25rem;
-    font-weight: 500;
-    color: #fff;
-    margin: 0;
-  }
-}
-
-.mat-list-item {
-  color: #c5c5c5; // Lighter text for inactive items
-
-  .mat-icon {
-    color: #c5c5c5; // Lighter icon for inactive items
-  }
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-}
-
-// Style for the active route
-.active-link {
-  background-color: rgba(255, 193, 7, 0.1); // Use accent color with transparency
-  color: #FFC107; // Firebase Amber Accent
-
-  .mat-icon {
-    color: #FFC107;
-  }
-}
-
-.mat-divider {
-  border-top-color: rgba(255, 255, 255, 0.12);
-}
-
-.mat-subheader {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-  letter-spacing: 1px;
-}
+// You can remove most of the old styles, as Tailwind classes in the HTML handle the new design.
+// Keep any specific overrides you might need.

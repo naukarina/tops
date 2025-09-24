@@ -1,7 +1,12 @@
-/* Global styles for the entire application */
+/* src/styles.scss */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Your other global styles can go below */
 html, body {
   height: 100%;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #fafafa; /* A light grey background for the content area */
+  background-color: #fafafa;
 }

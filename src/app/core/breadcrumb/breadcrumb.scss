@@ -1,0 +1,30 @@
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+
+  a {
+    color: #007bff;
+    text-decoration: none;
+    padding: 0 0.5rem;
+
+    &.disabled {
+      color: #6c757d;
+      pointer-events: none;
+    }
+  }
+}
+
+.breadcrumb-separator {
+  color: #6c757d;
+}

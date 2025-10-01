@@ -1,13 +1,13 @@
 .app-container {
-    height: calc(100vh - 64px); /* Full height minus header */
+  height: calc(100vh - 64px); /* Full height minus header */
 }
 
 mat-sidenav {
-    width: 240px;
+  width: 240px;
 }
 
 .main-content {
-    position: relative;
-    min-height: calc(100% - 57px); /* Main content area minus footer */
-    padding-bottom: 57px; /* Space for the footer */
+  position: relative;
+  min-height: calc(100% - 57px); /* Main content area minus footer */
+  padding: 1rem;
 }

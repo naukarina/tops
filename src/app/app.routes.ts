@@ -16,10 +16,28 @@ export const routes: Routes = [
       showSidenav: true,
     },
     children: [
-      { path: '', component: HomeComponent },
-      { path: 'products', component: ProductListComponent },
-      { path: 'products/new', component: ProductEditComponent },
-      { path: 'products/:id/edit', component: ProductEditComponent },
+      { path: '', component: HomeComponent, data: { breadcrumb: 'Dashboard' } },
+      {
+        path: 'products',
+        data: { breadcrumb: 'Products' },
+        children: [
+          {
+            path: '',
+            component: ProductListComponent,
+            pathMatch: 'full',
+          },
+          {
+            path: 'new',
+            component: ProductEditComponent,
+            data: { breadcrumb: 'New' },
+          },
+          {
+            path: ':id/edit',
+            component: ProductEditComponent,
+            data: { breadcrumb: 'Edit' },
+          },
+        ],
+      },
     ],
   },
   {

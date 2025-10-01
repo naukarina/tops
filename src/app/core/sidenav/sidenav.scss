@@ -1,7 +1,36 @@
-// src/app/core/sidenav/sidenav.scss
-:host {
-  display: block; // Keep host styling if necessary
+.sidenav-container {
+  padding: 1.5rem 1rem;
 }
 
-// You can remove most of the old styles, as Tailwind classes in the HTML handle the new design.
-// Keep any specific overrides you might need.
+.app-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #3f51b5;
+  margin-bottom: 2rem;
+  padding-left: 1rem;
+}
+
+.mat-nav-list a.mat-list-item {
+  color: #5f6368;
+  font-weight: 500;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.mat-nav-list a.mat-list-item:hover {
+  background-color: #f1f3f4;
+}
+
+.mat-nav-list a.mat-list-item.active-link {
+  background-color: #3f51b5;
+  color: #ffffff;
+}
+
+.mat-nav-list a.mat-list-item.active-link mat-icon {
+  color: #ffffff;
+}
+
+.mat-nav-list a.mat-list-item mat-icon {
+  color: #5f6368;
+}

@@ -1,77 +1,103 @@
-<div class="space-y-8">
-    <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Sales</h2>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">$24,350</p>
-            <p class="text-sm text-green-500 mt-1">+12.5% from last month</p>
+<div class="container-fluid dashboard-container">
+    <div class="row">
+        <!-- First Row of Cards -->
+        <div class="col-lg-6 mb-4">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>Sales Trends</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <canvas id="salesTrendsChart"></canvas>
+                </mat-card-content>
+            </mat-card>
         </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400">New Users</h2>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">1,204</p>
-            <p class="text-sm text-green-500 mt-1">+8.2% from last week</p>
+        <div class="col-lg-3 mb-4">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>Sales-cycles</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <canvas id="salesCyclesChart"></canvas>
+                </mat-card-content>
+            </mat-card>
         </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400">Open Tickets</h2>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">38</p>
-            <p class="text-sm text-red-500 mt-1">+5 since yesterday</p>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 class="text-sm font-medium text-gray-500 dark:text-gray-400">Server Load</h2>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">34%</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Normal</p>
+        <div class="col-lg-3 mb-4">
+            <mat-card class="info-card h-100">
+                <mat-card-header>
+                    <mat-card-title>New Users</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <p class="data-prominent">1,400K</p>
+                    <p class="data-sub"><span>Tomorrow:</span> 450 Esimated</p>
+                    <p class="data-prominent">3,13.00K</p>
+                    <p class="data-sub"><span>Progress:</span> 6% Esimated</p>
+                </mat-card-content>
+            </mat-card>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <h2 class="text-xl font-bold p-6 text-gray-800 dark:text-white">Recent Orders</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th
-                            class="px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Order ID</th>
-                        <th
-                            class="px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Customer</th>
-                        <th
-                            class="px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Status</th>
-                        <th
-                            class="px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">#12045
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">Alice Johnson
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Shipped</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">$250.00</td>
-                    </tr>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">#12046
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">Bob Williams
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">$99.50</td>
-                    </tr>
-                </tbody>
-            </table>
+    <div class="row">
+        <!-- Second Row of Cards -->
+        <div class="col-lg-6 mb-4">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>New Tickets</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <canvas id="newTicketsChart"></canvas>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-lg-3 mb-4">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>New Users</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <canvas id="newUsersChart"></canvas>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-lg-3 mb-4">
+            <mat-card class="info-card h-100">
+                <mat-card-header>
+                    <mat-card-title>Pending Orders</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <p class="data-prominent">8.0.4K</p>
+                    <p class="data-sub"><span>Sales:</span> Hillioth</p>
+                    <div class="d-flex justify-content-around mt-4">
+                        <button mat-raised-button color="primary">Settle</button>
+                        <button mat-stroked-button color="primary">Cancel</button>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Third Row of Cards -->
+        <div class="col-lg-6 mb-4">
+            <mat-card class="info-card">
+                <mat-card-content class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="info-label">Total Revenue</p>
+                        <p class="info-value">5151</p>
+                    </div>
+                    <mat-icon class="info-icon">arrow_upward</mat-icon>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <mat-card class="info-card">
+                <mat-card-content class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="info-label">Total Revenue</p>
+                        <p class="info-value">200K</p>
+                    </div>
+                    <mat-icon class="info-icon">arrow_downward</mat-icon>
+                </mat-card-content>
+            </mat-card>
         </div>
     </div>
 </div>

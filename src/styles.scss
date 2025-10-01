@@ -1,12 +1,4 @@
-/* src/styles.scss */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-/* Your other global styles can go below */
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #fafafa;
-}
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

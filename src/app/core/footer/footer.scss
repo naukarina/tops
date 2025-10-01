@@ -1,8 +1,10 @@
 .footer {
-  background-color: #f5f5f5;
-  color: #616161;
+  background-color: #ffffff;
+  padding: 15px 0;
+  border-top: 1px solid #e0e0e0;
   font-size: 14px;
-  height: 48px;
-  justify-content: center;
-  flex-shrink: 0; /* Prevents the footer from shrinking */
+  color: #6c757d;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }

@@ -1,5 +1,42 @@
-mat-toolbar {
-  background: #fff;
-  color: rgba(0,0,0,.87);
-  border-bottom: 1px solid rgba(0,0,0,.12);
+.header-toolbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  color: #212529;
+}
+
+.logo-icon {
+    background-color: #3f51b5;
+    color: white;
+    padding: 5px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.logo-text {
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.search-field .mat-form-field-wrapper {
+    padding-bottom: 0;
+}
+
+.search-field .mat-form-field-infix {
+    border-top: none;
+}
+
+.search-field {
+    font-size: 14px;
+}
+
+.header-icon {
+    color: #6c757d;
+}
+
+.user-avatar {
+  border-radius: 50%;
 }

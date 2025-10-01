@@ -1,21 +1,8 @@
-<aside
-    class="bg-white dark:bg-gray-800 w-64 flex-shrink-0 transition-transform duration-300 ease-in-out z-30 shadow-lg md:shadow-none"
-    [class.translate-x-0]="isOpen()" [class.-translate-x-full]="!isOpen()" [class.absolute]="isMobile()"
-    [class.md:relative]="true" [class.h-full]="isMobile()">
-    <div class="p-4">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">My App</h2>
-        <nav>
-            <ul>
-                <li *ngFor="let item of navItems" class="mb-2">
-                    <a [routerLink]="item.path"
-                        class="flex items-center p-3 rounded-lg transition-colors duration-200 text-base" [ngClass]="{
-                         'bg-blue-600 text-white': item.active,
-                         'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700': !item.active
-                       }">
-                        {{ item.name }}
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-</aside>
+<div class="sidenav-container">
+    <mat-nav-list>
+        <a mat-list-item *ngFor="let item of navItems" [class.active-link]="item.active">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.name }}</span>
+        </a>
+    </mat-nav-list>
+</div>

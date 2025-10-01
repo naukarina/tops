@@ -1,10 +1,13 @@
-.layout-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+.app-container {
+    height: calc(100vh - 64px); /* Full height minus header */
 }
 
-main {
-  flex: 1 1 auto; /* This makes the main content grow to fill available space */
-  padding: 24px;
+mat-sidenav {
+    width: 240px;
+}
+
+.main-content {
+    position: relative;
+    min-height: calc(100% - 57px); /* Main content area minus footer */
+    padding-bottom: 57px; /* Space for the footer */
 }

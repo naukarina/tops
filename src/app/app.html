@@ -1,12 +1,19 @@
+@if (showHeader) {
 <app-header></app-header>
+}
+
 <mat-sidenav-container class="app-container">
-  <mat-sidenav mode="side" opened>
-    <app-sidenav></app-sidenav>
-  </mat-sidenav>
-  <mat-sidenav-content>
-    <div class="main-content">
-        <router-outlet></router-outlet>
-    </div>
-    <app-footer></app-footer>
-  </mat-sidenav-content>
+    @if (showSidenav) {
+    <mat-sidenav mode="side" opened>
+        <app-sidenav></app-sidenav>
+    </mat-sidenav>
+    }
+    <mat-sidenav-content>
+        <div class="main-content">
+            <router-outlet></router-outlet>
+        </div>
+        @if (showFooter) {
+        <app-footer></app-footer>
+        }
+    </mat-sidenav-content>
 </mat-sidenav-container>

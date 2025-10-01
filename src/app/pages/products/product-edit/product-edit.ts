@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -25,6 +25,7 @@ import { MatButtonModule } from '@angular/material/button';
   ],
   templateUrl: './product-edit.html',
   styleUrls: ['./product-edit.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductEditComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -44,8 +45,8 @@ export class ProductEditComponent implements OnInit {
       productCode: ['', Validators.required],
       name: ['', Validators.required],
       category: [''],
-      price: [0],
-      cost: [0],
+      price: [0, [Validators.required, Validators.min(0)]],
+      cost: [0, [Validators.required, Validators.min(0)]],
     });
 
     if (this.isEditMode && this.productId) {

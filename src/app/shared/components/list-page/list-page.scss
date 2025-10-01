@@ -1,0 +1,45 @@
+:host {
+  ::ng-deep .mat-mdc-card-header-text {
+    width: 100%;
+  }
+}
+
+.list-page-container {
+  padding: 2rem;
+  background-color: #f4f7fa;
+}
+
+mat-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+mat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+mat-card-title h1 {
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0;
+}
+
+mat-card-content {
+  padding: 0 !important;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.header-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}

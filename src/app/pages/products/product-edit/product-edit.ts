@@ -10,6 +10,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-product-edit',
@@ -22,6 +24,8 @@ import { MatButtonModule } from '@angular/material/button';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    EditPageComponent,
+    MatIconModule,
   ],
   templateUrl: './product-edit.html',
   styleUrls: ['./product-edit.scss'],

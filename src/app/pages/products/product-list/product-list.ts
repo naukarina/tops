@@ -11,6 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox'; // Import MatCheckboxModule
 import { MatCardModule } from '@angular/material/card';
+import { ListPageComponent } from '../../../shared/components/list-page/list-page';
 
 @Component({
   selector: 'app-product-list',
@@ -23,6 +24,7 @@ import { MatCardModule } from '@angular/material/card';
     MatButtonModule,
     MatCheckboxModule, // Add MatCheckboxModule here
     MatCardModule,
+    ListPageComponent,
   ],
   templateUrl: './product-list.html',
   styleUrls: ['./product-list.scss'],

@@ -1,8 +1,5 @@
-<mat-card>
-    <mat-card-header>
-        <mat-card-title>{{ isEditMode ? 'Edit' : 'Create' }} Product</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
+<app-edit-page [title]="isEditMode ? 'Edit Product' : 'Create Product'">
+    <div form-fields>
         <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
             <div class="form-row">
                 <mat-form-field appearance="outline">
@@ -29,10 +26,15 @@
                 </mat-form-field>
             </div>
         </form>
-    </mat-card-content>
-    <mat-card-actions>
-        <button mat-stroked-button color="warn" type="button" routerLink="/products">Cancel</button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="!productForm.valid"
-            (click)="onSubmit()">Save</button>
-    </mat-card-actions>
-</mat-card>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" type="button" routerLink="/products">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!productForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
+    </div>
+</app-edit-page>

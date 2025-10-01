@@ -1,0 +1,28 @@
+<app-edit-page [title]="isEditMode ? 'Edit Partner' : 'Create Partner'">
+    <div form-fields>
+        <form [formGroup]="partnerForm" (ngSubmit)="onSubmit()">
+            <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Contact Person</mat-label>
+                <input matInput formControlName="contactPerson" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" required />
+            </mat-form-field>
+        </form>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" type="button" routerLink="/partners">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!partnerForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
+    </div>
+</app-edit-page>

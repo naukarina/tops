@@ -32,14 +32,15 @@ export class RegisterComponent {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      name: ['', [Validators.required]],
     });
   }
 
   async onRegister() {
     if (this.registerForm.valid) {
-      const { email, password } = this.registerForm.value;
+      const { email, password, name } = this.registerForm.value;
       try {
-        await this.authService.register(email!, password!);
+        await this.authService.register(email!, password!, name!);
         this.router.navigate(['/']);
       } catch (error) {
         console.error('Registration failed:', error);

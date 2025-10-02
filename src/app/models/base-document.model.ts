@@ -1,6 +1,6 @@
 import { Timestamp } from '@angular/fire/firestore';
 
-export enum DocumentStatus {
+export enum DocStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
   ARCHIVED = 'ARCHIVED',
@@ -14,5 +14,5 @@ export interface BaseDocument {
   createdByName: string;
   updatedBy: string; // User ID of the last user who updated it
   updatedByName: string;
-  documentStatus: DocumentStatus; // Status of the document
+  documentStatus: DocStatus; // Status of the document
 }

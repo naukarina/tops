@@ -1,19 +1,20 @@
+// src/app/core/auth/auth-guard.ts
+
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { map, take } from 'rxjs/operators';
 
-export const authGuard = () => {
+export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  return authService.user$.pipe(
+  return authService.userState$.pipe(
     take(1),
     map((user) => {
       if (user) {
-        return true; // If user is logged in, allow access
+        return true;
       }
-      // If user is not logged in, redirect to the login page
       router.navigate(['/login']);
       return false;
     })

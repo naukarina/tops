@@ -4,8 +4,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Partner, PartnerType } from '../../../models/partner.model';
 import { PartnerService } from '../../../services/partner.service';
-import { PartnerType } from '../../../models/partner.model';
 
 // Material Imports
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -59,11 +59,10 @@ export class PartnerEditComponent implements OnInit {
     });
 
     if (this.isEditMode && this.partnerId) {
-      const partnerDoc = await this.partnerService.getPartner(this.partnerId);
+      const partnerDoc = await this.partnerService.get(this.partnerId);
       if (partnerDoc.exists()) {
         this.partnerForm.patchValue(partnerDoc.data());
       } else {
-        // Handle the case where the document does not exist
         console.error('Partner not found!');
         this.router.navigate(['/partners']);
       }
@@ -75,10 +74,12 @@ export class PartnerEditComponent implements OnInit {
       return;
     }
 
+    const partnerData = this.partnerForm.value as Partner;
+
     if (this.isEditMode && this.partnerId) {
-      await this.partnerService.updatePartner(this.partnerId, this.partnerForm.value);
+      await this.partnerService.update(this.partnerId, partnerData);
     } else {
-      await this.partnerService.addPartner(this.partnerForm.value);
+      await this.partnerService.add(partnerData);
     }
     this.router.navigate(['/partners']);
   }

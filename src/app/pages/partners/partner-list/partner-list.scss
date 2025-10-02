@@ -48,3 +48,13 @@ td.mat-mdc-cell {
   color: #555;
   font-weight: 500;
 }
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mat-column-actions {
+    background-color: #fff;
+    border-left: 1px solid #dcdcdc;
+}

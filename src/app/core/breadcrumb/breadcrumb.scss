@@ -4,8 +4,10 @@
   list-style: none;
   padding: 0.5rem 1rem;
   margin: 0;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  background-color: #f4f7fa;
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  border-bottom: 1px solid #dcdcdc;
 }
 
 .breadcrumb-item {

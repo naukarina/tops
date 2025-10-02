@@ -40,11 +40,12 @@ td.mat-mdc-cell {
   width: 60px;
 }
 
-.edit-button {
-  border-radius: 4px;
-  line-height: 28px;
-  padding: 0 16px;
-  border-color: #dcdcdc;
-  color: #555;
-  font-weight: 500;
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mat-column-actions {
+    background-color: #fff;
+    border-left: 1px solid #dcdcdc;
 }

@@ -9,6 +9,7 @@ import { RouterModule } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 // Shared Components
 import { ListPageComponent } from '../../../shared/components/list-page/list-page';
@@ -22,6 +23,7 @@ import { ListPageComponent } from '../../../shared/components/list-page/list-pag
     MatTableModule,
     MatCheckboxModule,
     MatButtonModule,
+    MatIconModule,
     ListPageComponent,
   ],
   templateUrl: './partner-list.html',

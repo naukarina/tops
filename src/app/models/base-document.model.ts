@@ -11,6 +11,8 @@ export interface BaseDocument {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string; // User ID of the creator
+  createdByName: string;
   updatedBy: string; // User ID of the last user who updated it
+  updatedByName: string;
   documentStatus: DocumentStatus; // Status of the document
 }

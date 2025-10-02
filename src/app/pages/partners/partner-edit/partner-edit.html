@@ -6,12 +6,28 @@
                 <input matInput formControlName="name" required />
             </mat-form-field>
             <mat-form-field appearance="outline">
-                <mat-label>Contact Person</mat-label>
-                <input matInput formControlName="contactPerson" required />
+                <mat-label>Type</mat-label>
+                <mat-select formControlName="type" required>
+                    @for (type of partnerTypes; track type) {
+                    <mat-option [value]="type">{{ type }}</mat-option>
+                    }
+                </mat-select>
             </mat-form-field>
+
+            <div formGroupName="contactInfo">
+                <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" type="email" required />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Telephone</mat-label>
+                    <input matInput formControlName="tel" />
+                </mat-form-field>
+            </div>
+
             <mat-form-field appearance="outline">
-                <mat-label>Email</mat-label>
-                <input matInput formControlName="email" type="email" required />
+                <mat-label>Currency</mat-label>
+                <input matInput formControlName="currencyName" required />
             </mat-form-field>
         </form>
     </div>

@@ -1,3 +1,4 @@
+// src/app/pages/partners/partner-list/partner-list.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
@@ -32,5 +33,5 @@ import { ListPageComponent } from '../../../shared/components/list-page/list-pag
 export class PartnerListComponent {
   private partnerService = inject(PartnerService);
   partners$: Observable<Partner[]> = this.partnerService.getPartners();
-  displayedColumns = ['name', 'contactPerson', 'email', 'actions'];
+  displayedColumns = ['name', 'type', 'currencyName', 'actions'];
 }

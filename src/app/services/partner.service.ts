@@ -1,39 +1,50 @@
-import { Injectable } from '@angular/core';
+// src/app/services/partner.service.ts
+import { inject, Injectable } from '@angular/core';
 import {
+  Firestore,
   collection,
   collectionData,
   doc,
-  Firestore,
-  setDoc,
   addDoc,
-  docData,
+  getDoc,
+  updateDoc,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Partner } from '../models/partner.model';
+import { DocumentStatus } from '../models/base-document.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PartnerService {
-  constructor(private firestore: Firestore) {}
+  private firestore = inject(Firestore);
+  private partnersCollection = collection(this.firestore, 'partners');
 
   getPartners(): Observable<Partner[]> {
-    const partnersCollection = collection(this.firestore, 'partners');
-    return collectionData(partnersCollection, { idField: 'id' }) as Observable<Partner[]>;
+    return collectionData(this.partnersCollection, { idField: 'id' }) as Observable<Partner[]>;
   }
 
-  getPartner(id: string): Observable<Partner> {
+  getPartner(id: string) {
     const partnerDoc = doc(this.firestore, `partners/${id}`);
-    return docData(partnerDoc, { idField: 'id' }) as Observable<Partner>;
+    return getDoc(partnerDoc);
   }
 
-  addPartner(partner: Omit<Partner, 'id'>): Promise<any> {
-    const partnersCollection = collection(this.firestore, 'partners');
-    return addDoc(partnersCollection, partner);
+  addPartner(partner: Partner) {
+    const newPartner = {
+      ...partner,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: DocumentStatus.ACTIVE,
+    };
+    return addDoc(this.partnersCollection, newPartner);
   }
 
-  updatePartner(id: string, partner: Partial<Partner>): Promise<void> {
+  updatePartner(id: string, partner: Partner) {
     const partnerDoc = doc(this.firestore, `partners/${id}`);
-    return setDoc(partnerDoc, partner, { merge: true });
+    const updatedPartner = {
+      ...partner,
+      updatedAt: new Date(),
+    };
+    return updateDoc(partnerDoc, updatedPartner);
   }
 }

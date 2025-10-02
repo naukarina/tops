@@ -1,0 +1,28 @@
+// src/app/pages/partners/partner-list/partner-list.scss
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.status-ACTIVE {
+  background-color: #28a745;
+}
+
+.status-INACTIVE {
+  background-color: #ffc107;
+}
+
+.status-ARCHIVED {
+  background-color: #6c757d;
+}

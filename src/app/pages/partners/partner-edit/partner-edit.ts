@@ -4,7 +4,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { first } from 'rxjs/operators';
 import { PartnerService } from '../../../services/partner.service';
 import { PartnerType } from '../../../models/partner.model';
 
@@ -33,7 +32,6 @@ import { EditPageComponent } from '../../../shared/components/edit-page/edit-pag
     MatSelectModule,
   ],
   templateUrl: './partner-edit.html',
-  styleUrls: ['./partner-edit.scss'],
 })
 export class PartnerEditComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -46,7 +44,7 @@ export class PartnerEditComponent implements OnInit {
   partnerTypes = Object.values(PartnerType);
   private partnerId: string | null = null;
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.partnerId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.partnerId;
 
@@ -56,33 +54,19 @@ export class PartnerEditComponent implements OnInit {
       contactInfo: this.fb.group({
         email: ['', [Validators.required, Validators.email]],
         tel: [''],
-        tel2: [''],
-        address: [''],
-        zip: [''],
-        town: [''],
-        country: [''],
-      }),
-      taxinfo: this.fb.group({
-        brn: [''],
-        isVatRegistered: [false],
-        vatNumber: [''],
       }),
       currencyName: ['', Validators.required],
-      remarks: [''],
-      hotelInfo: this.fb.group({
-        starRating: [null],
-        region: [''],
-      }),
-      isActive: [true, Validators.required],
     });
 
     if (this.isEditMode && this.partnerId) {
-      this.partnerService
-        .getPartner(this.partnerId)
-        .pipe(first())
-        .subscribe((partner) => {
-          this.partnerForm.patchValue(partner);
-        });
+      const partnerDoc = await this.partnerService.getPartner(this.partnerId);
+      if (partnerDoc.exists()) {
+        this.partnerForm.patchValue(partnerDoc.data());
+      } else {
+        // Handle the case where the document does not exist
+        console.error('Partner not found!');
+        this.router.navigate(['/partners']);
+      }
     }
   }
 

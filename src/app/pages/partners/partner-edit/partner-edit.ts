@@ -31,6 +31,11 @@ export interface PartnerForm {
     tel: FormControl<string | null>;
   }>;
   currencyName: FormControl<string>;
+  hotelInfo?: FormGroup<{
+    // Make hotelInfo optional
+    starRating: FormControl<number | null>;
+    region: FormControl<string | null>;
+  }>;
 }
 
 @Component({
@@ -79,11 +84,37 @@ export class PartnerEditComponent implements OnInit {
       currencyName: this.fb.control('', { nonNullable: true, validators: Validators.required }),
     });
 
+    this.partnerForm.controls.type.valueChanges.subscribe((type) => {
+      if (type === PartnerType.HOTEL) {
+        this.partnerForm.addControl(
+          'hotelInfo',
+          this.fb.group({
+            starRating: this.fb.control<number | null>(null),
+            region: this.fb.control<string | null>(''),
+          })
+        );
+      } else {
+        this.partnerForm.removeControl('hotelInfo');
+      }
+    });
+
     if (this.isEditMode && this.partnerId) {
       const partnerDoc = await this.partnerService.get(this.partnerId);
       if (partnerDoc.exists()) {
+        const partnerData = partnerDoc.data();
         // The data from Firestore will correctly patch the typed form
-        this.partnerForm.patchValue(partnerDoc.data());
+        this.partnerForm.patchValue(partnerData);
+        if (partnerData['type'] === PartnerType.HOTEL && partnerData['hotelInfo']) {
+          this.partnerForm.addControl(
+            'hotelInfo',
+            this.fb.group({
+              starRating: this.fb.control<number | null>(
+                partnerData['hotelInfo'].starRating || null
+              ),
+              region: this.fb.control<string | null>(partnerData['hotelInfo'].region || ''),
+            })
+          );
+        }
       } else {
         console.error('Partner not found!');
         this.router.navigate(['/partners']);

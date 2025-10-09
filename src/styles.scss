@@ -56,3 +56,14 @@ td.mat-mdc-cell {
   border-left: 1px solid #dcdcdc;
 }
 }
+
+.edit-page-container {
+  .form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+}

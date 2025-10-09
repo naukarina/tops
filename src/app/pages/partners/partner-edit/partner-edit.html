@@ -14,6 +14,19 @@
                 </mat-select>
             </mat-form-field>
 
+            @if (partnerForm.controls.type.value === 'HOTEL') {
+            <div formGroupName="hotelInfo">
+                <mat-form-field appearance="outline">
+                    <mat-label>Star Rating</mat-label>
+                    <input matInput formControlName="starRating" type="number" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Region</mat-label>
+                    <input matInput formControlName="region" />
+                </mat-form-field>
+            </div>
+            }
+
             <div formGroupName="contactInfo">
                 <mat-form-field appearance="outline">
                     <mat-label>Email</mat-label>

@@ -1,10 +1,13 @@
 <app-edit-page [title]="isEditMode ? 'Edit Partner' : 'Create Partner'">
     <div form-fields>
         <form [formGroup]="partnerForm" (ngSubmit)="onSubmit()">
+            <mat-slide-toggle formControlName="isActive" class="mb-3">Is Active</mat-slide-toggle>
+
             <mat-form-field appearance="outline">
                 <mat-label>Name</mat-label>
                 <input matInput formControlName="name" required />
             </mat-form-field>
+
             <mat-form-field appearance="outline">
                 <mat-label>Type</mat-label>
                 <mat-select formControlName="type" required>
@@ -14,8 +17,13 @@
                 </mat-select>
             </mat-form-field>
 
-            @if (partnerForm.controls.type.value === 'HOTEL') {
+
+            @if (partnerForm.controls.hotelInfo) {
+            <hr>
             <div formGroupName="hotelInfo">
+                <div class="section-header">
+                    <h4>Hotel Information</h4>
+                </div>
                 <mat-form-field appearance="outline">
                     <mat-label>Star Rating</mat-label>
                     <input matInput formControlName="starRating" type="number" />
@@ -27,21 +35,84 @@
             </div>
             }
 
+            <hr>
             <div formGroupName="contactInfo">
+                <div class="section-header">
+                    <h4>Contact Information</h4>
+                </div>
                 <mat-form-field appearance="outline">
                     <mat-label>Email</mat-label>
                     <input matInput formControlName="email" type="email" required />
                 </mat-form-field>
+                <div class="form-row">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Telephone</mat-label>
+                        <input matInput formControlName="tel" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Telephone 2</mat-label>
+                        <input matInput formControlName="tel2" />
+                    </mat-form-field>
+                </div>
                 <mat-form-field appearance="outline">
-                    <mat-label>Telephone</mat-label>
-                    <input matInput formControlName="tel" />
+                    <mat-label>Address</mat-label>
+                    <input matInput formControlName="address" />
+                </mat-form-field>
+                <div class="form-row">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Zip</mat-label>
+                        <input matInput formControlName="zip" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Town</mat-label>
+                        <input matInput formControlName="town" />
+                    </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline">
+                    <mat-label>Country</mat-label>
+                    <mat-select formControlName="country">
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="countryFilterCtrl"></ngx-mat-select-search>
+                        </mat-option>
+                        @for (country of filteredCountries | async; track country) {
+                        <mat-option [value]="country">{{ country }}</mat-option>
+                        }
+                    </mat-select>
                 </mat-form-field>
             </div>
+            <hr>
+            <div formGroupName="taxinfo">
+                <div class="section-header">
+                    <h4>Tax Information</h4>
+                </div>
+                <mat-form-field appearance="outline">
+                    <mat-label>BRN</mat-label>
+                    <input matInput formControlName="brn" />
+                </mat-form-field>
+                <mat-slide-toggle formControlName="isVatRegistered">Is VAT Registered</mat-slide-toggle>
+                @if (partnerForm.get('taxinfo.isVatRegistered')?.value) {
+                <mat-form-field appearance="outline" class="mt-3">
+                    <mat-label>VAT Number</mat-label>
+                    <input matInput formControlName="vatNumber" />
+                </mat-form-field>
+                }
+            </div>
+            <hr>
 
             <mat-form-field appearance="outline">
                 <mat-label>Currency</mat-label>
-                <input matInput formControlName="currencyName" required />
+                <mat-select formControlName="currencyName" required>
+                    @for (currency of currencies; track currency) {
+                    <mat-option [value]="currency">{{ currency }}</mat-option>
+                    }
+                </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Remarks</mat-label>
+                <textarea matInput formControlName="remarks"></textarea>
+            </mat-form-field>
+
         </form>
     </div>
     <div form-actions>

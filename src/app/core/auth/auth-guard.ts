@@ -1,22 +1,25 @@
 // src/app/core/auth/auth-guard.ts
-
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from './auth.service';
+import { Auth, authState } from '@angular/fire/auth';
 import { map, take } from 'rxjs/operators';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+export const authGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
   const router = inject(Router);
 
-  return authService.userState$.pipe(
-    take(1),
+  // Use the authState observable to asynchronously check the user's login status.
+  // This waits for Firebase to initialize and determine if a user session exists.
+  return authState(auth).pipe(
+    take(1), // Take the first emitted value to prevent the guard from running indefinitely.
     map((user) => {
+      // If a user object exists, they are authenticated.
       if (user) {
         return true;
       }
-      router.navigate(['/login']);
-      return false;
+
+      // If no user exists, redirect to the login page.
+      return router.parseUrl('/login');
     })
   );
 };

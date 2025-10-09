@@ -1,69 +1,78 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
-
-.list-page-container{
-table {
-  width: 100%;
-  border-collapse: collapse;
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
-tr.mat-mdc-header-row {
-  height: 48px;
-  background-color: #f8f9fa;
-}
-
-th.mat-mdc-header-cell {
-  color: #6c757d;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  border-bottom: 1px solid #dee2e6;
-  padding: 0 16px;
-}
-
-tr.mat-mdc-row {
-  height: 60px;
-  border-bottom: 1px solid #e9ecef;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: #f1f3f4;
+.list-page-container {
+  table {
+    width: 100%;
+    border-collapse: collapse;
   }
-}
 
-tr.mat-mdc-row:last-child {
-  border-bottom: none;
-}
+  tr.mat-mdc-header-row {
+    height: 48px;
+    background-color: #f8f9fa;
+  }
 
-td.mat-mdc-cell {
-  padding: 0 16px;
-  color: #333;
-}
+  th.mat-mdc-header-cell {
+    color: #6c757d;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0 16px;
+  }
 
-.mat-column-select {
-  width: 60px;
-}
+  tr.mat-mdc-row {
+    height: 60px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
 
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
+    &:hover {
+      background-color: #f1f3f4;
+    }
+  }
 
-.mat-column-actions {
-  background-color: #fff;
-  border-left: 1px solid #dcdcdc;
-}
+  tr.mat-mdc-row:last-child {
+    border-bottom: none;
+  }
+
+  td.mat-mdc-cell {
+    padding: 0 16px;
+    color: #333;
+  }
+
+  .mat-column-select {
+    width: 60px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .mat-column-actions {
+    background-color: #fff;
+    border-left: 1px solid #dcdcdc;
+  }
 }
 
 .edit-page-container {
   .form-row {
-  display: flex;
-  gap: 1rem;
-}
+    display: flex;
+    gap: 1rem;
+  }
 
-mat-form-field {
-  width: 100%;
-}
+  mat-form-field {
+    width: 100%;
+  }
+  .section-header h4 {
+    font-size: 16px;
+  }
 }

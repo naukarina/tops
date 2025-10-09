@@ -1,0 +1,15 @@
+.form-row {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.form-row > * {
+  flex: 1;
+}
+
+.add-info-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}

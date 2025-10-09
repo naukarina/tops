@@ -1,4 +1,5 @@
 import { BaseDocument } from './base-document.model';
+import { CurrencyName } from './currency.model';
 
 export enum PartnerType {
   HOTEL = 'HOTEL',
@@ -24,7 +25,7 @@ export interface Partner extends BaseDocument {
     isVatRegistered: boolean;
     vatNumber?: string;
   };
-  currencyName: string;
+  currencyName: CurrencyName;
   remarks?: string;
   hotelInfo?: {
     starRating?: number;

@@ -2,7 +2,13 @@
 
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Partner, PartnerType } from '../../../models/partner.model';
 import { PartnerService } from '../../../services/partner.service';
@@ -16,6 +22,16 @@ import { MatSelectModule } from '@angular/material/select';
 
 // Shared Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
+
+export interface PartnerForm {
+  name: FormControl<string>;
+  type: FormControl<PartnerType | null>;
+  contactInfo: FormGroup<{
+    email: FormControl<string>;
+    tel: FormControl<string | null>;
+  }>;
+  currencyName: FormControl<string>;
+}
 
 @Component({
   selector: 'app-partners-edit',
@@ -39,7 +55,8 @@ export class PartnerEditComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  partnerForm!: FormGroup;
+  // Use the new interface to type the form
+  partnerForm!: FormGroup<PartnerForm>;
   isEditMode = false;
   partnerTypes = Object.values(PartnerType);
   private partnerId: string | null = null;
@@ -48,19 +65,24 @@ export class PartnerEditComponent implements OnInit {
     this.partnerId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.partnerId;
 
+    // Use non-nullable controls and explicit types
     this.partnerForm = this.fb.group({
-      name: ['', Validators.required],
-      type: ['', Validators.required],
+      name: this.fb.control('', { nonNullable: true, validators: Validators.required }),
+      type: this.fb.control<PartnerType | null>(null, Validators.required),
       contactInfo: this.fb.group({
-        email: ['', [Validators.required, Validators.email]],
-        tel: [''],
+        email: this.fb.control('', {
+          nonNullable: true,
+          validators: [Validators.required, Validators.email],
+        }),
+        tel: this.fb.control(''),
       }),
-      currencyName: ['', Validators.required],
+      currencyName: this.fb.control('', { nonNullable: true, validators: Validators.required }),
     });
 
     if (this.isEditMode && this.partnerId) {
       const partnerDoc = await this.partnerService.get(this.partnerId);
       if (partnerDoc.exists()) {
+        // The data from Firestore will correctly patch the typed form
         this.partnerForm.patchValue(partnerDoc.data());
       } else {
         console.error('Partner not found!');
@@ -74,7 +96,8 @@ export class PartnerEditComponent implements OnInit {
       return;
     }
 
-    const partnerData = this.partnerForm.value as Partner;
+    // Use getRawValue() to get all values, including disabled ones
+    const partnerData = this.partnerForm.getRawValue() as Partner;
 
     if (this.isEditMode && this.partnerId) {
       await this.partnerService.update(this.partnerId, partnerData);

@@ -119,6 +119,17 @@
                 </mat-select>
             </mat-form-field>
 
+            @if (subDmcs.length > 0) {
+            <mat-form-field appearance="outline">
+                <mat-label>Sub-DMC</mat-label>
+                <mat-select formControlName="subDmc">
+                    @for (subDmc of subDmcs; track subDmc) {
+                    <mat-option [value]="subDmc">{{ subDmc }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            }
+
             <mat-form-field appearance="outline">
                 <mat-label>Remarks</mat-label>
                 <textarea matInput formControlName="remarks"></textarea>

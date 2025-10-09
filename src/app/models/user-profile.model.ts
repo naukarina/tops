@@ -6,6 +6,6 @@ export interface UserProfile extends BaseDocument {
   name: string;
   email: string;
   roles: string[];
-  company: Pick<Company, 'id'>;
+  companyId: string;
   isActive: boolean;
 }

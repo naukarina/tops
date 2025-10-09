@@ -33,4 +33,6 @@ export interface Partner extends BaseDocument {
     region?: Region;
   };
   isActive: boolean;
+  companyId: string; // Assigned automatically based on the user creating the partner
+  subDmc?: string;
 }

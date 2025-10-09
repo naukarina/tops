@@ -11,8 +11,8 @@ import {
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Partner, PartnerType } from '../../../models/partner.model';
 import { PartnerService } from '../../../services/partner.service';
-import { ReplaySubject, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { of, ReplaySubject, Subject } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
 import { CurrencyName } from '../../../models/currency.model';
 import { countryList, Region } from '../../../models/location.model';
 
@@ -27,6 +27,8 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 
 // Shared Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
+import { UserProfileService } from '../../../services/user-profile.service';
+import { CompanyService } from '../../../services/company.service';
 
 export interface PartnerForm {
   name: FormControl<string>;
@@ -52,6 +54,7 @@ export interface PartnerForm {
     starRating: FormControl<number | null>;
     region: FormControl<Region | null>;
   }>;
+  subDmc: FormControl<string | null>;
 }
 
 @Component({
@@ -91,6 +94,10 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
   public filteredCountries: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
   private _onDestroy = new Subject<void>();
 
+  private userProfileService = inject(UserProfileService);
+  private companyService = inject(CompanyService);
+  subDmcs: string[] = [];
+
   async ngOnInit(): Promise<void> {
     this.partnerId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.partnerId;
@@ -118,6 +125,7 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
       }),
       currencyName: this.fb.control<CurrencyName | null>(null, Validators.required),
       remarks: this.fb.control(''),
+      subDmc: this.fb.control(''),
     });
 
     this.partnerForm.controls.type.valueChanges.subscribe((type) => {
@@ -132,6 +140,27 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
     this.countryFilterCtrl.valueChanges.pipe(takeUntil(this._onDestroy)).subscribe(() => {
       this.filterCountries();
     });
+
+    // Fetch sub-DMCs from the current user's company
+    this.userProfileService.currentUserProfile$
+      .pipe(
+        tap((userProfile) => {
+          console.log('Fetched user profile:', userProfile);
+        }),
+        switchMap((userProfile) => {
+          if (userProfile && userProfile.companyId) {
+            return this.companyService.get(userProfile.companyId);
+          }
+          return of(null);
+        })
+      )
+      .subscribe((company) => {
+        console.log('Fetched company for user:', company);
+
+        if (company && company.subDmcs) {
+          this.subDmcs = company.subDmcs;
+        }
+      });
 
     if (this.isEditMode && this.partnerId) {
       const partnerDoc = await this.partnerService.get(this.partnerId);

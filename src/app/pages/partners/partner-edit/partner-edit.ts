@@ -14,7 +14,7 @@ import { PartnerService } from '../../../services/partner.service';
 import { ReplaySubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CurrencyName } from '../../../models/currency.model';
-import { countryList } from '../../../models/location.model';
+import { countryList, Region } from '../../../models/location.model';
 
 // Material Imports
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -33,7 +33,6 @@ export interface PartnerForm {
   type: FormControl<PartnerType | null>;
   isActive: FormControl<boolean>;
   contactInfo: FormGroup<{
-    // No longer optional
     email: FormControl<string>;
     tel: FormControl<string | null>;
     tel2: FormControl<string | null>;
@@ -43,7 +42,6 @@ export interface PartnerForm {
     country: FormControl<string | null>;
   }>;
   taxinfo: FormGroup<{
-    // No longer optional
     brn: FormControl<string | null>;
     isVatRegistered: FormControl<boolean>;
     vatNumber: FormControl<string | null>;
@@ -52,7 +50,7 @@ export interface PartnerForm {
   remarks: FormControl<string | null>;
   hotelInfo?: FormGroup<{
     starRating: FormControl<number | null>;
-    region: FormControl<string | null>;
+    region: FormControl<Region | null>;
   }>;
 }
 
@@ -85,6 +83,8 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
   partnerTypes = Object.values(PartnerType);
   currencies = Object.values(CurrencyName);
   countries = countryList;
+  regions = Object.values(Region);
+  starRatings = [1, 2, 3, 4, 5];
   private partnerId: string | null = null;
 
   public countryFilterCtrl: FormControl<string | null> = new FormControl<string | null>('');
@@ -161,7 +161,7 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
       'hotelInfo',
       this.fb.group({
         starRating: this.fb.control<number | null>(null),
-        region: this.fb.control<string | null>(''),
+        region: this.fb.control<Region | null>(null),
       })
     );
   }

@@ -207,6 +207,9 @@ export enum Region {
   WEST = 'WEST',
   CENTRAL = 'CENTRAL',
   SOUTH_EAST = 'SOUTH_EAST',
+  SOUTH_WEST = 'SOUTH_WEST',
+  NORTH_EAST = 'NORTH_EAST',
+  NORTH_WEST = 'NORTH_WEST',
 }
 
 export interface Location extends BaseDocument {

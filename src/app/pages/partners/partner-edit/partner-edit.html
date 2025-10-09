@@ -19,19 +19,29 @@
 
 
             @if (partnerForm.controls.hotelInfo) {
-            <hr>
+            <hr />
             <div formGroupName="hotelInfo">
                 <div class="section-header">
                     <h4>Hotel Information</h4>
                 </div>
-                <mat-form-field appearance="outline">
-                    <mat-label>Star Rating</mat-label>
-                    <input matInput formControlName="starRating" type="number" />
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Region</mat-label>
-                    <input matInput formControlName="region" />
-                </mat-form-field>
+                <div class="form-row">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Star Rating</mat-label>
+                        <mat-select formControlName="starRating">
+                            @for (rating of starRatings; track rating) {
+                            <mat-option [value]="rating">{{ rating }}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Region</mat-label>
+                        <mat-select formControlName="region">
+                            @for (region of regions; track region) {
+                            <mat-option [value]="region">{{ region }}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
             </div>
             }
 
@@ -72,7 +82,8 @@
                     <mat-label>Country</mat-label>
                     <mat-select formControlName="country">
                         <mat-option>
-                            <ngx-mat-select-search [formControl]="countryFilterCtrl"></ngx-mat-select-search>
+                            <ngx-mat-select-search [formControl]="countryFilterCtrl"
+                                placeholderLabel="Search..."></ngx-mat-select-search>
                         </mat-option>
                         @for (country of filteredCountries | async; track country) {
                         <mat-option [value]="country">{{ country }}</mat-option>
@@ -116,7 +127,7 @@
         </form>
     </div>
     <div form-actions>
-        <button mat-stroked-button color="warn" type="button" routerLink="/partners">
+        <button mat-stroked-button color="warn" type="button" routerLink="/partners" class="me-2">
             <mat-icon>cancel</mat-icon>
             <span>Cancel</span>
         </button>

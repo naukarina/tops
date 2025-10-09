@@ -200,8 +200,17 @@ export const countryList = [
   'Zimbabwe',
 ];
 
+export enum Region {
+  NORTH = 'NORTH',
+  EAST = 'EAST',
+  SOUTH = 'SOUTH',
+  WEST = 'WEST',
+  CENTRAL = 'CENTRAL',
+  SOUTH_EAST = 'SOUTH_EAST',
+}
+
 export interface Location extends BaseDocument {
   name: string;
-  region?: string;
+  region?: Region;
   description?: string;
 }

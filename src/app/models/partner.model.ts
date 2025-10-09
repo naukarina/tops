@@ -1,5 +1,6 @@
 import { BaseDocument } from './base-document.model';
 import { CurrencyName } from './currency.model';
+import { Region } from './location.model';
 
 export enum PartnerType {
   HOTEL = 'HOTEL',
@@ -29,7 +30,7 @@ export interface Partner extends BaseDocument {
   remarks?: string;
   hotelInfo?: {
     starRating?: number;
-    region?: string;
+    region?: Region;
   };
   isActive: boolean;
 }

@@ -1,10 +1,4 @@
-<app-list-page title="Users">
-    <div-list-page-buttons>
-        <a mat-flat-button color="primary" routerLink="/users/create">
-            <mat-icon>add</mat-icon>
-            <span>Add User</span>
-        </a>
-    </div-list-page-buttons>
+<app-list-page title="Users" newRoute="/users/new" newButtonText="Add New User">
     <div list-page-content>
         <table mat-table [dataSource]="users$" class="mat-elevation-z8">
             <!-- Name Column -->

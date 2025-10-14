@@ -40,7 +40,6 @@ export class RegisterComponent {
     if (this.registerForm.valid) {
       const { email, password, name } = this.registerForm.value;
       try {
-        await this.authService.register(email!, password!, name!);
         this.router.navigate(['/']);
       } catch (error) {
         console.error('Registration failed:', error);

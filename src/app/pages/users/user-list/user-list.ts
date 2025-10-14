@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
 import { UserProfile } from '../../../models/user-profile.model';
+import { UserService } from '../../../services/user.service';
 import { ListPageComponent } from '../../../shared/components/list-page/list-page';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { UserService } from '../../../services/user.service';
 
 @Component({
   selector: 'app-user-list',
@@ -34,9 +34,10 @@ export class UserListComponent implements OnInit {
   }
 
   deleteUser(id: string) {
-    // Note: This only deletes the Firestore document, not the Firebase Auth user.
-    // A cloud function would be required to delete the Auth user upon document deletion.
-    if (confirm('Are you sure you want to delete this user?')) {
+    // Note: This only deletes the Firestore document. Deleting the actual
+    // Firebase Auth user requires a Cloud Function with Admin privileges
+    // to avoid security risks on the client side.
+    if (confirm('Are you sure you want to delete this user profile?')) {
       this.userService.delete(id);
     }
   }

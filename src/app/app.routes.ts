@@ -30,7 +30,7 @@ export const routes: Routes = [
           import('./pages/partners/partner-list/partner-list').then((m) => m.PartnerListComponent),
       },
       {
-        path: 'create',
+        path: 'new',
         loadComponent: () =>
           import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
       },
@@ -51,7 +51,7 @@ export const routes: Routes = [
           import('./pages/products/product-list/product-list').then((m) => m.ProductListComponent),
       },
       {
-        path: 'create',
+        path: 'new',
         loadComponent: () =>
           import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
       },
@@ -72,7 +72,7 @@ export const routes: Routes = [
           import('./pages/users/user-list/user-list').then((m) => m.UserListComponent),
       },
       {
-        path: 'create',
+        path: 'new',
         loadComponent: () =>
           import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
       },

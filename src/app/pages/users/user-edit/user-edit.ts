@@ -8,6 +8,7 @@ import { UserProfile } from '../../../models/user-profile.model';
 import { Company } from '../../../models/company.model';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { UserService } from '../../../services/user.service';
 import { CompanyService } from '../../../services/company.service';
 import { NotificationService } from '../../../services/notification.service';
 
@@ -17,7 +18,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { UserService } from '../../../services/user.service';
 
 @Component({
   selector: 'app-user-edit',
@@ -60,8 +60,11 @@ export class UserEditComponent implements OnInit {
       companyId: ['', Validators.required],
     });
 
-    if (this.isEditMode && this.userId) {
-      this.loadUserData(this.userId);
+    if (this.isEditMode) {
+      this.userForm.get('email')?.disable(); // Prevent email change in edit mode
+      if (this.userId) {
+        this.loadUserData(this.userId);
+      }
     }
   }
 
@@ -79,7 +82,7 @@ export class UserEditComponent implements OnInit {
     }
 
     try {
-      const formValue = this.userForm.value;
+      const formValue = this.userForm.getRawValue(); // Use getRawValue for disabled fields
       const companies = await firstValueFrom(this.companies$);
       const selectedCompany = companies.find((c) => c.id === formValue.companyId);
 
@@ -89,10 +92,9 @@ export class UserEditComponent implements OnInit {
       }
 
       if (this.isEditMode && this.userId) {
-        // Update existing user
+        // Update existing user's Firestore profile
         const updatedProfile: Partial<UserProfile> = {
           name: formValue.name,
-          email: formValue.email,
           companyId: formValue.companyId,
           companyName: selectedCompany.name,
           companyType: selectedCompany.type,
@@ -100,7 +102,7 @@ export class UserEditComponent implements OnInit {
         await this.userService.update(this.userId, updatedProfile);
         this.notificationService.showSuccess('User updated successfully!');
       } else {
-        // Create new user
+        // Create a new user (Auth and Firestore)
         await this.authService.createUser(
           formValue.email,
           formValue.name,

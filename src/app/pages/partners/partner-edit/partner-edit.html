@@ -119,11 +119,11 @@
                 </mat-select>
             </mat-form-field>
 
-            @if (subDmcs.length > 0) {
+            @if ((subDmcs$ | async)?.length) {
             <mat-form-field appearance="outline">
                 <mat-label>Sub-DMC</mat-label>
                 <mat-select formControlName="subDmc">
-                    @for (subDmc of subDmcs; track subDmc) {
+                    @for (subDmc of subDmcs$ | async; track subDmc) {
                     <mat-option [value]="subDmc">{{ subDmc }}</mat-option>
                     }
                 </mat-select>

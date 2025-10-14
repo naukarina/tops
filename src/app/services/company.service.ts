@@ -1,4 +1,3 @@
-// src/app/services/company.service.ts
 import { Injectable, inject } from '@angular/core';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
 import { Company } from '../models/company.model';

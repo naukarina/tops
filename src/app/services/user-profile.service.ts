@@ -19,6 +19,7 @@ export class UserProfileService {
   private userProfileSignal = signal<UserProfile | null>(null);
 
   user$ = user(this.auth);
+
   userProfile$ = this.user$.pipe(
     switchMap((user) => {
       if (user) {

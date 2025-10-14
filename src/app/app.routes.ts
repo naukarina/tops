@@ -1,78 +1,87 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home';
-import { LoginComponent } from './pages/login/login';
-import { RegisterComponent } from './pages/register/register';
 import { authGuard } from './core/auth/auth-guard';
-import { ProductListComponent } from './pages/products/product-list/product-list';
-import { ProductEditComponent } from './pages/products/product-edit/product-edit';
-import { PartnerListComponent } from './pages/partners/partner-list/partner-list';
-import { PartnerEditComponent } from './pages/partners/partner-edit/partner-edit';
 
 export const routes: Routes = [
   {
     path: '',
+    redirectTo: 'home',
+    pathMatch: 'full',
+  },
+  {
+    path: 'home',
+    loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent),
     canActivate: [authGuard],
-    data: {
-      showHeader: true,
-      showFooter: true,
-      showSidenav: true,
-    },
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/login/login').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./pages/register/register').then((m) => m.RegisterComponent),
+  },
+  {
+    path: 'partners',
+    canActivate: [authGuard],
     children: [
-      { path: '', component: HomeComponent, data: { breadcrumb: 'Dashboard' } },
       {
-        path: 'products',
-        data: { breadcrumb: 'Products' },
-        children: [
-          {
-            path: '',
-            component: ProductListComponent,
-            pathMatch: 'full',
-          },
-          {
-            path: 'new',
-            component: ProductEditComponent,
-            data: { breadcrumb: 'New' },
-          },
-          {
-            path: ':id/edit',
-            component: ProductEditComponent,
-            data: { breadcrumb: 'Edit' },
-          },
-        ],
+        path: '',
+        loadComponent: () =>
+          import('./pages/partners/partner-list/partner-list').then((m) => m.PartnerListComponent),
       },
       {
-        path: 'partners',
-        data: { breadcrumb: 'Partners' },
-        children: [
-          {
-            path: '',
-            component: PartnerListComponent,
-            pathMatch: 'full',
-          },
-          {
-            path: 'new',
-            component: PartnerEditComponent,
-            data: { breadcrumb: 'New' },
-          },
-          {
-            path: ':id/edit',
-            component: PartnerEditComponent,
-            data: { breadcrumb: 'Edit' },
-          },
-        ],
+        path: 'create',
+        loadComponent: () =>
+          import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
       },
     ],
   },
   {
-    path: '',
-    data: {
-      showHeader: false,
-      showFooter: false,
-      showSidenav: false,
-    },
+    path: 'products',
+    canActivate: [authGuard],
     children: [
-      { path: 'login', component: LoginComponent },
-      { path: 'register', component: RegisterComponent },
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/products/product-list/product-list').then((m) => m.ProductListComponent),
+      },
+      {
+        path: 'create',
+        loadComponent: () =>
+          import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
+      },
     ],
   },
+  {
+    path: 'users',
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/users/user-list/user-list').then((m) => m.UserListComponent),
+      },
+      {
+        path: 'create',
+        loadComponent: () =>
+          import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
+      },
+    ],
+  },
+  { path: '**', redirectTo: 'home' }, // Wildcard route
 ];

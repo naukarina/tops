@@ -1,0 +1,34 @@
+<app-edit-page [title]="isEditMode ? 'Edit User' : 'Create User'">
+    <div form-fields>
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+            <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Company</mat-label>
+                <mat-select formControlName="companyId" required>
+                    @for (company of companies$ | async; track company.id) {
+                    <mat-option [value]="company.id">{{ company.name }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </form>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" type="button" routerLink="/users">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!userForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
+    </div>
+</app-edit-page>

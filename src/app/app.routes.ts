@@ -11,18 +11,28 @@ export const routes: Routes = [
     path: 'home',
     loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent),
     canActivate: [authGuard],
+    data: { breadcrumb: 'Home' },
   },
   {
     path: 'login',
     loadComponent: () => import('./pages/login/login').then((m) => m.LoginComponent),
+    data: {
+      showHeader: false,
+      showSidenav: false,
+    },
   },
   {
     path: 'register',
     loadComponent: () => import('./pages/register/register').then((m) => m.RegisterComponent),
+    data: {
+      showHeader: false,
+      showSidenav: false,
+    },
   },
   {
     path: 'partners',
     canActivate: [authGuard],
+    data: { breadcrumb: 'Partners' },
     children: [
       {
         path: '',
@@ -33,17 +43,20 @@ export const routes: Routes = [
         path: 'new',
         loadComponent: () =>
           import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
+        data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
           import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
+        data: { breadcrumb: 'Edit' },
       },
     ],
   },
   {
     path: 'products',
     canActivate: [authGuard],
+    data: { breadcrumb: 'Products' },
     children: [
       {
         path: '',
@@ -54,17 +67,20 @@ export const routes: Routes = [
         path: 'new',
         loadComponent: () =>
           import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
+        data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
           import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
+        data: { breadcrumb: 'Edit' },
       },
     ],
   },
   {
     path: 'users',
     canActivate: [authGuard],
+    data: { breadcrumb: 'Users' },
     children: [
       {
         path: '',
@@ -75,11 +91,13 @@ export const routes: Routes = [
         path: 'new',
         loadComponent: () =>
           import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
+        data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
           import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
+        data: { breadcrumb: 'Edit' },
       },
     ],
   },

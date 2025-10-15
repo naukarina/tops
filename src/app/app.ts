@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ActivatedRoute,
   NavigationEnd,
   Router,
-  RouterOutlet,
+  RouterModule,
   PRIMARY_OUTLET,
 } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -13,7 +13,6 @@ import { filter } from 'rxjs/operators';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { HeaderComponent } from './core/header/header';
 import { SidenavComponent } from './core/sidenav/sidenav';
-import { FooterComponent } from './core/footer/footer';
 import { Breadcrumb, BreadcrumbComponent } from './core/breadcrumb/breadcrumb';
 
 @Component({
@@ -21,57 +20,58 @@ import { Breadcrumb, BreadcrumbComponent } from './core/breadcrumb/breadcrumb';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatSidenavModule,
     HeaderComponent,
     SidenavComponent,
-    FooterComponent,
-    RouterOutlet,
     BreadcrumbComponent,
   ],
   templateUrl: './app.html',
-  styleUrls: ['./app.scss'],
+  styleUrl: './app.scss',
 })
 export class AppComponent implements OnInit {
+  title = 'tops';
   showHeader = true;
-  showFooter = true;
   showSidenav = true;
   breadcrumbs: Breadcrumb[] = [];
 
-  constructor(private router: Router, private activatedRoute: ActivatedRoute) {}
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
 
   ngOnInit() {
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.breadcrumbs = this.createBreadcrumbs(this.activatedRoute.root);
       const routeData = this.getRouteData(this.activatedRoute.root);
       this.showHeader = routeData['showHeader'] !== false;
-      this.showFooter = routeData['showFooter'] !== false;
       this.showSidenav = routeData['showSidenav'] !== false;
     });
   }
 
-  private createBreadcrumbs(route: ActivatedRoute): Breadcrumb[] {
-    const breadcrumbs: Breadcrumb[] = [];
-    let currentRoute: ActivatedRoute | null = route.root;
-    let url = '';
+  private createBreadcrumbs(
+    route: ActivatedRoute,
+    url: string = '',
+    breadcrumbs: Breadcrumb[] = []
+  ): Breadcrumb[] {
+    const children: ActivatedRoute[] = route.children;
 
-    while (currentRoute?.firstChild) {
-      currentRoute = currentRoute.firstChild;
-      const routeURL = currentRoute.snapshot.url.map((segment) => segment.path).join('/');
-      const breadcrumbLabel = currentRoute.snapshot.data['breadcrumb'];
+    if (children.length === 0) {
+      return breadcrumbs;
+    }
 
-      if (routeURL && breadcrumbLabel) {
-        url += `/${routeURL}`;
-        breadcrumbs.push({
-          label: breadcrumbLabel,
-          url: url,
-        });
-      } else if (breadcrumbLabel) {
-        // Handle root breadcrumb
-        breadcrumbs.push({
-          label: breadcrumbLabel,
-          url: '/',
-        });
+    for (const child of children) {
+      if (child.outlet !== PRIMARY_OUTLET) {
+        continue;
       }
+
+      const routeURL: string = child.snapshot.url.map((segment) => segment.path).join('/');
+      const newUrl = url + (routeURL ? `/${routeURL}` : '');
+
+      const breadcrumbLabel = child.snapshot.data['breadcrumb'];
+      if (breadcrumbLabel) {
+        breadcrumbs.push({ label: breadcrumbLabel, url: newUrl });
+      }
+
+      return this.createBreadcrumbs(child, newUrl, breadcrumbs);
     }
     return breadcrumbs;
   }

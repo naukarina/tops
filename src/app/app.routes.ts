@@ -110,5 +110,13 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    path: 'admin/import',
+    // You can add a canActivate: [adminGuard] here
+    loadComponent: () =>
+      import('./pages/migration/migration-page/migration-page').then(
+        (m) => m.MigrationPageComponent
+      ),
+  },
   { path: '**', redirectTo: 'home' }, // Wildcard route
 ];

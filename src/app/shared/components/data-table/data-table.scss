@@ -1,9 +1,23 @@
 // src/app/shared/components/data-table/data-table.component.scss
-.filter-field {
-  width: 100%;
-  padding: 0 16px; /* Align with default table padding */
-  margin-bottom: 1rem;
+
+// Container for all filter elements
+.filters-container {
+  display: flex;
+  flex-wrap: wrap; // Allow filters to wrap on smaller screens
+  gap: 1rem; // Spacing between filter elements
+  padding: 0 16px 1rem; // Align with table padding, add bottom margin
   box-sizing: border-box;
+}
+
+// Styling for individual filter fields
+.filter-field {
+  flex: 1 1 200px; // Allow fields to grow and shrink, with a base size
+  min-width: 150px; // Minimum width before wrapping
+}
+
+// Ensure the general text filter doesn't take up excessive space if others are present
+.text-filter-field {
+  // You might adjust flex-grow or max-width if needed
 }
 
 .data-table {
@@ -21,4 +35,23 @@
 .mat-column-actions {
   // background-color: #fff; // Example - Customize as needed
   // border-left: 1px solid #dcdcdc;
+}
+
+// No Data Row Styling
+.mat-row.mat-no-data-row td {
+  text-align: center;
+  padding: 1rem;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+// Align mat-select dropdown arrow correctly within outline appearance
+::ng-deep .dropdown-filter-field .mat-mdc-select-arrow {
+  margin-top: -3px; // Adjust as needed based on your theme/styles
+}
+
+// Ensure search input within mat-select looks okay
+::ng-deep .mat-mdc-select-panel ngx-mat-select-search .mat-mdc-form-field {
+  // You might need to adjust padding or margins here if it looks off
+  padding: 0 16px;
+  margin-bottom: 8px; // Add some space below the search input
 }

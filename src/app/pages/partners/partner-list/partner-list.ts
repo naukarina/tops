@@ -4,80 +4,83 @@ import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { RouterModule } from '@angular/router';
 
-import { Partner, PartnerType } from '../../../models/partner.model'; // Import PartnerType
+import { Partner, PartnerType } from '../../../models/partner.model';
+import { CurrencyName } from '../../../models/currency.model'; // Import CurrencyName
 import { PartnerService } from '../../../services/partner.service';
-import { NotificationService } from '../../../services/notification.service'; // For delete feedback
+import { NotificationService } from '../../../services/notification.service';
 
 // Shared Components
 import { ListPageComponent } from '../../../shared/components/list-page/list-page';
-import { DataTableComponent } from '../../../shared/components/data-table/data-table'; // <-- Import Data Table
-import { ColumnDefinition } from '../../../shared/components/data-table/column-definition.model'; // <-- Import Column Definition
+// Import DropdownFilter type along with DataTableComponent
+import {
+  DataTableComponent,
+  DropdownFilter,
+} from '../../../shared/components/data-table/data-table';
+import { ColumnDefinition } from '../../../shared/components/data-table/column-definition.model';
 
-// Material Imports needed *only* if you use features outside the data table itself
-// (e.g., status badge styling is in partner-list.scss)
-// Removed MatTableModule, MatCheckboxModule, MatSortModule, MatPaginatorModule etc.
-import { MatIconModule } from '@angular/material/icon'; // Keep if used in ListPageComponent or directly
+// Material Imports
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-partner-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    ListPageComponent,
-    DataTableComponent, // <-- Add Data Table Component
-    MatIconModule, // Keep if needed elsewhere
-  ],
+  imports: [CommonModule, RouterModule, ListPageComponent, DataTableComponent, MatIconModule],
   templateUrl: './partner-list.html',
-  styleUrls: ['./partner-list.scss'], // Keep styles for status badges etc.
+  styleUrls: ['./partner-list.scss'],
 })
 export class PartnerListComponent {
   private partnerService = inject(PartnerService);
-  private notificationService = inject(NotificationService); // Inject NotificationService
+  private notificationService = inject(NotificationService);
 
   partners$: Observable<Partner[]> = this.partnerService.getAll();
+  currencies = Object.values(CurrencyName); // Get currency enum values for the dropdown
 
   // Columns to display in the data-table
   displayedColumns = ['name', 'type', 'currencyName', 'contactInfo.country', 'subDmc', 'actions'];
 
   // Define how each column is rendered and configured
   columnDefs: ColumnDefinition<Partner>[] = [
-    {
-      columnDef: 'name',
-      header: 'Name',
-      cell: (partner) => partner.name, // Display partner's name
-      isSortable: true,
-    },
-    {
-      columnDef: 'type',
-      header: 'Type',
-      cell: (partner) => partner.type, // Display partner's type
-      isSortable: true,
-    },
+    { columnDef: 'name', header: 'Name', cell: (p) => p.name, isSortable: true },
+    { columnDef: 'type', header: 'Type', cell: (p) => p.type, isSortable: true },
     {
       columnDef: 'currencyName',
       header: 'Currency',
-      cell: (partner) => partner.currencyName, // Display currency
+      cell: (p) => p.currencyName,
       isSortable: true,
     },
     {
-      columnDef: 'contactInfo.country', // Use dot notation for nested properties if desired
+      columnDef: 'contactInfo.country',
       header: 'Country',
-      cell: (partner) => partner.contactInfo?.country || 'N/A', // Safely access nested property
+      cell: (p) => p.contactInfo?.country || 'N/A',
       isSortable: true,
     },
+    { columnDef: 'subDmc', header: 'Sub DMC', cell: (p) => p.subDmc || 'N/A', isSortable: true },
+  ];
+
+  // Define the dropdown filter configuration
+  partnerDropdownFilters: DropdownFilter<Partner>[] = [
     {
-      columnDef: 'subDmc',
-      header: 'Sub DMC',
-      cell: (partner) => partner.subDmc || 'N/A',
-      isSortable: true,
+      columnDef: 'currencyName', // The property in the Partner object to filter by
+      placeholder: 'Filter by Currency', // Dropdown label
+      options: this.currencies, // Provide the list of currencies
+      multiple: true, // Allow selecting multiple currencies
+      searchable: true, // Enable the search input
+      // optionValue: 'valueProperty', // Use if options were objects like { valueProperty: 'MUR', textProperty: 'Mauritian Rupee' }
+      // optionText: 'textProperty',  // Use if options were objects
     },
-    // Action column is handled by specific inputs/outputs in data-table
+    // Add more dropdown filters here if needed (e.g., for 'type' or 'contactInfo.country')
+    {
+      columnDef: 'type',
+      placeholder: 'Filter by Type',
+      options: Object.values(PartnerType),
+      multiple: true,
+      searchable: false, // Example: Type filter is not searchable
+    },
   ];
 
   // Define routes for actions (optional)
-  partnerViewRoute = (partner: Partner) => ['/partners', partner.id]; // Example View Route
-  partnerEditRoute = (partner: Partner) => ['/partners', 'edit', partner.id]; // Example Edit Route
+  partnerViewRoute = (partner: Partner) => ['/partners', partner.id];
+  partnerEditRoute = (partner: Partner) => ['/partners', 'edit', partner.id];
 
   // Delete handler
   async onDeletePartner(partner: Partner) {
@@ -85,7 +88,6 @@ export class PartnerListComponent {
       try {
         await this.partnerService.delete(partner.id);
         this.notificationService.showSuccess('Partner deleted successfully.');
-        // Note: The list will update automatically due to the observable nature
       } catch (error) {
         console.error('Error deleting partner:', error);
         this.notificationService.showError('Failed to delete partner.');

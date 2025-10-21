@@ -3,7 +3,7 @@
     <app-data-table [dataInput]="partners$" [columnDefinitions]="columnDefs" [displayedColumns]="displayedColumns"
         [enableFilter]="true" [enableSort]="true" [enablePaginator]="true" [pageSizeOptions]="[10, 25, 50]"
         filterPlaceholder="Search partners..." [editRoute]="partnerEditRoute" [viewRoute]="partnerViewRoute"
-        [enableDelete]="true" (deleteAction)="onDeletePartner($event)">
+        [enableDelete]="true" (deleteAction)="onDeletePartner($event)" [dropdownFilters]="partnerDropdownFilters">
     </app-data-table>
 
 </app-list-page>

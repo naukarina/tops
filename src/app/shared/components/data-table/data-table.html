@@ -1,13 +1,37 @@
-@if (enableFilter) {
-<mat-form-field appearance="outline" class="filter-field">
-    <mat-label>Filter</mat-label>
-    <input matInput (keyup)="applyFilter($event)" [placeholder]="filterPlaceholder" #input>
-    <mat-icon matSuffix>search</mat-icon>
-</mat-form-field>
-}
+<div [formGroup]="filterForm" class="filters-container">
+
+    @if (enableFilter) {
+    <mat-form-field appearance="outline" class="filter-field text-filter-field">
+        <mat-label>Filter</mat-label>
+        <input matInput (keyup)="applyTextFilter($event)" [placeholder]="filterPlaceholder" #input
+            [formControl]="textFilterControl">
+        <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    }
+
+    @for (filter of dropdownFilters; track filter.columnDef) {
+    <mat-form-field appearance="outline" class="filter-field dropdown-filter-field">
+        <mat-label>{{ filter.placeholder }}</mat-label>
+        <mat-select [formControlName]="getControlKey(filter.columnDef)" [multiple]="filter.multiple">
+            @if (filter.searchable) {
+            <mat-option>
+                <ngx-mat-select-search [formControl]="searchControls[getControlKey(filter.columnDef)]"
+                    placeholderLabel="Search..." noEntriesFoundLabel="'No matching options found'">
+                </ngx-mat-select-search>
+            </mat-option>
+            }
+            @for (option of (filter.searchable ? (filteredOptions[getControlKey(filter.columnDef)] | async) :
+            filter.options); track option) {
+            <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
+                {{ filter.optionText ? option[filter.optionText] : option }}
+            </mat-option>
+            }
+        </mat-select>
+    </mat-form-field>
+    }
+</div>
 
 <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8 data-table">
-
     @for (col of columnDefinitions; track col.columnDef) {
     <ng-container [matColumnDef]="col.columnDef">
         @if (col.isSortable && enableSort) {
@@ -15,7 +39,7 @@
         } @else {
         <th mat-header-cell *matHeaderCellDef>{{ col.header }}</th>
         }
-        <td mat-cell *matCellDef="let element"> {{ col.cell(element) }} </td>
+        <td mat-cell *matCellDef="let element"> {{ col.cell(element) ?? '' }} </td>
     </ng-container>
     }
 
@@ -29,7 +53,6 @@
         </td>
     </ng-container>
     }
-
 
     @if (showActionsColumn) {
     <ng-container matColumnDef="actions" stickyEnd>
@@ -61,7 +84,7 @@
 
     <tr class="mat-row" *matNoDataRow>
         <td class="mat-cell" [attr.colspan]="displayedColumns.length">
-            No data matching the filter "{{ dataSource.filter }}"
+            No data matching the filter.
         </td>
     </tr>
 </table>

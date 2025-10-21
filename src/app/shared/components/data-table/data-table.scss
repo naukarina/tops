@@ -1,20 +1,30 @@
-// src/app/shared/components/data-table/data-table.component.scss
+// src/app/shared/components/data-table/data-table.scss
 
-// Container for top controls (text filter + button)
+// Container for top controls (text filter + button wrapper)
 .top-controls-container {
   display: flex;
-  justify-content: space-between; // Pushes search to the left and button to the right
-  align-items: center; // Better vertical alignment
+  // **Change justify-content to center the content horizontally**
+  justify-content: start;
+  align-items: center;
   gap: 1rem;
-  padding: 8px 16px; // Adjusted padding for a cleaner look
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12); // Adds a subtle separator line
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   flex-wrap: wrap;
-  margin-bottom: 1rem; // Adds space above the table
+  margin-bottom: 1rem;
+}
+
+// Wrapper for the filter input and the button
+.filter-input-wrapper {
+  display: flex;
+  align-items: center; // Align input and button vertically
+  gap: 0.5rem; // Space between input and button
+  // Allow wrapper to take available space if needed, but centering the container does the main job
+  // flex: 1 1 auto; // Optional
+  max-width: 1850px; // Optional: Limit the max width
 }
 
 .text-filter-field {
-  flex: 1 1 300px; // Allow it to grow and shrink, with a reasonable base size
-  max-width: 450px; // Prevents the search bar from becoming excessively wide on large screens
+  flex-grow: 1; // Allow input field to take remaining space within the wrapper
 
   // This helps with vertical alignment by removing the space reserved for hints/errors
   ::ng-deep .mat-mdc-form-field-subscript-wrapper {
@@ -24,6 +34,12 @@
 
 .filter-button {
   flex-shrink: 0; // Prevent button from shrinking
+  // Set the height to match the outlined form field
+  height: 56px; // Standard height for outlined fields
+  // Adjust padding if text isn't centered vertically
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 56px; // Helps vertical centering for the text/icon
 }
 
 // Ensure badge doesn't overlap button content too much

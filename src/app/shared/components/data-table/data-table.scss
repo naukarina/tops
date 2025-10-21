@@ -1,0 +1,24 @@
+// src/app/shared/components/data-table/data-table.component.scss
+.filter-field {
+  width: 100%;
+  padding: 0 16px; /* Align with default table padding */
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.data-table {
+  width: 100%;
+}
+
+// Ensure action buttons align nicely
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end; // Or center/start depending on preference
+}
+
+// Adjust sticky column styling if needed from styles.scss
+.mat-column-actions {
+  // background-color: #fff; // Example - Customize as needed
+  // border-left: 1px solid #dcdcdc;
+}

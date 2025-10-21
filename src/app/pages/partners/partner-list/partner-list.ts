@@ -33,5 +33,5 @@ import { ListPageComponent } from '../../../shared/components/list-page/list-pag
 export class PartnerListComponent {
   private partnerService = inject(PartnerService);
   partners$: Observable<Partner[]> = this.partnerService.getAll();
-  displayedColumns = ['name', 'type', 'currencyName', 'actions'];
+  displayedColumns = ['name', 'type', 'currencyName', 'contactInfo.country', 'subDmc', 'actions'];
 }

@@ -1,21 +1,27 @@
-import * as functions from 'firebase-functions';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
 admin.initializeApp();
 
+// Define an interface for the expected data payload
+interface CreateUserData {
+  email: string;
+  name: string;
+  companyId: string;
+  companyName: string;
+  companyType: string;
+}
+
 // Callable function to create a new user
-export const createUser = functions.https.onCall(async (data, context) => {
-  // Add this check to ensure the user is authenticated
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'The function must be called while authenticated.'
-    );
+export const createUser = onCall(async (request) => {
+  // Check if the user is authenticated.
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
   }
 
-  const { email, name, companyId, companyName, companyType } = data;
+  const { email, name, companyId, companyName, companyType }: CreateUserData = request.data;
   const defaultPassword = 'asdf1234';
-  const adminId = context.auth.uid; // Get admin's UID from the context
+  const adminId = request.auth.uid; // Get admin's UID from the context
 
   try {
     // 1. Fetch the admin's display name
@@ -50,6 +56,9 @@ export const createUser = functions.https.onCall(async (data, context) => {
     return { result: `Successfully created user ${email}` };
   } catch (error) {
     console.error('Error creating new user:', error);
-    throw new functions.https.HttpsError('internal', 'An error occurred while creating the user.');
+    if (error instanceof Error) {
+      throw new HttpsError('internal', error.message);
+    }
+    throw new HttpsError('internal', 'An error occurred while creating the user.');
   }
 });

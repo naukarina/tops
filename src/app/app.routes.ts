@@ -30,6 +30,15 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPasswordComponent),
+    data: {
+      showHeader: false,
+      showSidenav: false,
+    },
+  },
+  {
     path: 'partners',
     canActivate: [authGuard],
     data: { breadcrumb: 'Partners' },

@@ -13,16 +13,16 @@ export interface Partner extends BaseDocument {
   name: string;
   type: PartnerType;
   contactInfo?: {
-    email: string;
-    tel: string;
-    tel2: string;
-    address: string;
-    zip: string;
-    town: string;
-    country: string;
+    email?: string;
+    tel?: string;
+    tel2?: string;
+    address?: string;
+    zip?: string;
+    town?: string;
+    country?: string;
   };
   taxinfo?: {
-    brn: string;
+    brn?: string;
     isVatRegistered: boolean;
     vatNumber?: string;
   };

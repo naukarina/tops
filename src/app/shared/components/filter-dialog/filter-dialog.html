@@ -11,20 +11,15 @@
                     placeholderLabel="Search..." noEntriesFoundLabel="'No matching options found'">
                 </ngx-mat-select-search>
             </mat-option>
-            @for (option of (getSearchableOptions(filter) | async); track option) {
-            <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
-                {{ filter.optionText ? option[filter.optionText] : option }}
-            </mat-option>
             }
-            } @else {
             @if (!filter.multiple) {
             <mat-option [value]="null">-- None --</mat-option>
             }
-            @for (option of (getNonSearchableOptions(filter) | async); track option) {
+            <!-- Use the single 'getOptions' getter for all -->
+            @for (option of (getOptions(filter) | async); track option) {
             <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
                 {{ filter.optionText ? option[filter.optionText] : option }}
             </mat-option>
-            }
             }
         </mat-select>
     </mat-form-field>

@@ -1,5 +1,7 @@
+<!-- Container for top controls (text filter + filter button) -->
 <div class="top-controls-container">
 
+    <!-- General Text Filter -->
     @if (enableFilter) {
     <mat-form-field appearance="outline" class="filter-field text-filter-field">
         <mat-label>Filter</mat-label>
@@ -9,6 +11,7 @@
     </mat-form-field>
     }
 
+    <!-- Filter Button -->
     @if (dropdownFilters.length > 0) {
     <button mat-stroked-button color="primary" (click)="openFilterDialog()" class="filter-button"
         [matBadge]="activeFilterCount()" matBadgePosition="above after" [matBadgeHidden]="activeFilterCount() === 0"
@@ -20,6 +23,7 @@
 
 </div>
 
+<!-- Table remains the same -->
 <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8 data-table">
     @for (col of columnDefinitions; track col.columnDef) {
     <ng-container [matColumnDef]="col.columnDef">

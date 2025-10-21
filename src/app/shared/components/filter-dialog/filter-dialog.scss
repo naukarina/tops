@@ -1,0 +1,17 @@
+.filter-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 300px; /* Adjust as needed */
+  padding-top: 1rem; // Add some space above first filter
+}
+
+.filter-dialog-field {
+  width: 100%;
+}
+
+// Adjust search padding if needed
+::ng-deep .mat-mdc-select-panel ngx-mat-select-search .mat-mdc-form-field {
+  padding: 0 16px;
+  margin-bottom: 8px;
+}

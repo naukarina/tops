@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>Filters</h2>
+
+<mat-dialog-content [formGroup]="filterForm" class="filter-dialog-content">
+    @for (filter of data.filtersConfig; track filter.columnDef) {
+    <mat-form-field appearance="outline" class="filter-dialog-field">
+        <mat-label>{{ filter.placeholder }}</mat-label>
+        <mat-select [formControlName]="getControlKey(filter.columnDef)" [multiple]="filter.multiple">
+            @if (filter.searchable) {
+            <mat-option>
+                <ngx-mat-select-search [formControl]="searchControls[getControlKey(filter.columnDef)]"
+                    placeholderLabel="Search..." noEntriesFoundLabel="'No matching options found'">
+                </ngx-mat-select-search>
+            </mat-option>
+            @for (option of (getSearchableOptions(filter) | async); track option) {
+            <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
+                {{ filter.optionText ? option[filter.optionText] : option }}
+            </mat-option>
+            }
+            } @else {
+            @if (!filter.multiple) {
+            <mat-option [value]="null">-- None --</mat-option>
+            }
+            @for (option of (getNonSearchableOptions(filter) | async); track option) {
+            <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
+                {{ filter.optionText ? option[filter.optionText] : option }}
+            </mat-option>
+            }
+            }
+        </mat-select>
+    </mat-form-field>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button (click)="onClear()">Clear Filters</button>
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onApply()">Apply Filters</button>
+</mat-dialog-actions>

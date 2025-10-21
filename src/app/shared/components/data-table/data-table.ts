@@ -10,7 +10,9 @@ import {
   OnInit,
   SimpleChanges,
   OnChanges,
-  inject, // Import inject
+  inject,
+  computed, // Import computed
+  signal, // Import signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -22,29 +24,40 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSelectModule } from '@angular/material/select'; // Import MatSelectModule
-import { ReactiveFormsModule, FormBuilder, FormControl } from '@angular/forms'; // Import ReactiveFormsModule and FormBuilder/FormControl
-import { NgxMatSelectSearchModule } from 'ngx-mat-select-search'; // Import NgxMatSelectSearchModule
+import { MatSelectModule } from '@angular/material/select';
+import { ReactiveFormsModule, FormBuilder, FormControl } from '@angular/forms';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // Import MatDialog, MatDialogModule
 import {
   Observable,
   Subscription,
   isObservable,
   Subject,
   ReplaySubject,
+  BehaviorSubject,
+  of,
   combineLatest,
-} from 'rxjs'; // Import combineLatest, Subject, ReplaySubject
-import { takeUntil, startWith, map } from 'rxjs/operators'; // Import operators
+} from 'rxjs';
+import {
+  takeUntil,
+  startWith,
+  map,
+  distinctUntilChanged,
+  filter as rxFilter,
+} from 'rxjs/operators'; // Import rxFilter
 import { ColumnDefinition } from './column-definition.model';
+// Import the Filter Dialog Component and its data interface
+import { FilterDialogComponent, FilterDialogData } from '../filter-dialog/filter-dialog';
+import { MatBadgeModule } from '@angular/material/badge'; // Import MatBadgeModule
 
-// Define an interface for dropdown filters
 export interface DropdownFilter<T> {
-  columnDef: keyof T | string; // The property name to filter on (can use dot notation like 'contactInfo.country')
-  placeholder: string; // Placeholder for the dropdown
-  options: any[]; // Array of available options
-  multiple: boolean; // Allow multiple selections?
-  searchable: boolean; // Enable search within the dropdown?
-  optionValue?: string; // Optional: Property name for option value (if options are objects)
-  optionText?: string; // Optional: Property name for option display text (if options are objects)
+  columnDef: keyof T | string;
+  placeholder: string;
+  options: any[] | Observable<any[]>;
+  multiple: boolean;
+  searchable: boolean;
+  optionValue?: string;
+  optionText?: string;
 }
 
 @Component({
@@ -61,66 +74,63 @@ export interface DropdownFilter<T> {
     MatIconModule,
     MatButtonModule,
     MatCheckboxModule,
-    MatSelectModule, // Add MatSelectModule
-    ReactiveFormsModule, // Add ReactiveFormsModule
-    NgxMatSelectSearchModule, // Add NgxMatSelectSearchModule
-    // MatSortModule, // Already imported via MatSort
-    // MatSort, // Already imported via MatSort
+    MatSelectModule,
+    ReactiveFormsModule,
+    NgxMatSelectSearchModule,
+    MatDialogModule, // Add MatDialogModule
+    MatBadgeModule, // Add MatBadgeModule
   ],
   templateUrl: './data-table.html',
   styleUrls: ['./data-table.scss'],
 })
-export class DataTableComponent<T> implements OnInit, AfterViewInit, OnDestroy, OnChanges {
-  private fb = inject(FormBuilder); // Inject FormBuilder
+export class DataTableComponent<T> implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  private dialog = inject(MatDialog); // Inject MatDialog
 
-  // --- Inputs ---
+  // Inputs remain the same...
   @Input() dataInput: Observable<T[]> | T[] = [];
   @Input() columnDefinitions: ColumnDefinition<T>[] = [];
   @Input() displayedColumns: string[] = [];
-  @Input() enableFilter = true; // Keep this for the general text filter
+  @Input() enableFilter = true;
   @Input() enableSort = true;
   @Input() enablePaginator = true;
   @Input() pageSizeOptions = [5, 10, 20];
-  @Input() filterPlaceholder = 'Search...'; // For the general text filter
+  @Input() filterPlaceholder = 'Search...';
   @Input() viewRoute?: (item: T) => string | any[];
   @Input() editRoute?: (item: T) => string | any[];
   @Input() enableDelete = false;
-  @Input() dropdownFilters: DropdownFilter<T>[] = []; // Input for dropdown filters
+  @Input() dropdownFilters: DropdownFilter<T>[] = [];
 
-  // --- Outputs ---
   @Output() deleteAction = new EventEmitter<T>();
 
-  // --- Internal Properties ---
   dataSource = new MatTableDataSource<T>();
   private dataSubscription: Subscription | null = null;
-  filterForm = this.fb.group({}); // Form group for all filters
-  textFilterControl = new FormControl(''); // Separate control for text filter
-  dropdownFilterControls: { [key: string]: FormControl } = {}; // Controls for dropdowns
-  filteredOptions: { [key: string]: ReplaySubject<any[]> } = {}; // Filtered options for searchable dropdowns
-  searchControls: { [key: string]: FormControl } = {}; // Search input controls for dropdowns
+  filterForm = this.fb.group({});
+  textFilterControl = new FormControl('');
+  dropdownFilterControls: { [key: string]: FormControl } = {};
+  // Search controls and options logic removed as it moves to the dialog
+
+  // --- Signal for active dropdown filters ---
+  private activeDropdownFilters = signal<{ [key: string]: any }>({});
+  activeFilterCount = computed(() => {
+    const filters = this.activeDropdownFilters();
+    return Object.values(filters).filter((value) =>
+      Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined
+    ).length;
+  });
+  // ---
 
   private _onDestroy = new Subject<void>();
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['dataInput']) {
-      this.subscribeToData();
-    }
-    if (changes['dropdownFilters']) {
-      this.setupFilterForm();
-    }
-  }
+  // No changes in ngOnChanges, ngOnInit, ngAfterViewInit, ngOnDestroy needed for dialog logic itself
 
   ngOnInit() {
-    this.setupFilterForm();
-    this.subscribeToData(); // Initial subscription
-    this.subscribeToFilters(); // Subscribe to filter changes
-  }
-
-  ngAfterViewInit() {
-    this.setupDataSource();
+    this.setupFilterForm(); // Still needed to create controls
+    this.subscribeToData();
+    this.subscribeToFilters();
   }
 
   ngOnDestroy() {
@@ -129,89 +139,51 @@ export class DataTableComponent<T> implements OnInit, AfterViewInit, OnDestroy, 
     this._onDestroy.complete();
   }
 
+  // Simplified: only creates controls now
   private setupFilterForm(): void {
-    // Clear previous dropdown controls
     Object.keys(this.dropdownFilterControls).forEach((key) => {
       this.filterForm.removeControl(key);
-      this.filteredOptions[key]?.complete();
-      this.searchControls[key] = new FormControl(''); // Reset search control
     });
     this.dropdownFilterControls = {};
-    this.filteredOptions = {};
-    this.searchControls = {};
 
-    // Add text filter control if enabled
     if (this.enableFilter && !this.filterForm.contains('textFilter')) {
       this.filterForm.addControl('textFilter', this.textFilterControl);
     } else if (!this.enableFilter && this.filterForm.contains('textFilter')) {
       this.filterForm.removeControl('textFilter');
     }
 
-    // Add dropdown filter controls
     this.dropdownFilters.forEach((filter) => {
-      const control = new FormControl(filter.multiple ? [] : null);
       const controlKey = this.getControlKey(filter.columnDef);
+      const control = new FormControl(filter.multiple ? [] : null); // Initialize empty
       this.filterForm.addControl(controlKey, control);
       this.dropdownFilterControls[controlKey] = control;
-
-      // Setup for searchable dropdowns
-      if (filter.searchable) {
-        this.filteredOptions[controlKey] = new ReplaySubject<any[]>(1);
-        this.filteredOptions[controlKey].next(filter.options.slice());
-        this.searchControls[controlKey] = new FormControl(''); // Add search control
-
-        this.searchControls[controlKey].valueChanges
-          .pipe(takeUntil(this._onDestroy))
-          .subscribe(() => this.filterDropdownOptions(filter));
-      }
     });
+
+    // Initialize active filters signal
+    this.updateActiveFiltersSignal();
   }
 
-  // Helper to create a safe key for form controls from columnDef
   getControlKey(columnDef: keyof T | string): string {
-    return String(columnDef).replace('.', '_'); // Replace dots for nested properties
+    return String(columnDef).replace(/[.\[\]]/g, '_');
   }
 
-  private filterDropdownOptions(filterConfig: DropdownFilter<T>): void {
-    const controlKey = this.getControlKey(filterConfig.columnDef);
-    if (
-      !filterConfig.options ||
-      !this.searchControls[controlKey] ||
-      !this.filteredOptions[controlKey]
-    ) {
-      return;
-    }
-
-    let search = this.searchControls[controlKey].value;
-    if (!search) {
-      this.filteredOptions[controlKey].next(filterConfig.options.slice());
-      return;
-    }
-    search = search.toLowerCase();
-
-    const optionTextProp = filterConfig.optionText;
-
-    this.filteredOptions[controlKey].next(
-      filterConfig.options.filter((option) => {
-        const text = optionTextProp ? option[optionTextProp] : option;
-        return String(text).toLowerCase().includes(search);
-      })
-    );
-  }
+  // filterDropdownOptions removed - handled by dialog now
 
   private subscribeToData(): void {
+    // ... (no changes needed here)
     this.dataSubscription?.unsubscribe();
 
     const processData = (data: T[]) => {
       this.dataSource.data = data || [];
-      this.applyCurrentFilters(); // Apply filters when data changes
-      // Re-apply sort/pagination if dataSource is already initialized
+      this.applyCurrentFilters();
       if (this.dataSource.sort) this.dataSource.sort = this.sort;
       if (this.dataSource.paginator) this.dataSource.paginator = this.paginator;
     };
 
     if (isObservable(this.dataInput)) {
-      this.dataSubscription = this.dataInput.subscribe(processData);
+      this.dataSubscription = this.dataInput
+        .pipe(takeUntil(this._onDestroy))
+        .subscribe(processData);
     } else {
       processData(this.dataInput || []);
       this.setupDataSource();
@@ -219,17 +191,34 @@ export class DataTableComponent<T> implements OnInit, AfterViewInit, OnDestroy, 
   }
 
   private subscribeToFilters(): void {
+    // Listen to changes in the filterForm (triggered by text input or dialog)
     this.filterForm.valueChanges
-      .pipe(startWith(this.filterForm.value), takeUntil(this._onDestroy))
+      .pipe(
+        startWith(this.filterForm.value),
+        takeUntil(this._onDestroy)
+        // distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)) // Optional: prevent re-filtering if value object is same
+      )
       .subscribe(() => {
         this.applyCurrentFilters();
+        this.updateActiveFiltersSignal(); // Update badge count
       });
   }
 
+  // Update the signal holding dropdown filter values
+  private updateActiveFiltersSignal(): void {
+    const dropdownValues: { [key: string]: any } = {};
+    for (const key in this.dropdownFilterControls) {
+      if (this.filterForm.contains(key)) {
+        // Ensure control exists
+        dropdownValues[key] = this.filterForm.get(key)?.value;
+      }
+    }
+    this.activeDropdownFilters.set(dropdownValues);
+  }
+
   private applyCurrentFilters(): void {
-    // Use filteringPredicate for combined filtering
+    // ... (no changes needed here)
     this.dataSource.filterPredicate = this.createFilterPredicate();
-    // Trigger filtering by setting a unique value (JSON representation of filters)
     this.dataSource.filter = JSON.stringify(this.filterForm.value);
 
     if (this.dataSource.paginator) {
@@ -238,20 +227,19 @@ export class DataTableComponent<T> implements OnInit, AfterViewInit, OnDestroy, 
   }
 
   private createFilterPredicate(): (data: T, filter: string) => boolean {
+    // ... (no changes needed here)
     return (data: T, filterJson: string): boolean => {
-      if (!filterJson) return true; // Should not happen with JSON.stringify
+      if (!filterJson) return true;
 
       try {
         const filters = JSON.parse(filterJson);
         let match = true;
 
-        // Apply text filter
         const textFilter = filters.textFilter?.trim().toLowerCase();
         if (this.enableFilter && textFilter) {
           match = this.checkTextFilter(data, textFilter);
         }
 
-        // Apply dropdown filters if text filter matches (or is not active)
         if (match) {
           match = this.checkDropdownFilters(data, filters);
         }
@@ -259,27 +247,25 @@ export class DataTableComponent<T> implements OnInit, AfterViewInit, OnDestroy, 
         return match;
       } catch (e) {
         console.error('Error parsing filter JSON:', e);
-        return true; // Don't filter if JSON is invalid
+        return true;
       }
     };
   }
 
-  // Checks if the row matches the general text filter
   private checkTextFilter(data: T, textFilter: string): boolean {
-    // Search through all defined columns' cell values
+    // ... (no changes needed here)
     return this.columnDefinitions.some((colDef) => {
       const cellValue = colDef.cell(data);
       return cellValue != null && String(cellValue).toLowerCase().includes(textFilter);
     });
   }
 
-  // Checks if the row matches the selected dropdown filter values
   private checkDropdownFilters(data: T, filters: any): boolean {
+    // ... (no changes needed here)
     for (const filterConfig of this.dropdownFilters) {
       const controlKey = this.getControlKey(filterConfig.columnDef);
       const selectedValues = filters[controlKey];
 
-      // Skip if no value selected for this filter
       if (
         selectedValues === null ||
         selectedValues === undefined ||
@@ -288,56 +274,98 @@ export class DataTableComponent<T> implements OnInit, AfterViewInit, OnDestroy, 
         continue;
       }
 
-      // Get the actual data value for the column
       const dataValue = this.getPropertyValue(data, filterConfig.columnDef as string);
+      const dataValueString =
+        dataValue === null || dataValue === undefined ? '' : String(dataValue);
 
-      // Check for match
       if (filterConfig.multiple && Array.isArray(selectedValues)) {
-        // If multiple selections, check if the data value is in the selected array
-        if (!selectedValues.includes(dataValue)) {
-          return false; // Does not match this filter
+        const selectedValuesStr = selectedValues.map(String);
+        if (!selectedValuesStr.includes(dataValueString)) {
+          return false;
         }
       } else {
-        // If single selection, check for direct equality
-        if (dataValue !== selectedValues) {
-          return false; // Does not match this filter
+        if (String(selectedValues) !== dataValueString) {
+          return false;
         }
       }
     }
-    return true; // Matches all active dropdown filters
+    return true;
   }
 
-  // Helper to get nested property values (e.g., 'contactInfo.country')
   private getPropertyValue(obj: any, path: string): any {
-    return path.split('.').reduce((o, key) => (o && o[key] !== 'undefined' ? o[key] : null), obj);
+    // ... (no changes needed here)
+    return path
+      .split('.')
+      .reduce((o, key) => (o && o[key] !== undefined && o[key] !== null ? o[key] : null), obj);
   }
 
   private setupDataSource(): void {
+    // ... (no changes needed here)
     if (this.enableSort && this.sort) {
       this.dataSource.sort = this.sort;
     }
     if (this.enablePaginator && this.paginator) {
       this.dataSource.paginator = this.paginator;
     }
-    // Initial filter application after setup
     this.dataSource.filterPredicate = this.createFilterPredicate();
-    this.dataSource.filter = JSON.stringify(this.filterForm.value);
+    this.dataSource.filter = JSON.stringify(this.filterForm.value ?? {});
   }
 
-  // applyFilter is now only for the text input
   applyTextFilter(event: Event) {
+    // ... (no changes needed here)
     const filterValue = (event.target as HTMLInputElement).value;
-    this.textFilterControl.setValue(filterValue); // Update the form control which triggers the combined filter
+    this.textFilterControl.setValue(filterValue);
   }
 
   onDeleteClick(item: T) {
+    // ... (no changes needed here)
     this.deleteAction.emit(item);
   }
 
   get showActionsColumn(): boolean {
+    // ... (no changes needed here)
     return (
       this.displayedColumns.includes('actions') &&
       (!!this.viewRoute || !!this.editRoute || this.enableDelete)
     );
   }
+
+  // --- NEW METHOD to open the dialog ---
+  openFilterDialog(): void {
+    // Get current dropdown values from the form
+    const currentDropdownValues: { [key: string]: any } = {};
+    Object.keys(this.dropdownFilterControls).forEach((key) => {
+      currentDropdownValues[key] = this.filterForm.get(key)?.value;
+    });
+
+    const dialogRef = this.dialog.open<
+      FilterDialogComponent,
+      FilterDialogData,
+      { [key: string]: any }
+    >(FilterDialogComponent, {
+      width: '400px', // Adjust width as needed
+      data: {
+        filtersConfig: this.dropdownFilters,
+        currentValues: currentDropdownValues, // Pass current values
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .pipe(rxFilter((result) => result !== undefined)) // Only proceed if a result was returned (not cancelled)
+      .subscribe((result) => {
+        // Update the form controls with the values from the dialog
+        if (result) {
+          Object.keys(result).forEach((key) => {
+            if (this.filterForm.contains(key)) {
+              // Use patchValue to update only the dropdown controls, preserving the text filter
+              this.filterForm.patchValue({ [key]: result[key] }, { emitEvent: false }); // Avoid immediate re-trigger
+            }
+          });
+          // Manually trigger valueChanges once after patching all values
+          this.filterForm.updateValueAndValidity({ onlySelf: false, emitEvent: true });
+        }
+      });
+  }
+  // --- END NEW METHOD ---
 }

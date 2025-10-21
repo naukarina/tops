@@ -1,4 +1,4 @@
-<div [formGroup]="filterForm" class="filters-container">
+<div class="top-controls-container">
 
     @if (enableFilter) {
     <mat-form-field appearance="outline" class="filter-field text-filter-field">
@@ -9,26 +9,15 @@
     </mat-form-field>
     }
 
-    @for (filter of dropdownFilters; track filter.columnDef) {
-    <mat-form-field appearance="outline" class="filter-field dropdown-filter-field">
-        <mat-label>{{ filter.placeholder }}</mat-label>
-        <mat-select [formControlName]="getControlKey(filter.columnDef)" [multiple]="filter.multiple">
-            @if (filter.searchable) {
-            <mat-option>
-                <ngx-mat-select-search [formControl]="searchControls[getControlKey(filter.columnDef)]"
-                    placeholderLabel="Search..." noEntriesFoundLabel="'No matching options found'">
-                </ngx-mat-select-search>
-            </mat-option>
-            }
-            @for (option of (filter.searchable ? (filteredOptions[getControlKey(filter.columnDef)] | async) :
-            filter.options); track option) {
-            <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
-                {{ filter.optionText ? option[filter.optionText] : option }}
-            </mat-option>
-            }
-        </mat-select>
-    </mat-form-field>
+    @if (dropdownFilters.length > 0) {
+    <button mat-stroked-button color="primary" (click)="openFilterDialog()" class="filter-button"
+        [matBadge]="activeFilterCount()" matBadgePosition="above after" [matBadgeHidden]="activeFilterCount() === 0"
+        matBadgeColor="warn">
+        <mat-icon>filter_list</mat-icon>
+        Filters
+    </button>
     }
+
 </div>
 
 <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8 data-table">
@@ -53,6 +42,7 @@
         </td>
     </ng-container>
     }
+
 
     @if (showActionsColumn) {
     <ng-container matColumnDef="actions" stickyEnd>

@@ -1,17 +1,19 @@
 // src/app/pages/partners/partner-list/partner-list.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// --- Import map operator ---
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+// ---
 import { RouterModule } from '@angular/router';
 
 import { Partner, PartnerType } from '../../../models/partner.model';
-import { CurrencyName } from '../../../models/currency.model'; // Import CurrencyName
+import { CurrencyName } from '../../../models/currency.model';
 import { PartnerService } from '../../../services/partner.service';
 import { NotificationService } from '../../../services/notification.service';
 
 // Shared Components
 import { ListPageComponent } from '../../../shared/components/list-page/list-page';
-// Import DropdownFilter type along with DataTableComponent
 import {
   DataTableComponent,
   DropdownFilter,
@@ -33,12 +35,38 @@ export class PartnerListComponent {
   private notificationService = inject(NotificationService);
 
   partners$: Observable<Partner[]> = this.partnerService.getAll();
-  currencies = Object.values(CurrencyName); // Get currency enum values for the dropdown
+  currencies = Object.values(CurrencyName);
 
-  // Columns to display in the data-table
+  // --- DERIVE OPTIONS FROM PARTNERS$ ---
+  availableCountries$: Observable<string[]> = this.partners$.pipe(
+    map((partners) => {
+      // 1. Get all countries, filter out null/undefined/empty strings
+      const countries = partners
+        .map((p) => p.contactInfo?.country)
+        .filter((c): c is string => !!c && c.trim() !== '');
+      // 2. Get unique values
+      const uniqueCountries = [...new Set(countries)];
+      // 3. Sort alphabetically
+      return uniqueCountries.sort((a, b) => a.localeCompare(b));
+    })
+  );
+
+  availableSubDmcs$: Observable<string[]> = this.partners$.pipe(
+    map((partners) => {
+      // 1. Get all subDmcs, filter out null/undefined/empty strings
+      const subDmcs = partners
+        .map((p) => p.subDmc)
+        .filter((sd): sd is string => !!sd && sd.trim() !== '');
+      // 2. Get unique values
+      const uniqueSubDmcs = [...new Set(subDmcs)];
+      // 3. Sort alphabetically
+      return uniqueSubDmcs.sort((a, b) => a.localeCompare(b));
+    })
+  );
+  // --- END DERIVE OPTIONS ---
+
   displayedColumns = ['name', 'type', 'currencyName', 'contactInfo.country', 'subDmc', 'actions'];
 
-  // Define how each column is rendered and configured
   columnDefs: ColumnDefinition<Partner>[] = [
     { columnDef: 'name', header: 'Name', cell: (p) => p.name, isSortable: true },
     { columnDef: 'type', header: 'Type', cell: (p) => p.type, isSortable: true },
@@ -51,38 +79,50 @@ export class PartnerListComponent {
     {
       columnDef: 'contactInfo.country',
       header: 'Country',
-      cell: (p) => p.contactInfo?.country || 'N/A',
+      cell: (p) => p.contactInfo?.country || '',
       isSortable: true,
-    },
-    { columnDef: 'subDmc', header: 'Sub DMC', cell: (p) => p.subDmc || 'N/A', isSortable: true },
+    }, // Default to ''
+    { columnDef: 'subDmc', header: 'Sub DMC', cell: (p) => p.subDmc || '', isSortable: true }, // Default to ''
   ];
 
-  // Define the dropdown filter configuration
+  // --- UPDATE Dropdown Filters to use Observables ---
   partnerDropdownFilters: DropdownFilter<Partner>[] = [
     {
-      columnDef: 'currencyName', // The property in the Partner object to filter by
-      placeholder: 'Filter by Currency', // Dropdown label
-      options: this.currencies, // Provide the list of currencies
-      multiple: true, // Allow selecting multiple currencies
-      searchable: true, // Enable the search input
-      // optionValue: 'valueProperty', // Use if options were objects like { valueProperty: 'MUR', textProperty: 'Mauritian Rupee' }
-      // optionText: 'textProperty',  // Use if options were objects
+      columnDef: 'currencyName',
+      placeholder: 'Filter by Currency',
+      options: this.currencies, // Currencies are static, keep as array
+      multiple: true,
+      searchable: true,
     },
-    // Add more dropdown filters here if needed (e.g., for 'type' or 'contactInfo.country')
     {
       columnDef: 'type',
       placeholder: 'Filter by Type',
-      options: Object.values(PartnerType),
+      options: Object.values(PartnerType), // Types are static, keep as array
       multiple: true,
-      searchable: false, // Example: Type filter is not searchable
+      searchable: false,
+    },
+    {
+      // New Country Filter
+      columnDef: 'contactInfo.country',
+      placeholder: 'Filter by Country',
+      options: this.availableCountries$, // Use the derived observable
+      multiple: true,
+      searchable: true,
+    },
+    {
+      // New Sub-DMC Filter
+      columnDef: 'subDmc',
+      placeholder: 'Filter by Sub-DMC',
+      options: this.availableSubDmcs$, // Use the derived observable
+      multiple: true,
+      searchable: true,
     },
   ];
+  // --- END UPDATE ---
 
-  // Define routes for actions (optional)
   partnerViewRoute = (partner: Partner) => ['/partners', partner.id];
   partnerEditRoute = (partner: Partner) => ['/partners', 'edit', partner.id];
 
-  // Delete handler
   async onDeletePartner(partner: Partner) {
     if (confirm(`Are you sure you want to delete partner "${partner.name}"?`)) {
       try {

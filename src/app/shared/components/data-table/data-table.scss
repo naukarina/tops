@@ -4,13 +4,12 @@
 .top-controls-container {
   display: flex;
   // **Change justify-content to center the content horizontally**
-  justify-content: start;
+  justify-content: end;
   align-items: center;
   gap: 1rem;
-  padding: 8px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 16px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
   flex-wrap: wrap;
-  margin-bottom: 1rem;
 }
 
 // Wrapper for the filter input and the button
@@ -66,4 +65,14 @@
   text-align: center;
   padding: 1rem;
   color: rgba(0, 0, 0, 0.54);
+}
+
+.header-title {
+  flex-grow: 1;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
 }

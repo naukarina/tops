@@ -82,6 +82,9 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   @Input() editRoute?: (item: T) => string | any[];
   @Input() enableDelete = false;
   @Input() dropdownFilters: DropdownFilter<T>[] = [];
+  @Input() title = '';
+  @Input() newRoute = '';
+  @Input() newButtonText = 'Add New';
 
   @Output() deleteAction = new EventEmitter<T>();
 

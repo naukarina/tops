@@ -1,4 +1,7 @@
 <div class="top-controls-container">
+    <div class="header-title">
+        <h2>{{ title }}</h2>
+    </div>
     <div class="filter-input-wrapper">
         @if (enableFilter) {
         <mat-form-field appearance="outline" class="filter-field text-filter-field">
@@ -17,6 +20,10 @@
             Filters
         </button>
         }
+        <button mat-flat-button color="primary" [routerLink]="newRoute" class="filter-button">
+            <mat-icon>add</mat-icon>
+            {{ newButtonText }}
+        </button>
     </div>
 </div>
 

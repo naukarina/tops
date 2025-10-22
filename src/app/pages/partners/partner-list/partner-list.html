@@ -1,9 +1,10 @@
-<app-list-page title="Partners" newRoute="/partners/new" newButtonText="Add New Partner">
+<app-list-page>
 
     <app-data-table [dataInput]="partners$" [columnDefinitions]="columnDefs" [displayedColumns]="displayedColumns"
         [enableFilter]="true" [enableSort]="true" [enablePaginator]="true" [pageSizeOptions]="[10, 25, 50]"
         filterPlaceholder="Search partners..." [editRoute]="partnerEditRoute" [viewRoute]="partnerViewRoute"
-        [enableDelete]="true" (deleteAction)="onDeletePartner($event)" [dropdownFilters]="partnerDropdownFilters">
+        [enableDelete]="true" (deleteAction)="onDeletePartner($event)" [dropdownFilters]="partnerDropdownFilters"
+        title="Partners" newRoute="/partners/new" newButtonText="Add New Partner">
     </app-data-table>
 
 </app-list-page>

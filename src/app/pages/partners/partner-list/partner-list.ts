@@ -67,6 +67,16 @@ export class PartnerListComponent {
 
   displayedColumns = ['name', 'type', 'currencyName', 'contactInfo.country', 'subDmc', 'actions'];
 
+  columnsForTable = [
+    'name',
+    'type',
+    'currencyName',
+    'contactInfo.country',
+    'subDmc',
+    'contactInfo.address',
+  ];
+
+  // Column definitions remain the same
   columnDefs: ColumnDefinition<Partner>[] = [
     { columnDef: 'name', header: 'Name', cell: (p) => p.name, isSortable: true },
     { columnDef: 'type', header: 'Type', cell: (p) => p.type, isSortable: true },
@@ -81,8 +91,14 @@ export class PartnerListComponent {
       header: 'Country',
       cell: (p) => p.contactInfo?.country || '',
       isSortable: true,
-    }, // Default to ''
-    { columnDef: 'subDmc', header: 'Sub DMC', cell: (p) => p.subDmc || '', isSortable: true }, // Default to ''
+    },
+    { columnDef: 'subDmc', header: 'Sub DMC', cell: (p) => p.subDmc || '', isSortable: true },
+    {
+      columnDef: 'contactInfo.address',
+      header: 'Address',
+      cell: (p) => p.contactInfo?.address || '',
+      isSortable: true,
+    },
   ];
 
   // --- UPDATE Dropdown Filters to use Observables ---

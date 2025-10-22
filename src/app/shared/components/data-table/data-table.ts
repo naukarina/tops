@@ -28,10 +28,11 @@ import { ReactiveFormsModule, FormBuilder, FormControl } from '@angular/forms';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Observable, Subscription, isObservable, Subject, of } from 'rxjs';
-import { takeUntil, startWith, filter as rxFilter } from 'rxjs/operators';
+import { takeUntil, startWith, filter as rxFilter, map } from 'rxjs/operators';
 import { ColumnDefinition } from './column-definition.model';
 import { FilterDialogComponent, FilterDialogData } from '../filter-dialog/filter-dialog';
 import { MatBadgeModule } from '@angular/material/badge';
+import { SelectionModel } from '@angular/cdk/collections';
 
 export interface DropdownFilter<T> {
   columnDef: keyof T | string;
@@ -62,6 +63,7 @@ export interface DropdownFilter<T> {
     NgxMatSelectSearchModule,
     MatDialogModule,
     MatBadgeModule,
+    MatCheckboxModule,
   ],
   templateUrl: './data-table.html',
   styleUrls: ['./data-table.scss'],
@@ -72,7 +74,16 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
 
   @Input() dataInput: Observable<T[]> | T[] = [];
   @Input() columnDefinitions: ColumnDefinition<T>[] = [];
-  @Input() displayedColumns: string[] = [];
+  @Input() set displayedColumnsInput(cols: string[]) {
+    this._displayedColumnsInput = cols;
+    this.updateDisplayedColumns();
+  }
+  private _displayedColumnsInput: string[] = [];
+  displayedColumns: string[] = []; // This will hold the final array including 'select' if enabled
+  selection = new SelectionModel<T>(true, []); // Allow multi-select, start empty
+
+  // New input to enable selection
+  @Input() enableSelection = false;
   @Input() enableFilter = true;
   @Input() enableSort = true;
   @Input() enablePaginator = true;
@@ -108,6 +119,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   ngOnInit() {
+    this.updateDisplayedColumns(); // Call here to set initial columns
     this.setupFilterForm();
     this.subscribeToData();
     this.subscribeToFilters();
@@ -116,9 +128,14 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['dataInput'] && !changes['dataInput'].firstChange) {
       this.subscribeToData();
+      // Clear selection when data changes if needed
+      // this.selection.clear();
     }
     if (changes['dropdownFilters'] && !changes['dropdownFilters'].firstChange) {
       this.setupFilterForm();
+    }
+    if (changes['enableSelection'] || changes['displayedColumnsInput']) {
+      this.updateDisplayedColumns();
     }
   }
 
@@ -139,6 +156,20 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
     this.dataSubscription?.unsubscribe();
     this._onDestroy.next();
     this._onDestroy.complete();
+  }
+
+  // Helper to dynamically set displayedColumns
+  private updateDisplayedColumns(): void {
+    const baseColumns =
+      this._displayedColumnsInput || this.columnDefinitions.map((c) => c.columnDef);
+    this.displayedColumns = this.enableSelection ? ['select', ...baseColumns] : baseColumns;
+    // Ensure actions column is added if needed (based on the original logic)
+    if (
+      !this.displayedColumns.includes('actions') &&
+      (!!this.viewRoute || !!this.editRoute || this.enableDelete)
+    ) {
+      this.displayedColumns.push('actions');
+    }
   }
 
   private setupFilterForm(): void {
@@ -168,27 +199,45 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   private subscribeToData(): void {
     this.dataSubscription?.unsubscribe();
     const processData = (data: T[]) => {
-      // Initialize dataSource if it doesn't exist
       if (!this.dataSource) {
         this.dataSource = new MatTableDataSource<T>(data || []);
-        // Note: Sort/Paginator will be set later in ngAfterViewInit
+        // Set accessor here too in case AfterViewInit runs before data arrives
+        this.dataSource.sortingDataAccessor = (item: T, property: string) => {
+          return this.getPropertyValue(item, property);
+        };
       } else {
-        // Just update the data if dataSource already exists
         this.dataSource.data = data || [];
       }
-      // Apply filters whenever data changes
+      // Re-apply filters whenever data changes
       this.applyCurrentFilters();
-      // REMOVED setupDataSource() call from here
+      // Apply pagination/sort AFTER data is loaded and filters applied
+      // This ensures paginator length is correct
+      this.setupDataSource();
+      // Clear selection when underlying data changes significantly
+      this.selection.clear();
     };
 
     if (isObservable(this.dataInput)) {
       this.dataSubscription = this.dataInput
-        .pipe(takeUntil(this._onDestroy))
-        .subscribe(processData);
+        .pipe(
+          takeUntil(this._onDestroy),
+          // Get the data that passes the current filters for selection logic
+          map((data) => {
+            this.dataSource.data = data || []; // Update internal data first
+            this.applyCurrentFilters(); // Apply filters
+            return this.dataSource.filteredData; // Pass filtered data downstream if needed
+          })
+        )
+        .subscribe((filteredData) => {
+          // Use filteredData if needed for selection checks, or just use dataSource.data/filteredData directly
+          processData(this.dataSource.data); // Still process original data but filters are applied now
+        });
     } else {
-      // Ensure dataSource is initialized even for non-observable input
       if (!this.dataSource) {
         this.dataSource = new MatTableDataSource<T>([]);
+        this.dataSource.sortingDataAccessor = (item: T, property: string) => {
+          return this.getPropertyValue(item, property);
+        };
       }
       processData(this.dataInput || []);
     }
@@ -355,5 +404,93 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
           this.filterForm.patchValue(result); // This will trigger the valueChanges subscription
         }
       });
+  }
+
+  // --- Selection Methods ---
+
+  /** Whether the number of selected elements matches the total number of rows. */
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    // Consider only currently visible/filtered rows for "select all" state
+    const numRows = this.dataSource.filteredData.length;
+    return numSelected === numRows && numRows > 0;
+  }
+
+  /** Selects all rows if they are not all selected; otherwise clear selection. */
+  masterToggle() {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+    // Select all *filtered* rows
+    this.selection.select(...this.dataSource.filteredData);
+  }
+
+  /** The label for the checkbox on the passed row */
+  checkboxLabel(row?: T): string {
+    if (!row) {
+      return `${this.isAllSelected() ? 'deselect' : 'select'} all`;
+    }
+    // Assuming your data objects have an 'id' property. Adjust if necessary.
+    const id = (row as any)['id'] || JSON.stringify(row);
+    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${id}`;
+  }
+
+  // --- CSV Export Method ---
+  extractToCsv(): void {
+    if (this.selection.selected.length === 0) {
+      alert('Please select rows to extract.');
+      return;
+    }
+
+    const dataToExport = this.selection.selected;
+    const columns = this.columnDefinitions.filter((cd) =>
+      this._displayedColumnsInput.includes(cd.columnDef)
+    ); // Use the input columns
+
+    // 1. Create Headers
+    const headers = columns.map((col) => `"${col.header.replace(/"/g, '""')}"`).join(',');
+
+    // 2. Create Rows
+    const rows = dataToExport.map((item) => {
+      return columns
+        .map((col) => {
+          let cellValue = col.cell(item);
+          // Handle null/undefined
+          if (cellValue === null || typeof cellValue === 'undefined') {
+            cellValue = '';
+          }
+          // Basic escaping for CSV (quotes and commas)
+          const stringValue = String(cellValue).replace(/"/g, '""');
+          // Wrap in quotes if it contains comma, newline, or quote
+          if (
+            stringValue.includes(',') ||
+            stringValue.includes('\n') ||
+            stringValue.includes('"')
+          ) {
+            return `"${stringValue}"`;
+          }
+          return stringValue;
+        })
+        .join(',');
+    });
+
+    // 3. Combine Headers and Rows
+    const csvContent = `${headers}\n${rows.join('\n')}`;
+
+    // 4. Create Blob and Trigger Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      // Feature detection
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${this.title || 'data'}-extract.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up
+    }
   }
 }

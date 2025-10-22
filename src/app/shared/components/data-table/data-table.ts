@@ -123,6 +123,15 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   }
 
   ngAfterViewInit() {
+    if (!this.dataSource) {
+      this.dataSource = new MatTableDataSource<T>([]);
+    }
+    // Set the custom accessor BEFORE assigning the sort object
+    this.dataSource.sortingDataAccessor = (item: T, property: string) => {
+      // Use the existing helper function to get nested properties
+      return this.getPropertyValue(item, property);
+    };
+    // Now assign sort and paginator
     this.setupDataSource();
   }
 
@@ -159,9 +168,17 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   private subscribeToData(): void {
     this.dataSubscription?.unsubscribe();
     const processData = (data: T[]) => {
-      this.dataSource.data = data || [];
+      // Initialize dataSource if it doesn't exist
+      if (!this.dataSource) {
+        this.dataSource = new MatTableDataSource<T>(data || []);
+        // Note: Sort/Paginator will be set later in ngAfterViewInit
+      } else {
+        // Just update the data if dataSource already exists
+        this.dataSource.data = data || [];
+      }
+      // Apply filters whenever data changes
       this.applyCurrentFilters();
-      this.setupDataSource();
+      // REMOVED setupDataSource() call from here
     };
 
     if (isObservable(this.dataInput)) {
@@ -169,6 +186,10 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
         .pipe(takeUntil(this._onDestroy))
         .subscribe(processData);
     } else {
+      // Ensure dataSource is initialized even for non-observable input
+      if (!this.dataSource) {
+        this.dataSource = new MatTableDataSource<T>([]);
+      }
       processData(this.dataInput || []);
     }
   }
@@ -250,14 +271,38 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   }
 
   private getPropertyValue(obj: any, path: string): any {
+    // If no path or object is null/undefined, return it as is
+    if (!path || obj === null || typeof obj === 'undefined') {
+      return obj;
+    }
+    // Handle potential direct access if path has no dots
+    if (path.indexOf('.') === -1) {
+      return obj[path];
+    }
+    // Handle nested properties
     return path
       .split('.')
       .reduce((o, key) => (o && o[key] !== undefined && o[key] !== null ? o[key] : null), obj);
   }
 
   private setupDataSource(): void {
-    if (this.sort) this.dataSource.sort = this.sort;
-    if (this.paginator) this.dataSource.paginator = this.paginator;
+    if (this.sort && this.dataSource) {
+      // Check dataSource exists
+      // The custom sortingDataAccessor is already set in ngAfterViewInit
+      this.dataSource.sort = this.sort;
+    } else if (this.enableSort) {
+      console.warn(
+        'DataTableComponent: MatSort ViewChild is not available or dataSource not ready.'
+      );
+    }
+    if (this.paginator && this.dataSource) {
+      // Check dataSource exists
+      this.dataSource.paginator = this.paginator;
+    } else if (this.enablePaginator) {
+      console.warn(
+        'DataTableComponent: MatPaginator ViewChild is not available or dataSource not ready.'
+      );
+    }
   }
 
   applyTextFilter(event: Event) {

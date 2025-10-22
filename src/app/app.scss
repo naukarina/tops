@@ -1,9 +1,35 @@
+app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Ensure header stays on top */
+}
+
 .app-container {
-  height: calc(100vh - 64px); /* Full height minus header */
+  height: 100vh; /* Use full viewport height */
+  padding-top: 50px; /* Add padding equal to header height */
+  box-sizing: border-box; /* Include padding in height calculation */
+
+  mat-sidenav {
+    position: fixed; /* Fix the position relative to the viewport */
+    top: 64px; /* Position it below the 64px header */
+    bottom: 0; /* Stretch it to the bottom */
+    width: 240px; /* Explicitly set the width */
+    overflow-y: auto; /* Allow scrolling *within* the sidenav if needed */
+    border-right: 1px solid rgba(0, 0, 0, 0.12); /* Add border back if needed */
+    background-color: white; /* Ensure it has a background */
+  }
+
+  mat-sidenav-content {
+    /* The container should automatically handle the margin
+        when mode="side" and opened are used, but if not,
+        you might need: margin-left: 240px; */
+  }
 }
 
 mat-sidenav {
-  width: 240px;
+  width: 240px; /* Keep this rule if not overridden above */
 }
 
 .main-content {
@@ -11,4 +37,9 @@ mat-sidenav {
   min-height: calc(100% - 57px); /* Main content area minus footer */
   padding: 1rem;
   background-color: #f4f7fa;
+}
+
+/* Ensure content isn't hidden under fixed header/sidenav */
+main {
+  padding-top: 1rem; /* Adjust if needed */
 }

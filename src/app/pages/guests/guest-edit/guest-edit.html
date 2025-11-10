@@ -6,14 +6,8 @@
                 <input matInput formControlName="name" required />
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
-                <mat-label>Tour Operator</mat-label>
-                <mat-select formControlName="tourOperatorId" required>
-                    @for (operator of tourOperators$ | async; track operator.id) {
-                    <mat-option [value]="operator.id">{{ operator.name }}</mat-option>
-                    }
-                </mat-select>
-            </mat-form-field>
+            <app-searchable-select label="Tour Operator" formControlName="tourOperatorId" [options]="tourOperators$"
+                [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
 
             <div class="form-row">
                 <mat-form-field appearance="outline">

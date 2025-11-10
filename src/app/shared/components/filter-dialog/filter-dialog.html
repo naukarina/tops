@@ -2,27 +2,10 @@
 
 <mat-dialog-content [formGroup]="filterForm" class="filter-dialog-content">
     @for (filter of data.filtersConfig; track filter.columnDef) {
-    <mat-form-field appearance="outline" class="filter-dialog-field">
-        <mat-label>{{ filter.placeholder }}</mat-label>
-        <mat-select [formControlName]="getControlKey(filter.columnDef)" [multiple]="filter.multiple">
-            @if (filter.searchable) {
-            <mat-option>
-                <ngx-mat-select-search [formControl]="searchControls[getControlKey(filter.columnDef)]"
-                    placeholderLabel="Search..." noEntriesFoundLabel="'No matching options found'">
-                </ngx-mat-select-search>
-            </mat-option>
-            }
-            @if (!filter.multiple) {
-            <mat-option [value]="null">-- None --</mat-option>
-            }
-            <!-- Use the single 'getOptions' getter for all -->
-            @for (option of (getOptions(filter) | async); track option) {
-            <mat-option [value]="filter.optionValue ? option[filter.optionValue] : option">
-                {{ filter.optionText ? option[filter.optionText] : option }}
-            </mat-option>
-            }
-        </mat-select>
-    </mat-form-field>
+    <app-searchable-select [label]="filter.placeholder" [formControlName]="getControlKey(filter.columnDef)"
+        [options]="filter.options" [multiple]="filter.multiple" [searchable]="filter.searchable"
+        [optionValue]="filter.optionValue" [optionText]="filter.optionText"
+        class="filter-dialog-field"></app-searchable-select>
     }
 </mat-dialog-content>
 

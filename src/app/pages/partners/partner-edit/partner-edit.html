@@ -78,18 +78,8 @@
                         <input matInput formControlName="town" />
                     </mat-form-field>
                 </div>
-                <mat-form-field appearance="outline">
-                    <mat-label>Country</mat-label>
-                    <mat-select formControlName="country">
-                        <mat-option>
-                            <ngx-mat-select-search [formControl]="countryFilterCtrl"
-                                placeholderLabel="Search..."></ngx-mat-select-search>
-                        </mat-option>
-                        @for (country of filteredCountries | async; track country) {
-                        <mat-option [value]="country">{{ country }}</mat-option>
-                        }
-                    </mat-select>
-                </mat-form-field>
+                <app-searchable-select label="Country" formControlName="country" [options]="countries"
+                    [searchable]="true"></app-searchable-select>
             </div>
             <hr>
             <div formGroupName="taxinfo">

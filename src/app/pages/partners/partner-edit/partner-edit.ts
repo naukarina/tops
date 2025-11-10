@@ -27,6 +27,7 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 // Shared Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { CommonModule } from '@angular/common';
+import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
 
 // Form Interface and Component Definition...
 export interface PartnerForm {
@@ -71,6 +72,7 @@ export interface PartnerForm {
     MatSelectModule,
     MatSlideToggleModule,
     NgxMatSelectSearchModule,
+    SearchableSelectComponent,
   ],
   templateUrl: './partner-edit.html',
   styleUrl: './partner-edit.scss',
@@ -93,8 +95,6 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
 
   subDmcs$!: Observable<string[]>;
 
-  public countryFilterCtrl: FormControl<string | null> = new FormControl('');
-  public filteredCountries: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
   private _onDestroy = new Subject<void>();
 
   async ngOnInit(): Promise<void> {
@@ -145,11 +145,6 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.filteredCountries.next(this.countries.slice());
-    this.countryFilterCtrl.valueChanges.pipe(takeUntil(this._onDestroy)).subscribe(() => {
-      this.filterCountries();
-    });
-
     if (this.isEditMode && this.partnerId) {
       const partnerData = await firstValueFrom(this.partnerService.get(this.partnerId));
       if (partnerData) {
@@ -184,18 +179,6 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
 
   removeHotelInfo() {
     this.partnerForm.removeControl('hotelInfo');
-  }
-
-  private filterCountries() {
-    let search = this.countryFilterCtrl.value;
-    if (!search) {
-      this.filteredCountries.next(this.countries.slice());
-      return;
-    }
-    search = search.toLowerCase();
-    this.filteredCountries.next(
-      this.countries.filter((country) => country.toLowerCase().includes(search!))
-    );
   }
 
   async onSubmit(): Promise<void> {

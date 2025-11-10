@@ -29,6 +29,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 // Shared Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { CommonModule } from '@angular/common';
+import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
 
 // Form Interface
 export interface GuestForm {
@@ -66,6 +67,7 @@ export interface GuestForm {
     NgxMatSelectSearchModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    SearchableSelectComponent,
   ],
   templateUrl: './guest-edit.html',
   styleUrl: './guest-edit.scss',

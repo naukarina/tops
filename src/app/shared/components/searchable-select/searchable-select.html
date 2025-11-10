@@ -1,0 +1,19 @@
+<mat-form-field appearance="outline" class="w-100">
+    <mat-label>{{ label }}</mat-label>
+    <mat-select [value]="value" [multiple]="multiple" [disabled]="isDisabled"
+        (selectionChange)="onSelectionChange($event.value)" (blur)="onTouched()">
+        @if (searchable) {
+        <mat-option>
+            <ngx-mat-select-search [formControl]="searchCtrl" placeholderLabel="Search..."
+                noEntriesFoundLabel="No matching options found">
+            </ngx-mat-select-search>
+        </mat-option>
+        } @if (!multiple) {
+        <mat-option [value]="null">-- None --</mat-option>
+        } @for (option of (filteredOptions$ | async); track option) {
+        <mat-option [value]="getOptionValue(option)">
+            {{ getOptionText(option) }}
+        </mat-option>
+        }
+    </mat-select>
+</mat-form-field>

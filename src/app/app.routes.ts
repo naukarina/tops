@@ -63,6 +63,30 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'guests',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Guests' },
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/guests/guest-list/guest-list').then((m) => m.GuestListComponent),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./pages/guests/guest-edit/guest-edit').then((m) => m.GuestEditComponent),
+        data: { breadcrumb: 'Create' },
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/guests/guest-edit/guest-edit').then((m) => m.GuestEditComponent),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
+  {
     path: 'products',
     canActivate: [authGuard],
     data: { breadcrumb: 'Products' },

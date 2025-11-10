@@ -1,0 +1,86 @@
+<app-edit-page [title]="isEditMode ? 'Edit Guest' : 'Create Guest'">
+    <div form-fields>
+        <form [formGroup]="guestForm" (ngSubmit)="onSubmit()">
+            <mat-form-field appearance="outline">
+                <mat-label>Guest Name</mat-label>
+                <input matInput formControlName="name" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Tour Operator</mat-label>
+                <mat-select formControlName="tourOperatorId" required>
+                    @for (operator of tourOperators$ | async; track operator.id) {
+                    <mat-option [value]="operator.id">{{ operator.name }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Arrival Date</mat-label>
+                    <input matInput [matDatepicker]="arrivalPicker" formControlName="arrivalDate" />
+                    <mat-datepicker-toggle matSuffix [for]="arrivalPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #arrivalPicker></mat-datepicker>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Departure Date</mat-label>
+                    <input matInput [matDatepicker]="departurePicker" formControlName="departureDate" />
+                    <mat-datepicker-toggle matSuffix [for]="departurePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #departurePicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+
+            <div formGroupName="pax">
+                <div class="section-header">
+                    <h4>Pax</h4>
+                </div>
+                <div class="form-row">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Adults</mat-label>
+                        <input matInput formControlName="adult" type="number" min="0" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Children</mat-label>
+                        <input matInput formControlName="child" type="number" min="0" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Infants</mat-label>
+                        <input matInput formControlName="infant" type="number" min="0" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Total</mat-label>
+                        <input matInput formControlName="total" type="number" readonly />
+                    </mat-form-field>
+                </div>
+            </div>
+            <hr />
+
+            <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Telephone</mat-label>
+                <input matInput formControlName="tel" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>File Ref / Voucher</mat-label>
+                <input matInput formControlName="fileRef" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Remarks</mat-label>
+                <textarea matInput formControlName="remarks"></textarea>
+            </mat-form-field>
+        </form>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" type="button" routerLink="/guests" class="me-2">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!guestForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
+    </div>
+</app-edit-page>

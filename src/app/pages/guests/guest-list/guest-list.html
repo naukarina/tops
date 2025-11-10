@@ -1,0 +1,8 @@
+<app-list-page>
+    <app-data-table [dataInput]="guests$" [columnDefinitions]="columnDefs" [displayedColumnsInput]="columnsForTable"
+        [enableSelection]="true" [enableFilter]="true" [enableSort]="true" [enablePaginator]="true"
+        [pageSizeOptions]="[10, 25, 50]" filterPlaceholder="Search guests..." [editRoute]="guestEditRoute"
+        [viewRoute]="guestViewRoute" [enableDelete]="true" (deleteAction)="onDeleteGuest($event)"
+        [dropdownFilters]="guestDropdownFilters" title="Guests" newRoute="/guests/new" newButtonText="Add New Guest">
+    </app-data-table>
+</app-list-page>

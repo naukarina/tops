@@ -8,10 +8,17 @@ export enum SalesOrderStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum SalesOrderCategory {
+  RESERVATIONS = 'RESERVATIONS',
+  SALESREP = 'SALESREP',
+  B2B = 'B2B',
+}
+
 export interface SalesOrder extends BaseDocument {
   // Order details
   orderNumber: number;
   status: SalesOrderStatus;
+  category: SalesOrderCategory;
 
   // Partner details
   partnerName: string;

@@ -21,16 +21,10 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-guest-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    ListPageComponent,
-    DataTableComponent,
-    MatIconModule,
-    DatePipe,
-  ],
+  imports: [CommonModule, RouterModule, ListPageComponent, DataTableComponent, MatIconModule],
   templateUrl: './guest-list.html',
   styleUrls: ['./guest-list.scss'],
+  providers: [DatePipe],
 })
 export class GuestListComponent {
   private guestService = inject(GuestService);

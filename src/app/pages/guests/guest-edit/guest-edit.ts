@@ -24,7 +24,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 
 // Shared Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
@@ -69,7 +68,6 @@ export interface GuestForm {
     MatSlideToggleModule,
     NgxMatSelectSearchModule,
     MatDatepickerModule,
-    MatNativeDateModule,
     SearchableSelectComponent,
   ],
   templateUrl: './guest-edit.html',
@@ -119,10 +117,10 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       arrivalLocation: this.fb.control<string | null>(null),
       departureLocation: this.fb.control<string | null>(null),
       pax: this.fb.group({
-        adult: this.fb.control<number | null>(null, [Validators.min(0)]),
-        child: this.fb.control<number | null>(null, [Validators.min(0)]),
-        infant: this.fb.control<number | null>(null, [Validators.min(0)]),
-        total: this.fb.control<number | null>({ value: null, disabled: true }),
+        adult: this.fb.control<number | null>(0, [Validators.min(0)]),
+        child: this.fb.control<number | null>(0, [Validators.min(0)]),
+        infant: this.fb.control<number | null>(0, [Validators.min(0)]),
+        total: this.fb.control<number | null>({ value: 0, disabled: true }),
       }),
       email: this.fb.control<string | null>(null, [Validators.email]),
       tel: this.fb.control<string | null>(null),

@@ -9,8 +9,10 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-
 import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
+
+// 1. Import MAT_DATE_LOCALE
+import { MatNativeDateModule, MAT_DATE_LOCALE } from '@angular/material/core';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,9 +24,16 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(MatSnackBarModule),
     provideFunctions(() => getFunctions()),
 
+    // Default DatePipe format (for lists/text)
     {
       provide: DATE_PIPE_DEFAULT_OPTIONS,
       useValue: { dateFormat: 'dd/MM/yyyy' },
     },
+
+    // Provide NativeDateAdapter
+    importProvidersFrom(MatNativeDateModule),
+
+    // 2. Set the Locale to 'en-GB' to force DD/MM/YYYY in Datepickers
+    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
   ],
 };

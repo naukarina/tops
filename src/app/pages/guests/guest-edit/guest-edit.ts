@@ -14,6 +14,7 @@ import { GuestService } from '../../../services/guest.service';
 import { Partner, PartnerType } from '../../../models/partner.model';
 import { PartnerService } from '../../../services/partner.service';
 import { NotificationService } from '../../../services/notification.service';
+import { Timestamp } from '@angular/fire/firestore';
 
 // Material Imports
 import { MatButtonModule } from '@angular/material/button';
@@ -29,7 +30,6 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { CommonModule } from '@angular/common';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
-import { Timestamp } from '@angular/fire/firestore';
 
 // Form Interface
 export interface GuestForm {
@@ -42,8 +42,14 @@ export interface GuestForm {
   tourOperatorName: FormControl<string | null>;
   arrivalDate: FormControl<Date | null>;
   departureDate: FormControl<Date | null>;
-  arrivalLocation: FormControl<string | null>;
-  departureLocation: FormControl<string | null>;
+
+  // --- ADD THESE CONTROLS FOR THE FORM LOGIC ---
+  arrivalLocationSelect: FormControl<string | null>;
+  arrivalLocationCustom: FormControl<string | null>;
+  departureLocationSelect: FormControl<string | null>;
+  departureLocationCustom: FormControl<string | null>;
+  // --- END ADD ---
+
   pax: FormGroup<{
     adult: FormControl<number | null>;
     child: FormControl<number | null>;
@@ -85,17 +91,28 @@ export class GuestEditComponent implements OnInit, OnDestroy {
   isEditMode = false;
   private guestId: string | null = null;
   tourOperators$: Observable<Partner[]>;
+  hotels$: Observable<Partner[]>; // <-- ADDED
 
   private _onDestroy = new Subject<void>();
 
   constructor() {
-    // We must initialize tourOperators$ in the constructor
     this.tourOperators$ = this.partnerService
       .getAll()
       .pipe(
         map((partners) =>
           partners
             .filter((p) => p.type === PartnerType.TOUR_OPERATOR)
+            .sort((a, b) => a.name.localeCompare(b.name))
+        )
+      );
+
+    // --- ADDED: Fetch and sort hotels ---
+    this.hotels$ = this.partnerService
+      .getAll()
+      .pipe(
+        map((partners) =>
+          partners
+            .filter((p) => p.type === PartnerType.HOTEL)
             .sort((a, b) => a.name.localeCompare(b.name))
         )
       );
@@ -111,22 +128,49 @@ export class GuestEditComponent implements OnInit, OnDestroy {
         validators: Validators.required,
       }),
       tourOperatorId: this.fb.control<string | null>(null, Validators.required),
-      tourOperatorName: this.fb.control<string | null>({ value: null, disabled: true }),
+      tourOperatorName: this.fb.control<string | null>({
+        value: null,
+        disabled: true,
+      }),
       arrivalDate: this.fb.control<Date | null>(null),
       departureDate: this.fb.control<Date | null>(null),
-      arrivalLocation: this.fb.control<string | null>(null),
-      departureLocation: this.fb.control<string | null>(null),
+
+      // --- ADDED: Location form controls ---
+      arrivalLocationSelect: this.fb.control<string | null>(null),
+      arrivalLocationCustom: this.fb.control<string | null>(null),
+      departureLocationSelect: this.fb.control<string | null>(null),
+      departureLocationCustom: this.fb.control<string | null>(null),
+      // --- END ADD ---
+
       pax: this.fb.group({
-        adult: this.fb.control<number | null>(0, [Validators.min(0)]),
-        child: this.fb.control<number | null>(0, [Validators.min(0)]),
-        infant: this.fb.control<number | null>(0, [Validators.min(0)]),
-        total: this.fb.control<number | null>({ value: 0, disabled: true }),
+        adult: this.fb.control<number | null>(null, [Validators.min(0)]),
+        child: this.fb.control<number | null>(null, [Validators.min(0)]),
+        infant: this.fb.control<number | null>(null, [Validators.min(0)]),
+        total: this.fb.control<number | null>({ value: null, disabled: true }),
       }),
       email: this.fb.control<string | null>(null, [Validators.email]),
       tel: this.fb.control<string | null>(null),
       fileRef: this.fb.control<string | null>(null),
       remarks: this.fb.control<string | null>(null),
     });
+
+    // --- ADDED: Logic to reset custom field if "Custom" is not selected ---
+    this.guestForm.controls.arrivalLocationSelect.valueChanges
+      .pipe(takeUntil(this._onDestroy))
+      .subscribe((value) => {
+        if (value !== 'Custom') {
+          this.guestForm.controls.arrivalLocationCustom.reset();
+        }
+      });
+
+    this.guestForm.controls.departureLocationSelect.valueChanges
+      .pipe(takeUntil(this._onDestroy))
+      .subscribe((value) => {
+        if (value !== 'Custom') {
+          this.guestForm.controls.departureLocationCustom.reset();
+        }
+      });
+    // --- END ADD ---
 
     // Update Tour Operator Name when ID changes
     this.guestForm.controls.tourOperatorId.valueChanges
@@ -155,7 +199,12 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       });
 
     if (this.isEditMode && this.guestId) {
-      const guestData = await firstValueFrom(this.guestService.get(this.guestId));
+      // --- MODIFIED: Load hotels and guest data in parallel ---
+      const [guestData, hotels] = await Promise.all([
+        firstValueFrom(this.guestService.get(this.guestId)),
+        firstValueFrom(this.hotels$),
+      ]);
+
       if (guestData) {
         // Convert Timestamps back to JS Dates for the form
         const formData: any = {
@@ -163,6 +212,25 @@ export class GuestEditComponent implements OnInit, OnDestroy {
           arrivalDate: guestData.arrivalDate ? guestData.arrivalDate.toDate() : null,
           departureDate: guestData.departureDate ? guestData.departureDate.toDate() : null,
         };
+
+        // --- ADDED: Logic to populate location fields on load ---
+        const arrivalHotel = hotels.find((h) => h.name === guestData.arrivalLocation);
+        if (arrivalHotel) {
+          formData.arrivalLocationSelect = arrivalHotel.name;
+        } else if (guestData.arrivalLocation) {
+          formData.arrivalLocationSelect = 'Custom';
+          formData.arrivalLocationCustom = guestData.arrivalLocation;
+        }
+
+        const departureHotel = hotels.find((h) => h.name === guestData.departureLocation);
+        if (departureHotel) {
+          formData.departureLocationSelect = departureHotel.name;
+        } else if (guestData.departureLocation) {
+          formData.departureLocationSelect = 'Custom';
+          formData.departureLocationCustom = guestData.departureLocation;
+        }
+        // --- END ADD ---
+
         this.guestForm.patchValue(formData);
       } else {
         this.notificationService.showError('Guest not found!');
@@ -182,25 +250,18 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Get the raw value, which includes disabled controls
     const formValue = this.guestForm.getRawValue();
 
-    // This check should be guaranteed by the form validator, but we
-    // check again to satisfy TypeScript and provide a runtime error.
     if (!formValue.tourOperatorId || !formValue.tourOperatorName) {
       this.notificationService.showError('Tour Operator is required.');
       return;
     }
 
-    // --- FIX IS HERE ---
-    // Manually construct the payload, converting null to undefined
-    // for all optional fields to match the 'Guest' model.
     const guestPayload: Partial<Guest> = {
-      name: formValue.name, // Required
-      tourOperatorId: formValue.tourOperatorId, // Required (checked above)
-      tourOperatorName: formValue.tourOperatorName, // Required (checked above)
+      name: formValue.name,
+      tourOperatorId: formValue.tourOperatorId,
+      tourOperatorName: formValue.tourOperatorName,
 
-      // Optional fields
       email: formValue.email ?? undefined,
       tel: formValue.tel ?? undefined,
       fileRef: formValue.fileRef ?? undefined,
@@ -216,16 +277,24 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       departureDate: formValue.departureDate
         ? Timestamp.fromDate(formValue.departureDate)
         : undefined,
+
+      // --- ADDED: Logic to save the correct location value ---
+      arrivalLocation:
+        formValue.arrivalLocationSelect === 'Custom'
+          ? formValue.arrivalLocationCustom ?? undefined
+          : formValue.arrivalLocationSelect ?? undefined,
+      departureLocation:
+        formValue.departureLocationSelect === 'Custom'
+          ? formValue.departureLocationCustom ?? undefined
+          : formValue.departureLocationSelect ?? undefined,
+      // --- END ADD ---
     };
-    // --- END FIX ---
 
     try {
       if (this.isEditMode && this.guestId) {
-        // 'as Guest' is okay here because we've constructed the payload
         await this.guestService.update(this.guestId, guestPayload as Guest);
         this.notificationService.showSuccess('Guest updated successfully!');
       } else {
-        // 'as Guest' is safe because 'add' will add timestamps, etc.
         await this.guestService.add(guestPayload as Guest);
         this.notificationService.showSuccess('Guest created successfully!');
       }

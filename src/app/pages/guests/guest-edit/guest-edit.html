@@ -16,14 +16,50 @@
                     <mat-datepicker-toggle matSuffix [for]="arrivalPicker"></mat-datepicker-toggle>
                     <mat-datepicker #arrivalPicker></mat-datepicker>
                 </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Arrival Location</mat-label>
+                    <mat-select formControlName="arrivalLocationSelect">
+                        <mat-option value="Custom">-- Custom location --</mat-option>
+                        @for (hotel of hotels$ | async; track hotel.id) {
+                        <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            @if (guestForm.controls.arrivalLocationSelect.value === 'Custom') {
+            <mat-form-field appearance="outline">
+                <mat-label>Custom Arrival Location</mat-label>
+                <input matInput formControlName="arrivalLocationCustom" />
+            </mat-form-field>
+            }
+
+            <div class="form-row">
                 <mat-form-field appearance="outline">
                     <mat-label>Departure Date</mat-label>
                     <input matInput [matDatepicker]="departurePicker" formControlName="departureDate" />
                     <mat-datepicker-toggle matSuffix [for]="departurePicker"></mat-datepicker-toggle>
                     <mat-datepicker #departurePicker></mat-datepicker>
                 </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Departure Location</mat-label>
+                    <mat-select formControlName="departureLocationSelect">
+                        <mat-option value="Custom">-- Custom location --</mat-option>
+                        @for (hotel of hotels$ | async; track hotel.id) {
+                        <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
             </div>
 
+            @if (guestForm.controls.departureLocationSelect.value === 'Custom') {
+            <mat-form-field appearance="outline">
+                <mat-label>Custom Departure Location</mat-label>
+                <input matInput formControlName="departureLocationCustom" />
+            </mat-form-field>
+            }
             <div formGroupName="pax">
                 <div class="section-header">
                     <h4>Pax</h4>

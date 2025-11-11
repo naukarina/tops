@@ -40,7 +40,7 @@ import { SearchableSelectComponent } from '../../../shared/components/searchable
 
 // Form Interface
 export interface SalesOrderForm {
-  orderNumber: FormControl<number | null>;
+  // --- REMOVED: orderNumber: FormControl<number | null>; ---
   status: FormControl<SalesOrderStatus | null>;
   category: FormControl<SalesOrderCategory | null>;
   partnerId: FormControl<string | null>; // Supplier/Hotel
@@ -136,14 +136,17 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
     this.isEditMode = !!this.soId;
 
     this.salesOrderForm = this.fb.group({
-      orderNumber: this.fb.control<number | null>(null, Validators.required),
+      // --- REMOVED: orderNumber control ---
       status: this.fb.control<SalesOrderStatus | null>(SalesOrderStatus.DRAFT, Validators.required),
       category: this.fb.control<SalesOrderCategory | null>(
         SalesOrderCategory.RESERVATIONS,
         Validators.required
       ),
       partnerId: this.fb.control<string | null>(null, Validators.required),
-      partnerName: this.fb.control<string | null>({ value: null, disabled: true }),
+      partnerName: this.fb.control<string | null>({
+        value: null,
+        disabled: true,
+      }),
 
       guestMode: this.fb.control<'existing' | 'new'>('existing', {
         nonNullable: true,
@@ -295,6 +298,7 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
     if (soData) {
       const formData: any = {
         ...soData,
+        // --- REMOVED: orderNumber: soData.orderNumber, ---
         guestMode: soData.guestId ? 'existing' : 'new',
         guestArrivalDate: soData.guestArrivalDate ? soData.guestArrivalDate.toDate() : null,
         guestDepartureDate: soData.guestDepartureDate ? soData.guestDepartureDate.toDate() : null,
@@ -338,57 +342,64 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
           this.notificationService.showError('New Guest Name and Tour Operator are required.');
           return;
         }
+
+        // --- MODIFIED: Use ?? null to match Guest model ---
         const newGuestPayload: Partial<Guest> = {
           name: formValue.guestName,
-          email: formValue.newGuestEmail || undefined,
-          tel: formValue.newGuestTel || undefined,
+          email: formValue.newGuestEmail ?? null,
+          tel: formValue.newGuestTel ?? null,
           tourOperatorId: formValue.tourOperatorId,
           tourOperatorName: formValue.tourOperatorName,
           arrivalDate: formValue.guestArrivalDate
             ? Timestamp.fromDate(formValue.guestArrivalDate)
-            : undefined,
+            : null,
           departureDate: formValue.guestDepartureDate
             ? Timestamp.fromDate(formValue.guestDepartureDate)
-            : undefined,
-          arrivalLocation: formValue.guestArrivalLocation || undefined,
-          departureLocation: formValue.guestDepartureLocation || undefined,
-          fileRef: formValue.fileRef || undefined,
+            : null,
+          arrivalLocation: formValue.guestArrivalLocation ?? null,
+          departureLocation: formValue.guestDepartureLocation ?? null,
+          fileRef: formValue.fileRef ?? null,
+          pax: null, // Pax can be added later via the Guest edit page
         };
+        // --- END MOD ---
+
         const newGuestRef = await this.guestService.add(newGuestPayload as Guest);
         guestIdToSave = newGuestRef.id;
       }
 
       // --- Step 2: Build Sales Order Payload ---
+      // --- MODIFIED: Use ?? null to match SalesOrder model ---
       const soPayload: Partial<SalesOrder> = {
-        orderNumber: formValue.orderNumber!,
         status: formValue.status!,
         category: formValue.category!,
         partnerId: formValue.partnerId!,
         partnerName: formValue.partnerName!,
         currencyName: formValue.currencyName!,
         totalPrice: formValue.totalPrice!,
-        remarks: formValue.remarks || undefined,
-        fileRef: formValue.fileRef || undefined,
+        remarks: formValue.remarks ?? null,
+        fileRef: formValue.fileRef ?? null,
         // Guest Info
-        guestId: guestIdToSave,
-        guestName: formValue.guestName || undefined,
-        tourOperatorId: formValue.tourOperatorId || undefined,
-        tourOperatorName: formValue.tourOperatorName || undefined,
+        guestId: guestIdToSave ?? null,
+        guestName: formValue.guestName ?? null,
+        tourOperatorId: formValue.tourOperatorId ?? null,
+        tourOperatorName: formValue.tourOperatorName ?? null,
         guestArrivalDate: formValue.guestArrivalDate
           ? Timestamp.fromDate(formValue.guestArrivalDate)
-          : undefined,
+          : null,
         guestDepartureDate: formValue.guestDepartureDate
           ? Timestamp.fromDate(formValue.guestDepartureDate)
-          : undefined,
-        guestArrivalLocation: formValue.guestArrivalLocation || undefined,
-        guestDepartureLocation: formValue.guestDepartureLocation || undefined,
+          : null,
+        guestArrivalLocation: formValue.guestArrivalLocation ?? null,
+        guestDepartureLocation: formValue.guestDepartureLocation ?? null,
       };
+      // --- END MOD ---
 
       // --- Step 3: Save Sales Order ---
       if (this.isEditMode && this.soId) {
         await this.salesOrderService.update(this.soId, soPayload as SalesOrder);
         this.notificationService.showSuccess('Sales Order updated successfully!');
       } else {
+        soPayload.orderNumber = -1; // Placeholder for cloud function
         await this.salesOrderService.add(soPayload as SalesOrder);
         this.notificationService.showSuccess('Sales Order created successfully!');
       }

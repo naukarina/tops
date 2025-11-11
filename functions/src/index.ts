@@ -1,5 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+// --- ADDED ---
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+// --- END ADD ---
 
 admin.initializeApp();
 
@@ -62,3 +65,36 @@ export const createUser = onCall(async (request) => {
     throw new HttpsError('internal', 'An error occurred while creating the user.');
   }
 });
+
+// --- ADDED: Cloud Function to generate sequential order numbers ---
+export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) {
+    console.log('No data associated with the event');
+    return;
+  }
+
+  // Reference to the counter document
+  const counterRef = admin.firestore().doc('counters/salesOrders');
+
+  try {
+    // Run a transaction to atomically update the counter and the new order
+    await admin.firestore().runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+
+      // Get the new order number, starting at 1 if counter doesn't exist
+      const newOrderNumber = (counterDoc.data()?.currentValue || 0) + 1;
+
+      // Update the counter
+      transaction.set(counterRef, { currentValue: newOrderNumber }, { merge: true });
+
+      // Update the new sales order with the sequential number
+      transaction.update(snapshot.ref, { orderNumber: newOrderNumber });
+
+      console.log(`Successfully set order number ${newOrderNumber} for ${snapshot.id}`);
+    });
+  } catch (error) {
+    console.error('Error generating order number:', error);
+  }
+});
+// --- END ADD ---

@@ -257,38 +257,36 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // --- MODIFIED: Use ?? null to match Guest model ---
     const guestPayload: Partial<Guest> = {
       name: formValue.name,
       tourOperatorId: formValue.tourOperatorId,
       tourOperatorName: formValue.tourOperatorName,
 
-      email: formValue.email ?? undefined,
-      tel: formValue.tel ?? undefined,
-      fileRef: formValue.fileRef ?? undefined,
-      remarks: formValue.remarks ?? undefined,
+      email: formValue.email ?? null,
+      tel: formValue.tel ?? null,
+      fileRef: formValue.fileRef ?? null,
+      remarks: formValue.remarks ?? null,
 
       pax: {
-        adult: formValue.pax.adult ?? undefined,
-        child: formValue.pax.child ?? undefined,
-        infant: formValue.pax.infant ?? undefined,
-        total: formValue.pax.total ?? undefined,
+        adult: formValue.pax.adult ?? null,
+        child: formValue.pax.child ?? null,
+        infant: formValue.pax.infant ?? null,
+        total: formValue.pax.total ?? null,
       },
-      arrivalDate: formValue.arrivalDate ? Timestamp.fromDate(formValue.arrivalDate) : undefined,
-      departureDate: formValue.departureDate
-        ? Timestamp.fromDate(formValue.departureDate)
-        : undefined,
+      arrivalDate: formValue.arrivalDate ? Timestamp.fromDate(formValue.arrivalDate) : null,
+      departureDate: formValue.departureDate ? Timestamp.fromDate(formValue.departureDate) : null,
 
-      // --- ADDED: Logic to save the correct location value ---
       arrivalLocation:
-        formValue.arrivalLocationSelect === 'Custom'
-          ? formValue.arrivalLocationCustom ?? undefined
-          : formValue.arrivalLocationSelect ?? undefined,
+        (formValue.arrivalLocationSelect === 'Custom'
+          ? formValue.arrivalLocationCustom
+          : formValue.arrivalLocationSelect) ?? null,
       departureLocation:
-        formValue.departureLocationSelect === 'Custom'
-          ? formValue.departureLocationCustom ?? undefined
-          : formValue.departureLocationSelect ?? undefined,
-      // --- END ADD ---
+        (formValue.departureLocationSelect === 'Custom'
+          ? formValue.departureLocationCustom
+          : formValue.departureLocationSelect) ?? null,
     };
+    // --- END MOD ---
 
     try {
       if (this.isEditMode && this.guestId) {

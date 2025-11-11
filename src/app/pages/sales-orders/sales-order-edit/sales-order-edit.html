@@ -3,10 +3,6 @@
         <form [formGroup]="salesOrderForm" (ngSubmit)="onSubmit()">
             <div class="form-row">
                 <mat-form-field appearance="outline">
-                    <mat-label>Order Number</mat-label>
-                    <input matInput formControlName="orderNumber" type="number" required />
-                </mat-form-field>
-                <mat-form-field appearance="outline">
                     <mat-label>Status</mat-label>
                     <mat-select formControlName="status" required>
                         @for (status of statuses; track status) {
@@ -14,9 +10,6 @@
                         }
                     </mat-select>
                 </mat-form-field>
-            </div>
-
-            <div class="form-row">
                 <mat-form-field appearance="outline">
                     <mat-label>Category</mat-label>
                     <mat-select formControlName="category" required>
@@ -25,6 +18,9 @@
                         }
                     </mat-select>
                 </mat-form-field>
+            </div>
+
+            <div class="form-row">
                 <app-searchable-select label="Partner / Supplier" formControlName="partnerId" [options]="partners$"
                     [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
             </div>

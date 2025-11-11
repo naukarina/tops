@@ -1,6 +1,6 @@
 import { Timestamp } from '@angular/fire/firestore';
 import { BaseDocument } from './base-document.model';
-import { Currency, CurrencyName } from './currency.model';
+import { CurrencyName } from './currency.model'; // Removed unused 'Currency'
 
 export enum SalesOrderStatus {
   DRAFT = 'DRAFT',
@@ -25,19 +25,19 @@ export interface SalesOrder extends BaseDocument {
   partnerId: string;
 
   // Guest details
-  guestName?: string;
-  guestId?: string;
-  fileRef?: string;
-  tourOperatorId?: string;
-  tourOperatorName?: string;
-  guestArrivalDate?: Timestamp;
-  guestDepartureDate?: Timestamp;
-  guestArrivalLocation?: string;
-  guestDepartureLocation?: string;
+  guestName: string | null; // <-- MODIFIED
+  guestId: string | null; // <-- MODIFIED
+  fileRef: string | null; // <-- MODIFIED
+  tourOperatorId: string | null; // <-- MODIFIED
+  tourOperatorName: string | null; // <-- MODIFIED
+  guestArrivalDate: Timestamp | null; // <-- MODIFIED
+  guestDepartureDate: Timestamp | null; // <-- MODIFIED
+  guestArrivalLocation: string | null; // <-- MODIFIED
+  guestDepartureLocation: string | null; // <-- MODIFIED
 
   // Order totals (Calculated by a function or on save)
   currencyName: CurrencyName;
   totalPrice: number;
 
-  remarks?: string;
+  remarks: string | null; // <-- MODIFIED
 }

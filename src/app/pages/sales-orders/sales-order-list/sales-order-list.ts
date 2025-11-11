@@ -67,10 +67,18 @@ export class SalesOrderListComponent {
     {
       columnDef: 'orderNumber',
       header: 'Order #',
-      cell: (so) => so.orderNumber,
+      // --- MODIFIED: Changed padStart(8, '0') to padStart(7, '0') ---
+      cell: (so) =>
+        so.orderNumber <= 0 ? 'Generating...' : String(so.orderNumber).padStart(7, '0'),
+      // --- END MOD ---
       isSortable: true,
     },
-    { columnDef: 'status', header: 'Status', cell: (so) => so.status, isSortable: true },
+    {
+      columnDef: 'status',
+      header: 'Status',
+      cell: (so) => so.status,
+      isSortable: true,
+    },
     {
       columnDef: 'category',
       header: 'Category',
@@ -108,7 +116,12 @@ export class SalesOrderListComponent {
       cell: (so) => so.tourOperatorName || '',
       isSortable: true,
     },
-    { columnDef: 'fileRef', header: 'File Ref', cell: (so) => so.fileRef || '', isSortable: true },
+    {
+      columnDef: 'fileRef',
+      header: 'File Ref',
+      cell: (so) => so.fileRef || '',
+      isSortable: true,
+    },
   ];
 
   // Dropdown filters
@@ -132,7 +145,11 @@ export class SalesOrderListComponent {
   salesOrderEditRoute = (so: SalesOrder) => ['/sales-orders', 'edit', so.id];
 
   async onDeleteSalesOrder(so: SalesOrder) {
-    if (confirm(`Are you sure you want to delete Sales Order #${so.orderNumber}?`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete Sales Order #${String(so.orderNumber).padStart(7, '0')}`
+      )
+    ) {
       try {
         await this.salesOrderService.delete(so.id);
         this.notificationService.showSuccess('Sales Order deleted successfully.');

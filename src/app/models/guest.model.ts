@@ -1,4 +1,5 @@
 import { BaseDocument } from './base-document.model';
+import { Timestamp } from '@angular/fire/firestore';
 
 export interface Pax {
   adult?: number;
@@ -16,8 +17,11 @@ export interface Guest extends BaseDocument {
   tourOperatorId: string;
   tourOperatorName: string;
 
-  arrivalDate?: string;
-  departureDate?: string;
+  arrivalDate?: Timestamp;
+  departureDate?: Timestamp;
+
+  arrivalLocation?: string;
+  departureLocation?: string;
 
   pax?: Pax;
 }

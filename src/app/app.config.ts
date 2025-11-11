@@ -10,6 +10,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 
+import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
@@ -19,5 +21,10 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => getFirestore()),
     importProvidersFrom(MatSnackBarModule),
     provideFunctions(() => getFunctions()),
+
+    {
+      provide: DATE_PIPE_DEFAULT_OPTIONS,
+      useValue: { dateFormat: 'dd/MM/yyyy' },
+    },
   ],
 };

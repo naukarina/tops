@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -21,7 +21,14 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-guest-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, ListPageComponent, DataTableComponent, MatIconModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    ListPageComponent,
+    DataTableComponent,
+    MatIconModule,
+    DatePipe,
+  ],
   templateUrl: './guest-list.html',
   styleUrls: ['./guest-list.scss'],
 })
@@ -30,6 +37,8 @@ export class GuestListComponent {
   private notificationService = inject(NotificationService);
 
   guests$: Observable<Guest[]> = this.guestService.getAll();
+
+  private datePipe = inject(DatePipe);
 
   // --- DERIVE OPTIONS FROM GUESTS$ ---
   availableTourOperators$: Observable<string[]> = this.guests$.pipe(
@@ -75,13 +84,13 @@ export class GuestListComponent {
     {
       columnDef: 'arrivalDate',
       header: 'Arrival',
-      cell: (g) => g.arrivalDate || '',
+      cell: (g) => (g.arrivalDate ? this.datePipe.transform(g.arrivalDate.toDate()) : ''),
       isSortable: true,
     },
     {
       columnDef: 'departureDate',
       header: 'Departure',
-      cell: (g) => g.departureDate || '',
+      cell: (g) => (g.departureDate ? this.datePipe.transform(g.departureDate.toDate()) : ''),
       isSortable: true,
     },
     {

@@ -30,6 +30,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { CommonModule } from '@angular/common';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
+import { Timestamp } from '@angular/fire/firestore';
 
 // Form Interface
 export interface GuestForm {
@@ -40,8 +41,10 @@ export interface GuestForm {
   remarks: FormControl<string | null>;
   tourOperatorId: FormControl<string | null>;
   tourOperatorName: FormControl<string | null>;
-  arrivalDate: FormControl<string | null>;
-  departureDate: FormControl<string | null>;
+  arrivalDate: FormControl<Date | null>;
+  departureDate: FormControl<Date | null>;
+  arrivalLocation: FormControl<string | null>;
+  departureLocation: FormControl<string | null>;
   pax: FormGroup<{
     adult: FormControl<number | null>;
     child: FormControl<number | null>;
@@ -111,8 +114,10 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       }),
       tourOperatorId: this.fb.control<string | null>(null, Validators.required),
       tourOperatorName: this.fb.control<string | null>({ value: null, disabled: true }),
-      arrivalDate: this.fb.control<string | null>(null),
-      departureDate: this.fb.control<string | null>(null),
+      arrivalDate: this.fb.control<Date | null>(null),
+      departureDate: this.fb.control<Date | null>(null),
+      arrivalLocation: this.fb.control<string | null>(null),
+      departureLocation: this.fb.control<string | null>(null),
       pax: this.fb.group({
         adult: this.fb.control<number | null>(null, [Validators.min(0)]),
         child: this.fb.control<number | null>(null, [Validators.min(0)]),
@@ -154,7 +159,13 @@ export class GuestEditComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.guestId) {
       const guestData = await firstValueFrom(this.guestService.get(this.guestId));
       if (guestData) {
-        this.guestForm.patchValue(guestData as Guest);
+        // Convert Timestamps back to JS Dates for the form
+        const formData: any = {
+          ...guestData,
+          arrivalDate: guestData.arrivalDate ? guestData.arrivalDate.toDate() : null,
+          departureDate: guestData.departureDate ? guestData.departureDate.toDate() : null,
+        };
+        this.guestForm.patchValue(formData);
       } else {
         this.notificationService.showError('Guest not found!');
         this.router.navigate(['/guests']);
@@ -203,23 +214,12 @@ export class GuestEditComponent implements OnInit, OnDestroy {
         infant: formValue.pax.infant ?? undefined,
         total: formValue.pax.total ?? undefined,
       },
+      arrivalDate: formValue.arrivalDate ? Timestamp.fromDate(formValue.arrivalDate) : undefined,
+      departureDate: formValue.departureDate
+        ? Timestamp.fromDate(formValue.departureDate)
+        : undefined,
     };
     // --- END FIX ---
-
-    // Handle Date conversion safely
-    const arrivalDate: any = formValue.arrivalDate;
-    if (arrivalDate && arrivalDate instanceof Date) {
-      guestPayload.arrivalDate = arrivalDate.toISOString().split('T')[0];
-    } else {
-      guestPayload.arrivalDate = arrivalDate ?? undefined; // handle null
-    }
-
-    const departureDate: any = formValue.departureDate;
-    if (departureDate && departureDate instanceof Date) {
-      guestPayload.departureDate = departureDate.toISOString().split('T')[0];
-    } else {
-      guestPayload.departureDate = departureDate ?? undefined; // handle null
-    }
 
     try {
       if (this.isEditMode && this.guestId) {

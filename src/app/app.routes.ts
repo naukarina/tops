@@ -135,6 +135,36 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'sales-orders',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Sales Orders' },
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/sales-orders/sales-order-list/sales-order-list').then(
+            (m) => m.SalesOrderListComponent
+          ),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./pages/sales-orders/sales-order-edit/sales-order-edit').then(
+            (m) => m.SalesOrderEditComponent
+          ),
+        data: { breadcrumb: 'Create' },
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/sales-orders/sales-order-edit/sales-order-edit').then(
+            (m) => m.SalesOrderEditComponent
+          ),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
+  {
     path: 'admin/import',
     // You can add a canActivate: [adminGuard] here
     loadComponent: () =>

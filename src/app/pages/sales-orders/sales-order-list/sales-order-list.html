@@ -1,0 +1,9 @@
+<app-list-page>
+    <app-data-table [dataInput]="salesOrders$" [columnDefinitions]="columnDefs"
+        [displayedColumnsInput]="columnsForTable" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
+        [enablePaginator]="true" [pageSizeOptions]="[10, 25, 50]" filterPlaceholder="Search orders..."
+        [editRoute]="salesOrderEditRoute" [enableDelete]="true" (deleteAction)="onDeleteSalesOrder($event)"
+        [dropdownFilters]="salesOrderDropdownFilters" title="Sales Orders" newRoute="/sales-orders/new"
+        newButtonText="Add New Sales Order">
+    </app-data-table>
+</app-list-page>

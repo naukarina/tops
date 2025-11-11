@@ -1,6 +1,6 @@
 import { Timestamp } from '@angular/fire/firestore';
 import { BaseDocument } from './base-document.model';
-import { Currency } from './currency.model';
+import { Currency, CurrencyName } from './currency.model';
 
 export enum SalesOrderStatus {
   DRAFT = 'DRAFT',
@@ -36,7 +36,7 @@ export interface SalesOrder extends BaseDocument {
   guestDepartureLocation?: string;
 
   // Order totals (Calculated by a function or on save)
-  currency: Currency;
+  currencyName: CurrencyName;
   totalPrice: number;
 
   remarks?: string;

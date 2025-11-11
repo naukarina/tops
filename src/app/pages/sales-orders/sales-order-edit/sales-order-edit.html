@@ -1,0 +1,127 @@
+<app-edit-page [title]="isEditMode ? 'Edit Sales Order' : 'Create Sales Order'">
+    <div form-fields>
+        <form [formGroup]="salesOrderForm" (ngSubmit)="onSubmit()">
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Order Number</mat-label>
+                    <input matInput formControlName="orderNumber" type="number" required />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Status</mat-label>
+                    <mat-select formControlName="status" required>
+                        @for (status of statuses; track status) {
+                        <mat-option [value]="status">{{ status }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Category</mat-label>
+                    <mat-select formControlName="category" required>
+                        @for (category of categories; track category) {
+                        <mat-option [value]="category">{{ category }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <app-searchable-select label="Partner / Supplier" formControlName="partnerId" [options]="partners$"
+                    [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
+            </div>
+
+            <h4 class="section-header">Guest Information</h4>
+            <mat-radio-group formControlName="guestMode" class="guest-mode-toggle">
+                <mat-radio-button value="existing">Select Existing Guest</mat-radio-button>
+                <mat-radio-button value="new">Create New Guest</mat-radio-button>
+            </mat-radio-group>
+
+            @if (salesOrderForm.controls.guestMode.value === 'existing') {
+            <app-searchable-select label="Select Guest" formControlName="guestId" [options]="guests$"
+                [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
+            }
+
+            <mat-divider class="form-divider"></mat-divider>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Guest Name</mat-label>
+                <input matInput formControlName="guestName" />
+            </mat-form-field>
+
+            @if (salesOrderForm.controls.guestMode.value === 'new') {
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Email</mat-label>
+                    <input matInput formControlName="newGuestEmail" type="email" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Telephone</mat-label>
+                    <input matInput formControlName="newGuestTel" />
+                </mat-form-field>
+            </div>
+            }
+
+            <app-searchable-select label="Tour Operator" formControlName="tourOperatorId" [options]="tourOperators$"
+                [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Arrival Date</mat-label>
+                    <input matInput [matDatepicker]="arrivalPicker" formControlName="guestArrivalDate" />
+                    <mat-datepicker-toggle matSuffix [for]="arrivalPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #arrivalPicker></mat-datepicker>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Departure Date</mat-label>
+                    <input matInput [matDatepicker]="departurePicker" formControlName="guestDepartureDate" />
+                    <mat-datepicker-toggle matSuffix [for]="departurePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #departurePicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Arrival Location</mat-label>
+                    <input matInput formControlName="guestArrivalLocation" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Departure Location</mat-label>
+                    <input matInput formControlName="guestDepartureLocation" />
+                </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline">
+                <mat-label>File Ref / Voucher</mat-label>
+                <input matInput formControlName="fileRef" />
+            </mat-form-field>
+
+            <h4 class="section-header">Financials</h4>
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Total Price</mat-label>
+                    <input matInput formControlName="totalPrice" type="number" min="0" required />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Currency</mat-label>
+                    <mat-select formControlName="currencyName" required>
+                        @for (currency of currencies; track currency) {
+                        <mat-option [value]="currency">{{ currency }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Remarks</mat-label>
+                <textarea matInput formControlName="remarks"></textarea>
+            </mat-form-field>
+        </form>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" type="button" routerLink="/sales-orders" class="me-2">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!salesOrderForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
+    </div>
+</app-edit-page>

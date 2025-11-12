@@ -1,62 +1,27 @@
+// src/app/pages/guests/guest-edit/guest-edit.ts
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Observable, Subject, firstValueFrom, map, startWith } from 'rxjs';
-import { first, takeUntil } from 'rxjs/operators';
-import { Guest, Pax } from '../../../models/guest.model';
+import { Observable, Subject, firstValueFrom, map, takeUntil } from 'rxjs'; // Import takeUntil
+import { Guest } from '../../../models/guest.model';
 import { GuestService } from '../../../services/guest.service';
 import { Partner, PartnerType } from '../../../models/partner.model';
 import { PartnerService } from '../../../services/partner.service';
 import { NotificationService } from '../../../services/notification.service';
-import { Timestamp } from '@angular/fire/firestore';
 
 // Material Imports
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
-import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker'; // Keep for providers
 
 // Shared Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { CommonModule } from '@angular/common';
-import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
 
-// Form Interface
-export interface GuestForm {
-  name: FormControl<string>;
-  email: FormControl<string | null>;
-  tel: FormControl<string | null>;
-  fileRef: FormControl<string | null>;
-  remarks: FormControl<string | null>;
-  tourOperatorId: FormControl<string | null>;
-  tourOperatorName: FormControl<string | null>;
-  arrivalDate: FormControl<Date | null>;
-  departureDate: FormControl<Date | null>;
-
-  // --- ADD THESE CONTROLS FOR THE FORM LOGIC ---
-  arrivalLocationSelect: FormControl<string | null>;
-  arrivalLocationCustom: FormControl<string | null>;
-  departureLocationSelect: FormControl<string | null>;
-  departureLocationCustom: FormControl<string | null>;
-  // --- END ADD ---
-
-  pax: FormGroup<{
-    adult: FormControl<number | null>;
-    child: FormControl<number | null>;
-    infant: FormControl<number | null>;
-    total: FormControl<number | null>;
-  }>;
-}
+// --- IMPORT NEW UTILS AND INTERFACE ---
+import { GuestForm } from '../guest.form.model';
+import { createGuestForm, getGuestFormPatchValue, prepareGuestPayload } from '../guest-form.utils';
+import { GuestFormComponent } from '../guest-form/guest-form';
 
 @Component({
   selector: 'app-guest-edit',
@@ -65,16 +30,11 @@ export interface GuestForm {
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatIconModule,
     EditPageComponent,
-    MatSelectModule,
-    MatSlideToggleModule,
-    NgxMatSelectSearchModule,
     MatDatepickerModule,
-    SearchableSelectComponent,
+    GuestFormComponent, // <-- ADD NEW COMPONENT
   ],
   templateUrl: './guest-edit.html',
   styleUrl: './guest-edit.scss',
@@ -87,11 +47,11 @@ export class GuestEditComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  guestForm!: FormGroup<GuestForm>;
+  guestForm!: FormGroup<GuestForm>; // <-- Use shared interface
   isEditMode = false;
   private guestId: string | null = null;
   tourOperators$: Observable<Partner[]>;
-  hotels$: Observable<Partner[]>; // <-- ADDED
+  hotels$: Observable<Partner[]>;
 
   private _onDestroy = new Subject<void>();
 
@@ -106,7 +66,6 @@ export class GuestEditComponent implements OnInit, OnDestroy {
         )
       );
 
-    // --- ADDED: Fetch and sort hotels ---
     this.hotels$ = this.partnerService
       .getAll()
       .pipe(
@@ -122,115 +81,38 @@ export class GuestEditComponent implements OnInit, OnDestroy {
     this.guestId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.guestId;
 
-    this.guestForm = this.fb.group({
-      name: this.fb.control('', {
-        nonNullable: true,
-        validators: Validators.required,
-      }),
-      tourOperatorId: this.fb.control<string | null>(null, Validators.required),
-      tourOperatorName: this.fb.control<string | null>({
-        value: null,
-        disabled: true,
-      }),
-      arrivalDate: this.fb.control<Date | null>(null),
-      departureDate: this.fb.control<Date | null>(null),
+    // --- USE UTILITY TO CREATE FORM ---
+    this.guestForm = createGuestForm(this.fb);
 
-      // --- ADDED: Location form controls ---
-      arrivalLocationSelect: this.fb.control<string | null>(null),
-      arrivalLocationCustom: this.fb.control<string | null>(null),
-      departureLocationSelect: this.fb.control<string | null>(null),
-      departureLocationCustom: this.fb.control<string | null>(null),
-      // --- END ADD ---
+    // --- REMOVED valueChanges listeners (moved to GuestFormComponent) ---
 
-      pax: this.fb.group({
-        adult: this.fb.control<number | null>(null, [Validators.min(0)]),
-        child: this.fb.control<number | null>(null, [Validators.min(0)]),
-        infant: this.fb.control<number | null>(null, [Validators.min(0)]),
-        total: this.fb.control<number | null>({ value: null, disabled: true }),
-      }),
-      email: this.fb.control<string | null>(null, [Validators.email]),
-      tel: this.fb.control<string | null>(null),
-      fileRef: this.fb.control<string | null>(null),
-      remarks: this.fb.control<string | null>(null),
-    });
-
-    // --- ADDED: Logic to reset custom field if "Custom" is not selected ---
-    this.guestForm.controls.arrivalLocationSelect.valueChanges
-      .pipe(takeUntil(this._onDestroy))
-      .subscribe((value) => {
-        if (value !== 'Custom') {
-          this.guestForm.controls.arrivalLocationCustom.reset();
-        }
-      });
-
-    this.guestForm.controls.departureLocationSelect.valueChanges
-      .pipe(takeUntil(this._onDestroy))
-      .subscribe((value) => {
-        if (value !== 'Custom') {
-          this.guestForm.controls.departureLocationCustom.reset();
-        }
-      });
-    // --- END ADD ---
-
-    // Update Tour Operator Name when ID changes
+    // Update Tour Operator Name when ID changes (Keep this here as it's part of this component's data)
     this.guestForm.controls.tourOperatorId.valueChanges
-      .pipe(takeUntil(this._onDestroy), startWith(this.guestForm.controls.tourOperatorId.value))
-      .subscribe((id) => {
-        if (id) {
-          this.tourOperators$.pipe(first()).subscribe((ops) => {
-            const selectedOp = ops.find((o) => o.id === id);
-            if (selectedOp) {
-              this.guestForm.controls.tourOperatorName.setValue(selectedOp.name);
-            }
-          });
-        }
-      });
-
-    // Update total Pax when pax numbers change
-    this.guestForm.controls.pax.valueChanges
       .pipe(takeUntil(this._onDestroy))
-      .subscribe((paxValue) => {
-        const adult = paxValue.adult || 0;
-        const child = paxValue.child || 0;
-        const infant = paxValue.infant || 0;
-        this.guestForm.controls.pax.controls.total.setValue(adult + child + infant, {
-          emitEvent: false,
-        });
+      .subscribe(async (id) => {
+        // <-- made async
+        if (id) {
+          // --- FIX: Pass the observable to firstValueFrom ---
+          const ops = await firstValueFrom(this.tourOperators$);
+          const selectedOp = ops.find((o) => o.id === id);
+          if (selectedOp) {
+            this.guestForm.controls.tourOperatorName.setValue(selectedOp.name);
+          }
+        } else {
+          // --- ADDED: Clear name if ID is cleared ---
+          this.guestForm.controls.tourOperatorName.setValue(null);
+        }
       });
 
     if (this.isEditMode && this.guestId) {
-      // --- MODIFIED: Load hotels and guest data in parallel ---
       const [guestData, hotels] = await Promise.all([
         firstValueFrom(this.guestService.get(this.guestId)),
         firstValueFrom(this.hotels$),
       ]);
 
       if (guestData) {
-        // Convert Timestamps back to JS Dates for the form
-        const formData: any = {
-          ...guestData,
-          arrivalDate: guestData.arrivalDate ? guestData.arrivalDate.toDate() : null,
-          departureDate: guestData.departureDate ? guestData.departureDate.toDate() : null,
-        };
-
-        // --- ADDED: Logic to populate location fields on load ---
-        const arrivalHotel = hotels.find((h) => h.name === guestData.arrivalLocation);
-        if (arrivalHotel) {
-          formData.arrivalLocationSelect = arrivalHotel.name;
-        } else if (guestData.arrivalLocation) {
-          formData.arrivalLocationSelect = 'Custom';
-          formData.arrivalLocationCustom = guestData.arrivalLocation;
-        }
-
-        const departureHotel = hotels.find((h) => h.name === guestData.departureLocation);
-        if (departureHotel) {
-          formData.departureLocationSelect = departureHotel.name;
-        } else if (guestData.departureLocation) {
-          formData.departureLocationSelect = 'Custom';
-          formData.departureLocationCustom = guestData.departureLocation;
-        }
-        // --- END ADD ---
-
+        // --- USE UTILITY TO GET PATCH VALUE ---
+        const formData = getGuestFormPatchValue(guestData, hotels);
         this.guestForm.patchValue(formData);
       } else {
         this.notificationService.showError('Guest not found!');
@@ -257,36 +139,8 @@ export class GuestEditComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // --- MODIFIED: Use ?? null to match Guest model ---
-    const guestPayload: Partial<Guest> = {
-      name: formValue.name,
-      tourOperatorId: formValue.tourOperatorId,
-      tourOperatorName: formValue.tourOperatorName,
-
-      email: formValue.email ?? null,
-      tel: formValue.tel ?? null,
-      fileRef: formValue.fileRef ?? null,
-      remarks: formValue.remarks ?? null,
-
-      pax: {
-        adult: formValue.pax.adult ?? null,
-        child: formValue.pax.child ?? null,
-        infant: formValue.pax.infant ?? null,
-        total: formValue.pax.total ?? null,
-      },
-      arrivalDate: formValue.arrivalDate ? Timestamp.fromDate(formValue.arrivalDate) : null,
-      departureDate: formValue.departureDate ? Timestamp.fromDate(formValue.departureDate) : null,
-
-      arrivalLocation:
-        (formValue.arrivalLocationSelect === 'Custom'
-          ? formValue.arrivalLocationCustom
-          : formValue.arrivalLocationSelect) ?? null,
-      departureLocation:
-        (formValue.departureLocationSelect === 'Custom'
-          ? formValue.departureLocationCustom
-          : formValue.departureLocationSelect) ?? null,
-    };
-    // --- END MOD ---
+    // --- USE UTILITY TO PREPARE PAYLOAD ---
+    const guestPayload = prepareGuestPayload(formValue);
 
     try {
       if (this.isEditMode && this.guestId) {

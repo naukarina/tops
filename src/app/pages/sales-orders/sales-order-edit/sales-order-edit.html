@@ -2,26 +2,7 @@
     <div form-fields>
         <form [formGroup]="salesOrderForm" (ngSubmit)="onSubmit()">
             <div class="form-row">
-                <mat-form-field appearance="outline">
-                    <mat-label>Status</mat-label>
-                    <mat-select formControlName="status" required>
-                        @for (status of statuses; track status) {
-                        <mat-option [value]="status">{{ status }}</mat-option>
-                        }
-                    </mat-select>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Category</mat-label>
-                    <mat-select formControlName="category" required>
-                        @for (category of categories; track category) {
-                        <mat-option [value]="category">{{ category }}</mat-option>
-                        }
-                    </mat-select>
-                </mat-form-field>
-            </div>
-
-            <div class="form-row">
-                <app-searchable-select label="Partner / Supplier" formControlName="partnerId" [options]="partners$"
+                <app-searchable-select label="Paid by" formControlName="partnerId" [options]="partners$"
                     [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
             </div>
 
@@ -31,62 +12,27 @@
                 <mat-radio-button value="new">Create New Guest</mat-radio-button>
             </mat-radio-group>
 
-            @if (salesOrderForm.controls.guestMode.value === 'existing') {
+            @if (soFormControls.guestMode.value === 'existing') {
             <app-searchable-select label="Select Guest" formControlName="guestId" [options]="guests$"
                 [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
             }
 
             <mat-divider class="form-divider"></mat-divider>
 
-            <mat-form-field appearance="outline">
-                <mat-label>Guest Name</mat-label>
-                <input matInput formControlName="guestName" />
-            </mat-form-field>
-
-            @if (salesOrderForm.controls.guestMode.value === 'new') {
-            <div class="form-row">
-                <mat-form-field appearance="outline">
-                    <mat-label>Guest Email</mat-label>
-                    <input matInput formControlName="newGuestEmail" type="email" />
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Guest Telephone</mat-label>
-                    <input matInput formControlName="newGuestTel" />
-                </mat-form-field>
+            @if (soFormControls.guestMode.value === 'new' || soFormControls.guestId.value) {
+            <div formGroupName="newGuestForm">
+                <app-guest-form [guestForm]="soFormControls.newGuestForm" [hotels$]="hotels$"
+                    [tourOperators$]="tourOperators$"></app-guest-form>
             </div>
             }
 
-            <app-searchable-select label="Tour Operator" formControlName="tourOperatorId" [options]="tourOperators$"
-                [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
-
-            <div class="form-row">
-                <mat-form-field appearance="outline">
-                    <mat-label>Guest Arrival Date</mat-label>
-                    <input matInput [matDatepicker]="arrivalPicker" formControlName="guestArrivalDate" />
-                    <mat-datepicker-toggle matSuffix [for]="arrivalPicker"></mat-datepicker-toggle>
-                    <mat-datepicker #arrivalPicker></mat-datepicker>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Guest Departure Date</mat-label>
-                    <input matInput [matDatepicker]="departurePicker" formControlName="guestDepartureDate" />
-                    <mat-datepicker-toggle matSuffix [for]="departurePicker"></mat-datepicker-toggle>
-                    <mat-datepicker #departurePicker></mat-datepicker>
-                </mat-form-field>
-            </div>
-            <div class="form-row">
-                <mat-form-field appearance="outline">
-                    <mat-label>Guest Arrival Location</mat-label>
-                    <input matInput formControlName="guestArrivalLocation" />
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Guest Departure Location</mat-label>
-                    <input matInput formControlName="guestDepartureLocation" />
-                </mat-form-field>
-            </div>
-            <mat-form-field appearance="outline">
-                <mat-label>File Ref / Voucher</mat-label>
-                <input matInput formControlName="fileRef" />
-            </mat-form-field>
+            <input type="hidden" formControlName="guestName" />
+            <input type="hidden" formControlName="tourOperatorId" />
+            <input type="hidden" formControlName="guestArrivalDate" />
+            <input type="hidden" formControlName="guestDepartureDate" />
+            <input type="hidden" formControlName="guestArrivalLocation" />
+            <input type="hidden" formControlName="guestDepartureLocation" />
+            <input type="hidden" formControlName="fileRef" />
 
             <h4 class="section-header">Financials</h4>
             <div class="form-row">

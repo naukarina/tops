@@ -1,0 +1,104 @@
+<div [formGroup]="guestForm">
+    <mat-form-field appearance="outline">
+        <mat-label>Guest Name</mat-label>
+        <input matInput formControlName="name" required />
+    </mat-form-field>
+
+    <app-searchable-select label="Tour Operator" formControlName="tourOperatorId" [options]="tourOperators$"
+        [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
+
+    <div class="form-row">
+        <mat-form-field appearance="outline">
+            <mat-label>Arrival Date</mat-label>
+            <input matInput [matDatepicker]="arrivalPicker" formControlName="arrivalDate" />
+            <mat-datepicker-toggle matSuffix [for]="arrivalPicker"></mat-datepicker-toggle>
+            <mat-datepicker #arrivalPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Arrival Location</mat-label>
+            <mat-select formControlName="arrivalLocationSelect">
+                <mat-option [value]="null">-- None --</mat-option>
+                <mat-option value="Custom">-- Custom location --</mat-option>
+                @for (hotel of hotels$ | async; track hotel.id) {
+                <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    @if (guestForm.controls.arrivalLocationSelect.value === 'Custom') {
+    <mat-form-field appearance="outline">
+        <mat-label>Custom Arrival Location</mat-label>
+        <input matInput formControlName="arrivalLocationCustom" />
+    </mat-form-field>
+    }
+
+    <div class="form-row">
+        <mat-form-field appearance="outline">
+            <mat-label>Departure Date</mat-label>
+            <input matInput [matDatepicker]="departurePicker" formControlName="departureDate" />
+            <mat-datepicker-toggle matSuffix [for]="departurePicker"></mat-datepicker-toggle>
+            <mat-datepicker #departurePicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Departure Location</mat-label>
+            <mat-select formControlName="departureLocationSelect">
+                <mat-option [value]="null">-- None --</mat-option>
+                <mat-option value="Custom">-- Custom location --</mat-option>
+                @for (hotel of hotels$ | async; track hotel.id) {
+                <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    @if (guestForm.controls.departureLocationSelect.value === 'Custom') {
+    <mat-form-field appearance="outline">
+        <mat-label>Custom Departure Location</mat-label>
+        <input matInput formControlName="departureLocationCustom" />
+    </mat-form-field>
+    }
+    <div formGroupName="pax">
+        <div class="section-header">
+            <h4>Pax</h4>
+        </div>
+        <div class="form-row">
+            <mat-form-field appearance="outline">
+                <mat-label>Adults</mat-label>
+                <input matInput formControlName="adult" type="number" min="0" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Children</mat-label>
+                <input matInput formControlName="child" type="number" min="0" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Infants</mat-label>
+                <input matInput formControlName="infant" type="number" min="0" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Total</mat-label>
+                <input matInput formControlName="total" type="number" readonly />
+            </mat-form-field>
+        </div>
+    </div>
+    <hr />
+
+    <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" type="email" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+        <mat-label>Telephone</mat-label>
+        <input matInput formControlName="tel" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+        <mat-label>File Ref / Voucher</mat-label>
+        <input matInput formControlName="fileRef" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+        <mat-label>Remarks</mat-label>
+        <textarea matInput formControlName="remarks"></textarea>
+    </mat-form-field>
+</div>

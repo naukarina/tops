@@ -1,3 +1,4 @@
+// src/app/pages/sales-orders/sales-order-edit/sales-order-edit.ts
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
@@ -38,19 +39,27 @@ import { EditPageComponent } from '../../../shared/components/edit-page/edit-pag
 import { CommonModule } from '@angular/common';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
 
+// --- IMPORT NEW UTILS AND INTERFACE ---
+import { GuestForm } from '../../guests/guest.form.model';
+import {
+  createGuestForm,
+  getGuestFormPatchValue,
+  prepareGuestPayload,
+} from '../../guests/guest-form.utils';
+import { GuestFormComponent } from '../../guests/guest-form/guest-form';
+
 // Form Interface
 export interface SalesOrderForm {
-  // --- REMOVED: orderNumber: FormControl<number | null>; ---
-  status: FormControl<SalesOrderStatus | null>;
-  category: FormControl<SalesOrderCategory | null>;
-  partnerId: FormControl<string | null>; // Supplier/Hotel
+  partnerId: FormControl<string | null>;
   partnerName: FormControl<string | null>;
   guestMode: FormControl<'existing' | 'new'>;
-  guestId: FormControl<string | null>; // Existing Guest ID
-  // Denormalized/New Guest Fields
+  guestId: FormControl<string | null>;
+
+  // --- REPLACED individual fields with a nested FormGroup ---
+  newGuestForm: FormGroup<GuestForm>;
+
+  // Denormalized fields for the Sales Order itself
   guestName: FormControl<string | null>;
-  newGuestEmail: FormControl<string | null>; // For new guest
-  newGuestTel: FormControl<string | null>; // For new guest
   tourOperatorId: FormControl<string | null>;
   tourOperatorName: FormControl<string | null>;
   guestArrivalDate: FormControl<Date | null>;
@@ -58,6 +67,7 @@ export interface SalesOrderForm {
   guestArrivalLocation: FormControl<string | null>;
   guestDepartureLocation: FormControl<string | null>;
   fileRef: FormControl<string | null>;
+
   // Order Totals
   currencyName: FormControl<CurrencyName | null>;
   totalPrice: FormControl<number | null>;
@@ -81,6 +91,7 @@ export interface SalesOrderForm {
     SearchableSelectComponent,
     MatRadioModule,
     MatDividerModule,
+    GuestFormComponent, // <-- ADD NEW COMPONENT
   ],
   templateUrl: './sales-order-edit.html',
   styleUrl: './sales-order-edit.scss',
@@ -94,18 +105,17 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  salesOrderForm!: FormGroup<SalesOrderForm>;
+  salesOrderForm!: FormGroup; // Use base FormGroup
   isEditMode = false;
   private soId: string | null = null;
 
   // Data Observables
-  partners$: Observable<Partner[]>; // Suppliers, Hotels
+  partners$: Observable<Partner[]>;
   guests$: Observable<Guest[]>;
   tourOperators$: Observable<Partner[]>;
+  hotels$: Observable<Partner[]>; // <-- ADDED
 
   // Enums for template
-  statuses = Object.values(SalesOrderStatus);
-  categories = Object.values(SalesOrderCategory);
   currencies = Object.values(CurrencyName);
 
   private _onDestroy = new Subject<void>();
@@ -115,7 +125,7 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
     this.partners$ = allPartners$.pipe(
       map((partners) =>
         partners
-          .filter((p) => p.type === PartnerType.SUPPLIER || p.type === PartnerType.HOTEL)
+          .filter((p) => p.type === PartnerType.TOUR_OPERATOR)
           .sort((a, b) => a.name.localeCompare(b.name))
       )
     );
@@ -129,19 +139,23 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
     this.guests$ = this.guestService
       .getAll()
       .pipe(map((guests) => guests.sort((a, b) => a.name.localeCompare(b.name))));
+
+    // --- ADDED: hotels$ observable ---
+    this.hotels$ = allPartners$.pipe(
+      map((partners) =>
+        partners
+          .filter((p) => p.type === PartnerType.HOTEL)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      )
+    );
   }
 
   async ngOnInit(): Promise<void> {
     this.soId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.soId;
 
+    // --- UPDATED: Form definition ---
     this.salesOrderForm = this.fb.group({
-      // --- REMOVED: orderNumber control ---
-      status: this.fb.control<SalesOrderStatus | null>(SalesOrderStatus.DRAFT, Validators.required),
-      category: this.fb.control<SalesOrderCategory | null>(
-        SalesOrderCategory.RESERVATIONS,
-        Validators.required
-      ),
       partnerId: this.fb.control<string | null>(null, Validators.required),
       partnerName: this.fb.control<string | null>({
         value: null,
@@ -153,10 +167,11 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
       }),
       guestId: this.fb.control<string | null>(null),
 
-      // Guest Details
+      // --- ADDED: Nested GuestForm ---
+      newGuestForm: createGuestForm(this.fb),
+
+      // Denormalized Guest Details (for the SO payload)
       guestName: this.fb.control<string | null>(null),
-      newGuestEmail: this.fb.control<string | null>(null, [Validators.email]),
-      newGuestTel: this.fb.control<string | null>(null),
       tourOperatorId: this.fb.control<string | null>(null),
       tourOperatorName: this.fb.control<string | null>({
         value: null,
@@ -189,26 +204,36 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
     this._onDestroy.complete();
   }
 
+  // --- HELPER to get typed controls ---
+  get soFormControls() {
+    return this.salesOrderForm.controls as unknown as {
+      [K in keyof SalesOrderForm]: SalesOrderForm[K];
+    };
+  }
+
   private setupFormListeners(): void {
     // --- 1. Handle Guest Mode Toggle ---
-    this.salesOrderForm.controls.guestMode.valueChanges
+    this.soFormControls.guestMode.valueChanges
       .pipe(takeUntil(this._onDestroy))
       .subscribe((mode) => {
         this.updateGuestValidators(mode);
       });
 
     // --- 2. Handle Existing Guest Selection ---
-    this.salesOrderForm.controls.guestId.valueChanges
+    this.soFormControls.guestId.valueChanges
       .pipe(takeUntil(this._onDestroy))
       .subscribe(async (guestId) => {
-        if (this.salesOrderForm.controls.guestMode.value === 'existing' && guestId) {
-          const guests = await firstValueFrom(this.guests$);
+        if (this.soFormControls.guestMode.value === 'existing' && guestId) {
+          const [guests, hotels] = await Promise.all([
+            firstValueFrom(this.guests$),
+            firstValueFrom(this.hotels$),
+          ]);
           const selectedGuest = guests.find((g) => g.id === guestId);
+
           if (selectedGuest) {
+            // Patch the main SO form's denormalized fields
             this.salesOrderForm.patchValue({
               guestName: selectedGuest.name,
-              newGuestEmail: selectedGuest.email,
-              newGuestTel: selectedGuest.tel,
               tourOperatorId: selectedGuest.tourOperatorId,
               tourOperatorName: selectedGuest.tourOperatorName,
               guestArrivalDate: selectedGuest.arrivalDate?.toDate(),
@@ -217,105 +242,90 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
               guestDepartureLocation: selectedGuest.departureLocation,
               fileRef: selectedGuest.fileRef,
             });
+
+            // --- ADDED: Patch the disabled newGuestForm for visual display ---
+            const guestFormData = getGuestFormPatchValue(selectedGuest, hotels);
+            this.soFormControls.newGuestForm.patchValue(guestFormData);
           }
+        } else {
+          // Clear fields if no guest is selected
+          this.salesOrderForm.patchValue({
+            guestName: null,
+            tourOperatorId: null,
+            tourOperatorName: null,
+            guestArrivalDate: null,
+            guestDepartureDate: null,
+            guestArrivalLocation: null,
+            guestDepartureLocation: null,
+            fileRef: null,
+          });
+          this.soFormControls.newGuestForm.reset();
         }
       });
 
     // --- 3. Handle Partner Selection ---
-    this.salesOrderForm.controls.partnerId.valueChanges
-      .pipe(takeUntil(this._onDestroy), startWith(this.salesOrderForm.controls.partnerId.value))
+    this.soFormControls.partnerId.valueChanges
+      .pipe(takeUntil(this._onDestroy), startWith(this.soFormControls.partnerId.value))
       .subscribe(async (id) => {
         if (id) {
           const partners = await firstValueFrom(this.partners$);
           const selected = partners.find((p) => p.id === id);
-          this.salesOrderForm.controls.partnerName.setValue(selected?.name || null);
+          this.soFormControls.partnerName.setValue(selected?.name || null);
         }
       });
 
     // --- 4. Handle Tour Operator Selection (for new guest) ---
-    this.salesOrderForm.controls.tourOperatorId.valueChanges
-      .pipe(
-        takeUntil(this._onDestroy),
-        startWith(this.salesOrderForm.controls.tourOperatorId.value)
-      )
-      .subscribe(async (id) => {
-        if (id) {
-          const tourOperators = await firstValueFrom(this.tourOperators$);
-          const selected = tourOperators.find((p) => p.id === id);
-          this.salesOrderForm.controls.tourOperatorName.setValue(selected?.name || null);
-        }
-      });
+    // This is now handled *inside* the GuestFormComponent
   }
 
   private updateGuestValidators(mode: 'existing' | 'new'): void {
-    const guestIdCtrl = this.salesOrderForm.controls.guestId;
-    const guestNameCtrl = this.salesOrderForm.controls.guestName;
-    const tourOpIdCtrl = this.salesOrderForm.controls.tourOperatorId;
+    const guestIdCtrl = this.soFormControls.guestId;
+    const newGuestFormCtrl = this.soFormControls.newGuestForm;
 
     if (mode === 'existing') {
       guestIdCtrl.setValidators(Validators.required);
-      guestNameCtrl.clearValidators();
-      tourOpIdCtrl.clearValidators();
-      this.disableGuestFields();
+      newGuestFormCtrl.disable();
+      newGuestFormCtrl.controls.name.clearValidators();
+      newGuestFormCtrl.controls.tourOperatorId.clearValidators();
     } else {
       // 'new'
       guestIdCtrl.clearValidators();
-      guestNameCtrl.setValidators(Validators.required);
-      tourOpIdCtrl.setValidators(Validators.required);
-      this.enableGuestFields();
+      newGuestFormCtrl.enable();
+      newGuestFormCtrl.controls.name.setValidators(Validators.required);
+      newGuestFormCtrl.controls.tourOperatorId.setValidators(Validators.required);
     }
     guestIdCtrl.updateValueAndValidity({ emitEvent: false });
-    guestNameCtrl.updateValueAndValidity({ emitEvent: false });
-    tourOpIdCtrl.updateValueAndValidity({ emitEvent: false });
-  }
-
-  private enableGuestFields(): void {
-    this.salesOrderForm.controls.guestName.enable();
-    this.salesOrderForm.controls.newGuestEmail.enable();
-    this.salesOrderForm.controls.newGuestTel.enable();
-    this.salesOrderForm.controls.tourOperatorId.enable();
-    this.salesOrderForm.controls.guestArrivalDate.enable();
-    this.salesOrderForm.controls.guestDepartureDate.enable();
-    this.salesOrderForm.controls.guestArrivalLocation.enable();
-    this.salesOrderForm.controls.guestDepartureLocation.enable();
-    this.salesOrderForm.controls.fileRef.enable();
-  }
-
-  private disableGuestFields(): void {
-    this.salesOrderForm.controls.guestName.disable();
-    this.salesOrderForm.controls.newGuestEmail.disable();
-    this.salesOrderForm.controls.newGuestTel.disable();
-    this.salesOrderForm.controls.tourOperatorId.disable();
-    this.salesOrderForm.controls.guestArrivalDate.disable();
-    this.salesOrderForm.controls.guestDepartureDate.disable();
-    this.salesOrderForm.controls.guestArrivalLocation.disable();
-    this.salesOrderForm.controls.guestDepartureLocation.disable();
-    this.salesOrderForm.controls.fileRef.disable();
+    newGuestFormCtrl.controls.name.updateValueAndValidity({ emitEvent: false });
+    newGuestFormCtrl.controls.tourOperatorId.updateValueAndValidity({ emitEvent: false });
   }
 
   private async loadSalesOrderData(id: string): Promise<void> {
-    const soData = await firstValueFrom(this.salesOrderService.get(id));
+    const [soData, hotels] = await Promise.all([
+      firstValueFrom(this.salesOrderService.get(id)),
+      firstValueFrom(this.hotels$),
+    ]);
+
     if (soData) {
       const formData: any = {
         ...soData,
-        // --- REMOVED: orderNumber: soData.orderNumber, ---
         guestMode: soData.guestId ? 'existing' : 'new',
         guestArrivalDate: soData.guestArrivalDate ? soData.guestArrivalDate.toDate() : null,
         guestDepartureDate: soData.guestDepartureDate ? soData.guestDepartureDate.toDate() : null,
-        // The form doesn't store these, but we can load them if a guest is attached
-        newGuestEmail: null,
-        newGuestTel: null,
       };
 
-      // If existing guest, fetch their email/tel to display
       if (soData.guestId) {
         const guestData = await firstValueFrom(this.guestService.get(soData.guestId));
         if (guestData) {
-          formData.newGuestEmail = guestData.email;
-          formData.newGuestTel = guestData.tel;
+          // --- UPDATED: Patch the nested form ---
+          const guestFormData = getGuestFormPatchValue(guestData, hotels);
+          this.soFormControls.newGuestForm.patchValue(guestFormData);
         }
         this.updateGuestValidators('existing');
       } else {
+        // SO was created with a new guest, so we populate the newGuestForm
+        // with the denormalized data from the SO itself.
+        const guestFormData = getGuestFormPatchValue(soData as any, hotels);
+        this.soFormControls.newGuestForm.patchValue(guestFormData);
         this.updateGuestValidators('new');
       }
 
@@ -334,71 +344,70 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
 
     const formValue = this.salesOrderForm.getRawValue();
     let guestIdToSave: string | undefined = formValue.guestId || undefined;
+    let newGuestPayload: Partial<Guest> | null = null;
 
     try {
       // --- Step 1: Create new guest if needed ---
       if (formValue.guestMode === 'new') {
-        if (!formValue.guestName || !formValue.tourOperatorId || !formValue.tourOperatorName) {
+        // --- UPDATED: Use the nested form value ---
+        const newGuestFormValue = this.soFormControls.newGuestForm.getRawValue();
+
+        if (!newGuestFormValue.name || !newGuestFormValue.tourOperatorId) {
           this.notificationService.showError('New Guest Name and Tour Operator are required.');
           return;
         }
 
-        // --- MODIFIED: Use ?? null to match Guest model ---
-        const newGuestPayload: Partial<Guest> = {
-          name: formValue.guestName,
-          email: formValue.newGuestEmail ?? null,
-          tel: formValue.newGuestTel ?? null,
-          tourOperatorId: formValue.tourOperatorId,
-          tourOperatorName: formValue.tourOperatorName,
-          arrivalDate: formValue.guestArrivalDate
-            ? Timestamp.fromDate(formValue.guestArrivalDate)
-            : null,
-          departureDate: formValue.guestDepartureDate
-            ? Timestamp.fromDate(formValue.guestDepartureDate)
-            : null,
-          arrivalLocation: formValue.guestArrivalLocation ?? null,
-          departureLocation: formValue.guestDepartureLocation ?? null,
-          fileRef: formValue.fileRef ?? null,
-          pax: null, // Pax can be added later via the Guest edit page
-        };
-        // --- END MOD ---
+        // --- UPDATED: Use utility to prepare payload ---
+        newGuestPayload = prepareGuestPayload(newGuestFormValue);
 
         const newGuestRef = await this.guestService.add(newGuestPayload as Guest);
         guestIdToSave = newGuestRef.id;
       }
 
       // --- Step 2: Build Sales Order Payload ---
-      // --- MODIFIED: Use ?? null to match SalesOrder model ---
       const soPayload: Partial<SalesOrder> = {
-        status: formValue.status!,
-        category: formValue.category!,
         partnerId: formValue.partnerId!,
         partnerName: formValue.partnerName!,
         currencyName: formValue.currencyName!,
         totalPrice: formValue.totalPrice!,
         remarks: formValue.remarks ?? null,
-        fileRef: formValue.fileRef ?? null,
-        // Guest Info
-        guestId: guestIdToSave ?? null,
-        guestName: formValue.guestName ?? null,
-        tourOperatorId: formValue.tourOperatorId ?? null,
-        tourOperatorName: formValue.tourOperatorName ?? null,
-        guestArrivalDate: formValue.guestArrivalDate
-          ? Timestamp.fromDate(formValue.guestArrivalDate)
-          : null,
-        guestDepartureDate: formValue.guestDepartureDate
-          ? Timestamp.fromDate(formValue.guestDepartureDate)
-          : null,
-        guestArrivalLocation: formValue.guestArrivalLocation ?? null,
-        guestDepartureLocation: formValue.guestDepartureLocation ?? null,
       };
-      // --- END MOD ---
+
+      // --- UPDATED: Populate guest info from the correct source ---
+      if (formValue.guestMode === 'new' && newGuestPayload) {
+        soPayload.guestId = guestIdToSave ?? null;
+        soPayload.guestName = newGuestPayload.name ?? null;
+        soPayload.tourOperatorId = newGuestPayload.tourOperatorId ?? null;
+        soPayload.tourOperatorName = newGuestPayload.tourOperatorName ?? null;
+        soPayload.guestArrivalDate = newGuestPayload.arrivalDate ?? null;
+        soPayload.guestDepartureDate = newGuestPayload.departureDate ?? null;
+        soPayload.guestArrivalLocation = newGuestPayload.arrivalLocation ?? null;
+        soPayload.guestDepartureLocation = newGuestPayload.departureLocation ?? null;
+        soPayload.fileRef = newGuestPayload.fileRef ?? null;
+      } else {
+        // Mode is 'existing', use the top-level denormalized fields
+        soPayload.guestId = formValue.guestId ?? null;
+        soPayload.guestName = formValue.guestName ?? null;
+        soPayload.tourOperatorId = formValue.tourOperatorId ?? null;
+        soPayload.tourOperatorName = formValue.tourOperatorName ?? null;
+        soPayload.guestArrivalDate = formValue.guestArrivalDate
+          ? Timestamp.fromDate(formValue.guestArrivalDate)
+          : null;
+        soPayload.guestDepartureDate = formValue.guestDepartureDate
+          ? Timestamp.fromDate(formValue.guestDepartureDate)
+          : null;
+        soPayload.guestArrivalLocation = formValue.guestArrivalLocation ?? null;
+        soPayload.guestDepartureLocation = formValue.guestDepartureLocation ?? null;
+        soPayload.fileRef = formValue.fileRef ?? null;
+      }
 
       // --- Step 3: Save Sales Order ---
       if (this.isEditMode && this.soId) {
         await this.salesOrderService.update(this.soId, soPayload as SalesOrder);
         this.notificationService.showSuccess('Sales Order updated successfully!');
       } else {
+        soPayload.status = SalesOrderStatus.DRAFT;
+        soPayload.category = SalesOrderCategory.RESERVATIONS;
         soPayload.orderNumber = -1; // Placeholder for cloud function
         await this.salesOrderService.add(soPayload as SalesOrder);
         this.notificationService.showSuccess('Sales Order created successfully!');

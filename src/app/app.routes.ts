@@ -165,6 +165,36 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'accommodations',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Accommodations' },
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/accommodations/accommodation-list/accommodation-list').then(
+            (m) => m.AccommodationListComponent
+          ),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./pages/accommodations/accommodation-edit/accommodation-edit').then(
+            (m) => m.AccommodationEditComponent
+          ),
+        data: { breadcrumb: 'Create' },
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/accommodations/accommodation-edit/accommodation-edit').then(
+            (m) => m.AccommodationEditComponent
+          ),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
+  {
     path: 'admin/import',
     // You can add a canActivate: [adminGuard] here
     loadComponent: () =>

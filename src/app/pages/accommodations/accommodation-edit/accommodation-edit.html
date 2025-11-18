@@ -1,0 +1,150 @@
+<app-edit-page [title]="isEditMode ? 'Edit Accommodation' : 'New Accommodation'">
+    <div form-fields>
+        <form [formGroup]="form">
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Guest Name</mat-label>
+                    <input matInput formControlName="guestName" required />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Status</mat-label>
+                    <mat-select formControlName="status">
+                        <mat-option value="QUOTATION">Quotation</mat-option>
+                        <mat-option value="CONFIRMED">Confirmed</mat-option>
+                        <mat-option value="CANCELLED">Cancelled</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <h4 class="section-header">Valuation Parameters</h4>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Hotel ID (Market)</mat-label>
+                    <input matInput type="number" formControlName="hotelMarketId" placeholder="e.g. 1" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Promotion ID</mat-label>
+                    <input matInput type="number" formControlName="promotionId" placeholder="e.g. 1" />
+                </mat-form-field>
+            </div>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Start Date</mat-label>
+                    <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
+                    <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #startPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>End Date</mat-label>
+                    <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
+                    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Meal Plan Code</mat-label>
+                <mat-select formControlName="mealPlanCode">
+                    <mat-option value="BED_AND_BREAKFAST">Bed & Breakfast</mat-option>
+                    <mat-option value="HALF_BOARD">Half Board</mat-option>
+                    <mat-option value="FULL_BOARD">Full Board</mat-option>
+                    <mat-option value="ALL_INCLUSIVE">All Inclusive</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <div class="section-header">
+                <h4>Rooms Configuration</h4>
+                <button mat-button color="primary" (click)="addRoom()">+ Add Room</button>
+            </div>
+
+            <div formArrayName="rooms">
+                @for (room of roomsArray.controls; track room; let i = $index) {
+                <div [formGroupName]="i" class="room-card">
+                    <div class="room-header">
+                        <span>Room {{i + 1}}</span>
+                        <button mat-icon-button color="warn"
+                            (click)="removeRoom(i)"><mat-icon>delete</mat-icon></button>
+                    </div>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="small-input">
+                            <mat-label>Room ID</mat-label>
+                            <input matInput type="number" formControlName="roomId" required>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline" class="small-input">
+                            <mat-label>Candidate ID</mat-label>
+                            <input matInput type="number" formControlName="roomCandidateId" required>
+                        </mat-form-field>
+                    </div>
+
+                    <div formArrayName="paxes">
+                        <div class="pax-list">
+                            @for (pax of getPaxArray(i).controls; track pax; let j = $index) {
+                            <div [formGroupName]="j" class="pax-item">
+                                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                                    <mat-label>Pax ID</mat-label>
+                                    <input matInput type="number" formControlName="id">
+                                </mat-form-field>
+                                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                                    <mat-label>Age</mat-label>
+                                    <input matInput type="number" formControlName="age">
+                                </mat-form-field>
+                                <button mat-icon-button color="warn"
+                                    (click)="removePax(i, j)"><mat-icon>close</mat-icon></button>
+                            </div>
+                            }
+                        </div>
+                        <button mat-button type="button" (click)="addPax(i)">+ Add Pax</button>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <div class="action-bar mt-3">
+                <button mat-raised-button color="accent" type="button" (click)="calculatePrice()">
+                    <mat-icon>calculate</mat-icon> Calculate Price
+                </button>
+            </div>
+
+            @if (valuationResults.length > 0) {
+            <div class="results-container mt-3">
+                <h4>Valuation Results</h4>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Room</th>
+                            <th>Formula</th>
+                            <th>Promotion</th>
+                            <th class="text-end">Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (res of valuationResults; track res) {
+                        <tr>
+                            <td>ID: {{res.roomId}}</td>
+                            <td>{{res.formula}}</td>
+                            <td>{{res.promotionApplied}}</td>
+                            <td class="text-end">{{res.totalPrice | number:'1.2-2'}}</td>
+                        </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3">Grand Total</th>
+                            <th class="text-end">{{ form.get('totalPrice')?.value | number:'1.2-2' }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            }
+
+        </form>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" routerLink="/accommodations" class="me-2">Cancel</button>
+        <button mat-flat-button color="primary" (click)="onSave()" [disabled]="form.invalid">Save Booking</button>
+    </div>
+</app-edit-page>

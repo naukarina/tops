@@ -2,6 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 // --- ADDED ---
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import axios from 'axios';
 // --- END ADD ---
 
 admin.initializeApp();
@@ -95,6 +96,36 @@ export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', a
     });
   } catch (error) {
     console.error('Error generating order number:', error);
+  }
+});
+
+// Proxy function to handle GET requests with bodies (which browsers can't do)
+export const getRoomPricesProxy = onCall(async (request) => {
+  // 1. Extract data sent from Angular
+  const { token, hotelId, payload } = request.data;
+  const apiUrl = 'https://api.kreola-dev.com';
+
+  try {
+    // 2. Make the request from the Server (Node.js supports GET+Body)
+    const response = await axios.get(`${apiUrl}/valuation/${hotelId}/room-prices`, {
+      data: payload, // In Axios, 'data' is the body
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+
+    // 3. Return data back to Angular
+    return response.data;
+  } catch (error: any) {
+    console.error('Proxy Error:', error.response?.data || error.message);
+    // Pass the error back to the client
+    throw new HttpsError(
+      'internal',
+      error.response?.statusText || 'API Error',
+      error.response?.data
+    );
   }
 });
 // --- END ADD ---

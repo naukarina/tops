@@ -19,5 +19,6 @@ export class SidenavComponent {
     { name: 'Analytics', icon: 'analytics', active: false },
     { name: 'Products', icon: 'store', active: false, route: '/products' },
     { name: 'Settings', icon: 'settings', active: false },
+    { name: 'Accommodations', icon: 'hotel', active: false, route: '/accommodations' },
   ];
 }

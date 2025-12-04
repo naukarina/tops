@@ -11,6 +11,7 @@ import { IImportStrategy, CsvRow } from '../import-strategy.interface';
 import { BaseDocument } from '../../../models/base-document.model';
 import { HotelImportStrategy } from '../strategies/hotel-import.strategy';
 import { TourOperatorImportStrategy } from '../strategies/tour-operator-import.strategy';
+import { SupplierImportStrategy } from '../strategies/supplier-import.strategy';
 
 @Component({
   selector: 'app-migration-page',
@@ -54,13 +55,14 @@ import { TourOperatorImportStrategy } from '../strategies/tour-operator-import.s
   ],
 })
 export class MigrationPageComponent {
-  // --- Inject both strategies ---
   private hotelStrategy = inject(HotelImportStrategy);
   private tourOperatorStrategy = inject(TourOperatorImportStrategy);
+  private supplierStrategy = inject(SupplierImportStrategy);
 
   allStrategies: IImportStrategy<any & BaseDocument>[] = [
     this.hotelStrategy,
     this.tourOperatorStrategy,
+    this.supplierStrategy,
   ];
 
   selectedStrategy: IImportStrategy<any & BaseDocument> | null = null;

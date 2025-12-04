@@ -1,0 +1,65 @@
+.form-row {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1rem;
+
+  > * {
+    flex: 1;
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.validity-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  margin-top: 1.5rem;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #3f51b5;
+  }
+}
+
+.validity-row {
+  display: grid;
+  // 3 equal columns for inputs, 1 auto column for the delete button
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 1rem;
+  align-items: center;
+
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 0; // Reset default margin
+  }
+
+  // Responsive: Stack fields on small screens
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr; // 1 column layout
+    gap: 0.5rem;
+
+    // Make the delete button stretch or float
+    button {
+      justify-self: end;
+    }
+  }
+}

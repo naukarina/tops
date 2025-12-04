@@ -1,0 +1,8 @@
+<app-list-page>
+    <app-data-table [dataInput]="items$" [columnDefinitions]="columnDefs" [displayedColumnsInput]="displayedColumns"
+        [enableSelection]="true" [enableFilter]="true" [enableSort]="true" [enablePaginator]="true"
+        [dropdownFilters]="dropdownFilters" filterPlaceholder="Search items..." [editRoute]="editRoute"
+        [enableDelete]="true" (deleteAction)="onDelete($event)" title="Items" newRoute="/items/new"
+        newButtonText="Add Item">
+    </app-data-table>
+</app-list-page>

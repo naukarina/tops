@@ -195,6 +195,30 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'items',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Items' },
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/items/item-list/item-list').then((m) => m.ItemListComponent),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./pages/items/item-edit/item-edit').then((m) => m.ItemEditComponent),
+        data: { breadcrumb: 'Create' },
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/items/item-edit/item-edit').then((m) => m.ItemEditComponent),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
+  {
     path: 'admin/import',
     // You can add a canActivate: [adminGuard] here
     loadComponent: () =>

@@ -1,0 +1,82 @@
+<app-edit-page [title]="isEditMode ? 'Edit Item' : 'New Item'">
+    <div form-fields>
+        <form [formGroup]="form">
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Item Name</mat-label>
+                    <input matInput formControlName="name" placeholder="e.g. Luxury Van Transfer" required />
+                </mat-form-field>
+
+                <app-searchable-select label="Partner" formControlName="partnerId" [options]="partners$"
+                    [searchable]="true" optionValue="id" optionText="name">
+                </app-searchable-select>
+            </div>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Category</mat-label>
+                    <mat-select formControlName="itemCategory" required>
+                        @for (cat of categories; track cat) {
+                        <mat-option [value]="cat">{{cat}}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Unit Type</mat-label>
+                    <mat-select formControlName="unitType" required>
+                        @for (unit of unitTypes; track unit) {
+                        <mat-option [value]="unit">{{unit}}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="validity-section-header">
+                <h4>Validity Periods & Cost</h4>
+                <button mat-stroked-button color="primary" type="button" (click)="addValidity()">
+                    <mat-icon>add</mat-icon> Add Period
+                </button>
+            </div>
+
+            <div formArrayName="validities">
+                @for (group of validitiesArray.controls; track group; let i = $index) {
+                <div [formGroupName]="i" class="validity-row">
+
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                        <mat-label>From</mat-label>
+                        <input matInput [matDatepicker]="pickerFrom" formControlName="from" required>
+                        <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+                        <mat-datepicker #pickerFrom></mat-datepicker>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                        <mat-label>To</mat-label>
+                        <input matInput [matDatepicker]="pickerTo" formControlName="to" required>
+                        <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
+                        <mat-datepicker #pickerTo></mat-datepicker>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                        <mat-label>Cost</mat-label>
+                        <input matInput type="number" formControlName="cost" min="0" required>
+                        <span matPrefix>Rs&nbsp;</span>
+                    </mat-form-field>
+
+                    <button mat-icon-button color="warn" type="button" (click)="removeValidity(i)"
+                        [disabled]="validitiesArray.length === 1" matTooltip="Remove this period">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+                }
+            </div>
+
+        </form>
+    </div>
+    <div form-actions>
+        <button mat-stroked-button color="warn" routerLink="/items" class="me-2">Cancel</button>
+        <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="form.invalid">Save</button>
+    </div>
+</app-edit-page>

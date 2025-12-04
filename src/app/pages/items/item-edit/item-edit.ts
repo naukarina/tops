@@ -7,9 +7,11 @@ import { Timestamp } from '@angular/fire/firestore';
 
 import { ItemService } from '../../../services/item.service';
 import { PartnerService } from '../../../services/partner.service';
+import { VehicleCategoryService } from '../../../services/vehicle-category.service'; // Import Service
 import { NotificationService } from '../../../services/notification.service';
 import { Item, ItemCategory, UnitType } from '../../../models/item.model';
 import { Partner, PartnerType } from '../../../models/partner.model';
+import { VehicleCategory } from '../../../models/vehicle-category.model'; // Import Model
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
@@ -23,6 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'app-item-edit',
@@ -41,6 +44,7 @@ import { MatDividerModule } from '@angular/material/divider';
     MatDatepickerModule,
     MatNativeDateModule,
     MatDividerModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './item-edit.html',
   styleUrls: ['./item-edit.scss'],
@@ -49,6 +53,7 @@ export class ItemEditComponent implements OnInit {
   private fb = inject(FormBuilder);
   private itemService = inject(ItemService);
   private partnerService = inject(PartnerService);
+  private vehicleCategoryService = inject(VehicleCategoryService); // Inject
   private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -59,6 +64,7 @@ export class ItemEditComponent implements OnInit {
 
   categories = Object.values(ItemCategory);
   unitTypes = Object.values(UnitType);
+
   partners$: Observable<Partner[]> = this.partnerService
     .getAll()
     .pipe(
@@ -69,6 +75,11 @@ export class ItemEditComponent implements OnInit {
       )
     );
 
+  // Load vehicle categories
+  vehicleCategories$: Observable<VehicleCategory[]> = this.vehicleCategoryService
+    .getAll()
+    .pipe(map((cats) => cats.sort((a, b) => a.name.localeCompare(b.name))));
+
   ngOnInit(): void {
     this.itemId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.itemId;
@@ -78,11 +89,15 @@ export class ItemEditComponent implements OnInit {
       itemCategory: [null, Validators.required],
       unitType: [null, Validators.required],
       partnerId: [null, Validators.required],
-      partnerName: [''], // Hidden, auto-populated
+      partnerName: [''],
+      virtual: [false],
+      vehicleCategoryId: [null],
+      vehicleCategoryName: [''],
+
       validities: this.fb.array([]),
     });
 
-    // Auto-populate partnerName when partnerId changes
+    // Auto-populate partnerName
     this.form.get('partnerId')?.valueChanges.subscribe(async (id) => {
       if (id) {
         const partners = await firstValueFrom(this.partners$);
@@ -93,10 +108,22 @@ export class ItemEditComponent implements OnInit {
       }
     });
 
+    // Auto-populate vehicleCategoryName
+    this.form.get('vehicleCategoryId')?.valueChanges.subscribe(async (id) => {
+      if (id) {
+        const categories = await firstValueFrom(this.vehicleCategories$);
+        const category = categories.find((c) => c.id === id);
+        if (category) {
+          this.form.get('vehicleCategoryName')?.setValue(category.name);
+        }
+      } else {
+        this.form.get('vehicleCategoryName')?.setValue(null);
+      }
+    });
+
     if (this.isEditMode && this.itemId) {
       this.loadItem();
     } else {
-      // Add one empty validity row by default for new items
       this.addValidity();
     }
   }
@@ -122,16 +149,17 @@ export class ItemEditComponent implements OnInit {
     if (!this.itemId) return;
     const item = await firstValueFrom(this.itemService.get(this.itemId));
     if (item) {
-      // Patch simple fields
       this.form.patchValue({
         name: item.name,
         itemCategory: item.itemCategory,
+        virtual: item.virtual || false,
         unitType: item.unitType,
         partnerId: item.partnerId,
         partnerName: item.partnerName,
+        vehicleCategoryId: item.vehicleCategoryId, // Patch ID
+        vehicleCategoryName: item.vehicleCategoryName, // Patch Name
       });
 
-      // Patch validities array
       if (item.validities) {
         item.validities.forEach((v) => {
           this.validitiesArray.push(
@@ -154,7 +182,6 @@ export class ItemEditComponent implements OnInit {
 
     const formVal = this.form.getRawValue();
 
-    // Convert JS Dates back to Firestore Timestamps
     const validities = formVal.validities.map((v: any) => ({
       from: Timestamp.fromDate(v.from),
       to: Timestamp.fromDate(v.to),
@@ -164,9 +191,12 @@ export class ItemEditComponent implements OnInit {
     const itemData: Partial<Item> = {
       name: formVal.name,
       itemCategory: formVal.itemCategory,
+      virtual: formVal.virtual,
       unitType: formVal.unitType,
       partnerId: formVal.partnerId,
       partnerName: formVal.partnerName,
+      vehicleCategoryId: formVal.vehicleCategoryId, // Save ID
+      vehicleCategoryName: formVal.vehicleCategoryName, // Save Name
       validities: validities,
     };
 

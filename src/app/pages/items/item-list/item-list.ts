@@ -25,7 +25,15 @@ export class ItemListComponent {
 
   items$: Observable<Item[]> = this.itemService.getAll();
 
-  displayedColumns = ['name', 'itemCategory', 'unitType', 'partnerName', 'actions'];
+  displayedColumns = [
+    'name',
+    'itemCategory',
+    'virtual',
+    'vehicleCategoryName',
+    'unitType',
+    'partnerName',
+    'actions',
+  ];
 
   columnDefs: ColumnDefinition<Item>[] = [
     { columnDef: 'name', header: 'Name', cell: (i) => i.name, isSortable: true },
@@ -35,10 +43,22 @@ export class ItemListComponent {
       cell: (i) => i.itemCategory,
       isSortable: true,
     },
+    // Add this definition
+    {
+      columnDef: 'virtual',
+      header: 'Virtual',
+      cell: (i) => (i.virtual ? 'Yes' : 'No'),
+      isSortable: true,
+    },
+    {
+      columnDef: 'vehicleCategoryName',
+      header: 'Vehicle Category',
+      cell: (i) => i.vehicleCategoryName || '-',
+      isSortable: true,
+    },
     { columnDef: 'unitType', header: 'Unit', cell: (i) => i.unitType, isSortable: true },
     { columnDef: 'partnerName', header: 'Partner', cell: (i) => i.partnerName, isSortable: true },
   ];
-
   dropdownFilters: DropdownFilter<Item>[] = [
     {
       columnDef: 'itemCategory',

@@ -28,10 +28,13 @@ export interface ItemValidity {
 }
 
 export interface Item extends BaseDocument {
-  name: string; // Added for display purposes
+  name: string;
   itemCategory: ItemCategory;
   unitType: UnitType;
   partnerId: string;
   partnerName: string;
   validities?: ItemValidity[];
+  vehicleCategoryId?: string;
+  vehicleCategoryName?: string;
+  virtual: boolean;
 }

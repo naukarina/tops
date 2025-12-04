@@ -1,0 +1,8 @@
+<app-list-page>
+    <app-data-table [dataInput]="vehicleCategories$" [columnDefinitions]="columnDefs"
+        [displayedColumnsInput]="displayedColumns" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
+        [enablePaginator]="true" filterPlaceholder="Search categories..." [editRoute]="editRoute" [enableDelete]="true"
+        (deleteAction)="onDelete($event)" title="Vehicle Categories" newRoute="/vehicle-categories/new"
+        newButtonText="Add Category">
+    </app-data-table>
+</app-list-page>

@@ -219,6 +219,36 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'vehicle-categories',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Vehicle Categories' },
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/vehicle-categories/vehicle-category-list/vehicle-category-list').then(
+            (m) => m.VehicleCategoryListComponent
+          ),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./pages/vehicle-categories/vehicle-category-edit/vehicle-category-edit').then(
+            (m) => m.VehicleCategoryEditComponent
+          ),
+        data: { breadcrumb: 'Create' },
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./pages/vehicle-categories/vehicle-category-edit/vehicle-category-edit').then(
+            (m) => m.VehicleCategoryEditComponent
+          ),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
+  {
     path: 'admin/import',
     // You can add a canActivate: [adminGuard] here
     loadComponent: () =>

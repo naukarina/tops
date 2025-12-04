@@ -2,14 +2,14 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { filter, firstValueFrom, Observable } from 'rxjs';
+import { filter, firstValueFrom, map, Observable } from 'rxjs';
 import { Timestamp } from '@angular/fire/firestore';
 
 import { ItemService } from '../../../services/item.service';
 import { PartnerService } from '../../../services/partner.service';
 import { NotificationService } from '../../../services/notification.service';
 import { Item, ItemCategory, UnitType } from '../../../models/item.model';
-import { Partner } from '../../../models/partner.model';
+import { Partner, PartnerType } from '../../../models/partner.model';
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
@@ -59,7 +59,15 @@ export class ItemEditComponent implements OnInit {
 
   categories = Object.values(ItemCategory);
   unitTypes = Object.values(UnitType);
-  partners$: Observable<Partner[]> = this.partnerService.getAll();
+  partners$: Observable<Partner[]> = this.partnerService
+    .getAll()
+    .pipe(
+      map((partners) =>
+        partners
+          .filter((p) => p.type === PartnerType.SUPPLIER)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      )
+    );
 
   ngOnInit(): void {
     this.itemId = this.route.snapshot.paramMap.get('id');

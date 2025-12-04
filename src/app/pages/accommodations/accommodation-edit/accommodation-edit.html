@@ -16,21 +16,14 @@
                 </mat-form-field>
             </div>
 
-            <h4 class="section-header">Valuation Parameters</h4>
+            <h4 class="section-header">Trip Details</h4>
 
             <div class="form-row">
                 <mat-form-field appearance="outline">
                     <mat-label>Hotel ID (Market)</mat-label>
-                    <input matInput type="number" formControlName="hotelMarketId" placeholder="e.g. 1" />
+                    <input matInput type="number" formControlName="hotelMarketId" placeholder="e.g. 1" required />
                 </mat-form-field>
 
-                <mat-form-field appearance="outline">
-                    <mat-label>Promotion ID</mat-label>
-                    <input matInput type="number" formControlName="promotionId" placeholder="e.g. 1" />
-                </mat-form-field>
-            </div>
-
-            <div class="form-row">
                 <mat-form-field appearance="outline">
                     <mat-label>Start Date</mat-label>
                     <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
@@ -46,18 +39,8 @@
                 </mat-form-field>
             </div>
 
-            <mat-form-field appearance="outline">
-                <mat-label>Meal Plan Code</mat-label>
-                <mat-select formControlName="mealPlanCode">
-                    <mat-option value="BED_AND_BREAKFAST">Bed & Breakfast</mat-option>
-                    <mat-option value="HALF_BOARD">Half Board</mat-option>
-                    <mat-option value="FULL_BOARD">Full Board</mat-option>
-                    <mat-option value="ALL_INCLUSIVE">All Inclusive</mat-option>
-                </mat-select>
-            </mat-form-field>
-
             <div class="section-header">
-                <h4>Rooms Configuration</h4>
+                <h4>Room Candidates</h4>
                 <button mat-button color="primary" (click)="addRoom()">+ Add Room</button>
             </div>
 
@@ -65,15 +48,12 @@
                 @for (room of roomsArray.controls; track room; let i = $index) {
                 <div [formGroupName]="i" class="room-card">
                     <div class="room-header">
-                        <span>Room {{i + 1}}</span>
-                        <button mat-icon-button color="warn"
-                            (click)="removeRoom(i)"><mat-icon>delete</mat-icon></button>
+                        <span>Candidate {{i + 1}}</span>
+                        <button mat-icon-button color="warn" (click)="removeRoom(i)">
+                            <mat-icon>delete</mat-icon>
+                        </button>
                     </div>
                     <div class="form-row">
-                        <mat-form-field appearance="outline" class="small-input">
-                            <mat-label>Room ID</mat-label>
-                            <input matInput type="number" formControlName="roomId" required>
-                        </mat-form-field>
                         <mat-form-field appearance="outline" class="small-input">
                             <mat-label>Candidate ID</mat-label>
                             <input matInput type="number" formControlName="roomCandidateId" required>
@@ -85,15 +65,12 @@
                             @for (pax of getPaxArray(i).controls; track pax; let j = $index) {
                             <div [formGroupName]="j" class="pax-item">
                                 <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                                    <mat-label>Pax ID</mat-label>
-                                    <input matInput type="number" formControlName="id">
-                                </mat-form-field>
-                                <mat-form-field appearance="outline" subscriptSizing="dynamic">
                                     <mat-label>Age</mat-label>
-                                    <input matInput type="number" formControlName="age">
+                                    <input matInput type="number" formControlName="age" required>
                                 </mat-form-field>
-                                <button mat-icon-button color="warn"
-                                    (click)="removePax(i, j)"><mat-icon>close</mat-icon></button>
+                                <button mat-icon-button color="warn" (click)="removePax(i, j)">
+                                    <mat-icon>close</mat-icon>
+                                </button>
                             </div>
                             }
                         </div>
@@ -105,39 +82,59 @@
 
             <div class="action-bar mt-3">
                 <button mat-raised-button color="accent" type="button" (click)="calculatePrice()">
-                    <mat-icon>calculate</mat-icon> Calculate Price
+                    <mat-icon>calculate</mat-icon> Get Available Offers
                 </button>
             </div>
 
             @if (valuationResults.length > 0) {
             <div class="results-container mt-3">
-                <h4>Valuation Results</h4>
-                <table class="table table-striped">
+                <h4>Available Offers</h4>
+                <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Room</th>
-                            <th>Formula</th>
+                            <th>Candidate</th>
+                            <th>Room ID</th>
+                            <th>Meal Plan</th>
                             <th>Promotion</th>
-                            <th class="text-end">Total Price</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @for (res of valuationResults; track res) {
-                        <tr>
-                            <td>ID: {{res.roomId}}</td>
-                            <td>{{res.formula}}</td>
-                            <td>{{res.promotionApplied}}</td>
-                            <td class="text-end">{{res.totalPrice | number:'1.2-2'}}</td>
+                        <tr (click)="selectOption(res)" style="cursor: pointer;">
+                            <td>{{res.roomCandidateId}}</td>
+                            <td>{{res.roomId}}</td>
+                            <td>{{res.mealPlan}}</td>
+                            <td>
+                                {{res.promotion}}
+                                @if(res.isDiscounted) {
+                                <span class="badge bg-success ms-2">{{res.discount}}% OFF</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <strong>{{res.price | number:'1.2-2'}}</strong>
+                            </td>
+                            <td class="text-center">
+                                <button mat-stroked-button color="primary"
+                                    (click)="$event.stopPropagation(); openDetails(res)">
+                                    Details
+                                </button>
+                                <button mat-icon-button color="primary" title="Select this price" class="ms-2">
+                                    <mat-icon>check_circle</mat-icon>
+                                </button>
+                            </td>
                         </tr>
                         }
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3">Grand Total</th>
-                            <th class="text-end">{{ form.get('totalPrice')?.value | number:'1.2-2' }}</th>
-                        </tr>
-                    </tfoot>
                 </table>
+
+                <div class="mt-3 d-flex justify-content-end align-items-center gap-2">
+                    <span class="mat-body-2">Selected Total:</span>
+                    <mat-form-field appearance="outline" style="width: 150px;">
+                        <input matInput type="number" formControlName="totalPrice">
+                    </mat-form-field>
+                </div>
             </div>
             }
 

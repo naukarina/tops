@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // Added MatDialog
 
 // App Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
@@ -19,8 +20,11 @@ import { NotificationService } from '../../../services/notification.service';
 import {
   Accommodation,
   ValuationRequest,
-  ValuationResponse,
+  HotelOffer,
+  PricePerDay,
+  MealRate,
 } from '../../../models/accommodation.model';
+import { PriceDetailsDialogComponent, PriceDetailsData } from './price-details-dialog';
 
 @Component({
   selector: 'app-accommodation-edit',
@@ -35,6 +39,7 @@ import {
     MatDatepickerModule,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule, // Added
     EditPageComponent,
   ],
   templateUrl: './accommodation-edit.html',
@@ -47,11 +52,14 @@ export class AccommodationEditComponent implements OnInit {
   private notification = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private dialog = inject(MatDialog); // Inject Dialog
 
   form!: FormGroup;
   isEditMode = false;
   bookingId: string | null = null;
-  valuationResults: ValuationResponse[] = [];
+
+  valuationResults: any[] = [];
+  rawValuationResult: HotelOffer[] = [];
 
   ngOnInit() {
     this.bookingId = this.route.snapshot.paramMap.get('id');
@@ -62,7 +70,6 @@ export class AccommodationEditComponent implements OnInit {
     if (this.isEditMode && this.bookingId) {
       this.loadBooking();
     } else {
-      // Add default room for new bookings
       this.addRoom();
     }
   }
@@ -71,19 +78,11 @@ export class AccommodationEditComponent implements OnInit {
     this.form = this.fb.group({
       guestName: ['', Validators.required],
       status: ['QUOTATION', Validators.required],
-
-      // Valuation API params
       hotelMarketId: [1, Validators.required],
-      promotionId: [1, Validators.required],
       startDate: [null, Validators.required],
       endDate: [null, Validators.required],
-      mealPlanCode: ['BED_AND_BREAKFAST', Validators.required],
-
       rooms: this.fb.array([]),
-
-      // Results
       totalPrice: [0],
-      valuationResult: [null],
     });
   }
 
@@ -97,12 +96,10 @@ export class AccommodationEditComponent implements OnInit {
 
   addRoom() {
     const roomGroup = this.fb.group({
-      roomId: [91, Validators.required], // Default from example
       roomCandidateId: [this.roomsArray.length + 1, Validators.required],
       paxes: this.fb.array([]),
     });
     this.roomsArray.push(roomGroup);
-    // Add default paxes
     this.addPax(this.roomsArray.length - 1, 50);
     this.addPax(this.roomsArray.length - 1, 50);
   }
@@ -133,27 +130,16 @@ export class AccommodationEditComponent implements OnInit {
     this.form.patchValue({
       guestName: data.guestName,
       status: data.status,
-      hotelMarketId: data.valuationRequest.hotelMarketId,
-      promotionId: data.valuationRequest.promotionId,
-      mealPlanCode: data.valuationRequest.mealPlanCode,
+      hotelMarketId: data.valuationRequest.availDestinations?.[0]?.code || data.hotelMarketId,
       startDate: data.startDate.toDate(),
       endDate: data.endDate.toDate(),
       totalPrice: data.totalPrice,
-      valuationResult: data.valuationResult,
     });
 
-    // Reconstruct FormArrays
     this.roomsArray.clear();
-    // We map from `valuationRequest.roomCandidates` because that has the pax info
-    // Note: The API splits IDs into 'rooms' array and Pax into 'roomCandidates'.
-    // This UI combines them for ease, we will split them on submit/calculate.
     if (data.valuationRequest.roomCandidates) {
-      data.valuationRequest.roomCandidates.forEach((rc, idx) => {
-        // Find corresponding roomId from rooms array
-        const roomMapping = data.valuationRequest.rooms.find((r) => r.roomCandidateId === rc.id);
-
+      data.valuationRequest.roomCandidates.forEach((rc) => {
         const roomGroup = this.fb.group({
-          roomId: [roomMapping?.roomId || 0, Validators.required],
           roomCandidateId: [rc.id, Validators.required],
           paxes: this.fb.array([]),
         });
@@ -172,7 +158,8 @@ export class AccommodationEditComponent implements OnInit {
     }
 
     if (data.valuationResult) {
-      this.valuationResults = data.valuationResult;
+      this.rawValuationResult = data.valuationResult;
+      this.processResults(data.valuationResult);
     }
   }
 
@@ -183,17 +170,15 @@ export class AccommodationEditComponent implements OnInit {
     }
     const val = this.form.value;
 
-    // Transform form data to API Request Structure
     const request: ValuationRequest = {
       startDate: this.formatDate(val.startDate),
       endDate: this.formatDate(val.endDate),
-      hotelMarketId: val.hotelMarketId,
-      promotionId: val.promotionId,
-      mealPlanCode: val.mealPlanCode,
-      rooms: val.rooms.map((r: any) => ({
-        roomId: r.roomId,
-        roomCandidateId: r.roomCandidateId,
-      })),
+      availDestinations: [
+        {
+          type: 'HOT',
+          code: val.hotelMarketId,
+        },
+      ],
       roomCandidates: val.rooms.map((r: any) => ({
         id: r.roomCandidateId,
         paxes: r.paxes,
@@ -201,22 +186,101 @@ export class AccommodationEditComponent implements OnInit {
     };
 
     try {
-      // For "5" in URL, using logic from example or form.
-      // Assuming hotelMarketId matches or we use a static ID for the Valuation Endpoint path.
-      // The example used /valuation/5/..., I'll use a static 5 or derive it.
-      // Let's use '5' as per example, or maybe hotelMarketId is the param?
-      // I'll use hotelMarketId as the parameter for now.
-      const results = await this.service.getRoomPrices(5, request);
-      this.valuationResults = results;
-
-      // Calculate total
-      const total = results.reduce((acc, curr) => acc + curr.totalPrice, 0);
-      this.form.patchValue({ totalPrice: total, valuationResult: results });
-      this.notification.showSuccess('Price calculated successfully');
+      const results = await this.service.getRoomPrices(5, request); // ID 5 hardcoded as per API example
+      this.rawValuationResult = results;
+      this.processResults(results);
+      this.notification.showSuccess('Valuation successful');
     } catch (e) {
       console.error(e);
       this.notification.showError('Failed to calculate price');
     }
+  }
+
+  processResults(offers: HotelOffer[]) {
+    this.valuationResults = [];
+
+    offers.forEach((offer) => {
+      offer.availableRooms.forEach((room) => {
+        // 1. Regular prices (no promotion)
+        room.mealPlans.forEach((plan) => {
+          this.valuationResults.push({
+            roomCandidateId: room.roomCandidateId,
+            roomId: room.roomId,
+            offerName: offer.name,
+            mealPlan: plan.name,
+            promotion: 'None',
+            price: plan.price,
+            isDiscounted: false,
+            // Attach detailed breakdown for the dialog
+            breakdown: this.createBreakdown(room.regularRoomPricesPerDays, plan.mealRates),
+          });
+        });
+
+        // 2. Promotion prices
+        room.pricesPerDaysWithPromotion.forEach((promoPrice) => {
+          const promoName = promoPrice.promotion.name;
+
+          promoPrice.mealPlansWithPricesPerDays.forEach((plan) => {
+            this.valuationResults.push({
+              roomCandidateId: room.roomCandidateId,
+              roomId: room.roomId,
+              offerName: offer.name,
+              mealPlan: plan.name,
+              promotion: promoName,
+              price: plan.price,
+              isDiscounted: true,
+              discount: promoPrice.promotion.discount,
+              // Attach detailed breakdown for the dialog
+              breakdown: this.createBreakdown(
+                promoPrice.roomPricesPerDays,
+                plan.mealPlanPricesPerDays
+              ),
+            });
+          });
+        });
+      });
+    });
+  }
+
+  // Helper to merge room and meal prices into a flat list for the dialog
+  private createBreakdown(roomPrices: PricePerDay[], mealPrices?: MealRate[]) {
+    if (!roomPrices) return [];
+
+    return roomPrices.map((rp, index) => {
+      const mealPrice = mealPrices ? mealPrices[index] : null;
+      const totalDaily = rp.price + (mealPrice ? mealPrice.pricePerDay : 0);
+
+      return {
+        date: rp.date,
+        roomPrice: rp.price,
+        roomFormula: rp.formula,
+        mealPrice: mealPrice ? mealPrice.pricePerDay : 0,
+        total: totalDaily,
+      };
+    });
+  }
+
+  // Open the details dialog
+  openDetails(offer: any) {
+    const rows = offer.breakdown.map((b: any) => ({
+      date: b.date,
+      description: `Room: ${b.roomFormula} ${b.mealPrice > 0 ? '+ Meal: ' + b.mealPrice : ''}`,
+      price: b.total,
+      formula: b.roomFormula,
+    }));
+
+    this.dialog.open(PriceDetailsDialogComponent, {
+      data: {
+        title: `${offer.offerName} - ${offer.mealPlan} (${offer.promotion})`,
+        rows: rows,
+        total: offer.price,
+      },
+      width: '600px',
+    });
+  }
+
+  selectOption(option: any) {
+    this.form.patchValue({ totalPrice: option.price });
   }
 
   async onSave() {
@@ -227,24 +291,21 @@ export class AccommodationEditComponent implements OnInit {
     const requestData: ValuationRequest = {
       startDate: this.formatDate(val.startDate),
       endDate: this.formatDate(val.endDate),
-      hotelMarketId: val.hotelMarketId,
-      promotionId: val.promotionId,
-      mealPlanCode: val.mealPlanCode,
-      rooms: val.rooms.map((r: any) => ({ roomId: r.roomId, roomCandidateId: r.roomCandidateId })),
+      availDestinations: [{ type: 'HOT', code: val.hotelMarketId }],
       roomCandidates: val.rooms.map((r: any) => ({ id: r.roomCandidateId, paxes: r.paxes })),
     };
 
     const docData: Partial<Accommodation> = {
       guestName: val.guestName,
-      hotelName: `Hotel Market ${val.hotelMarketId}`, // Placeholder name
+      hotelName: this.rawValuationResult[0]?.name || `Hotel ${val.hotelMarketId}`,
       hotelMarketId: val.hotelMarketId,
       startDate: Timestamp.fromDate(val.startDate),
       endDate: Timestamp.fromDate(val.endDate),
       status: val.status,
       totalPrice: val.totalPrice,
-      currency: 'EUR', // Default or from API
+      currency: 'EUR',
       valuationRequest: requestData,
-      valuationResult: this.valuationResults,
+      valuationResult: this.rawValuationResult,
     };
 
     try {
@@ -263,7 +324,6 @@ export class AccommodationEditComponent implements OnInit {
   }
 
   private formatDate(date: Date): string {
-    // Manual YYYY-MM-DD formatting to avoid timezone issues
     const year = date.getFullYear();
     const month = ('0' + (date.getMonth() + 1)).slice(-2);
     const day = ('0' + date.getDate()).slice(-2);

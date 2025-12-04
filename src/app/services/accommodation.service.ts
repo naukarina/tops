@@ -1,9 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BaseService } from './base.service';
-import { Accommodation, ValuationRequest, ValuationResponse } from '../models/accommodation.model';
+import { Accommodation, ValuationRequest, HotelOffer } from '../models/accommodation.model';
 import { firstValueFrom } from 'rxjs';
-// Import Cloud Functions
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
 @Injectable({
@@ -11,7 +10,7 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 })
 export class AccommodationService extends BaseService<Accommodation> {
   private http = inject(HttpClient);
-  private functions = inject(Functions); // Inject Functions
+  private functions = inject(Functions);
   private apiUrl = 'https://api.kreola-dev.com';
 
   private apiCreds = {
@@ -29,7 +28,6 @@ export class AccommodationService extends BaseService<Accommodation> {
     if (this.accessToken) return this.accessToken;
 
     try {
-      // Login is a standard POST, so we can do this directly from the browser
       const res = await firstValueFrom(
         this.http.post<{ access_token: string }>(`${this.apiUrl}/auth/sign-in`, this.apiCreds)
       );
@@ -41,10 +39,9 @@ export class AccommodationService extends BaseService<Accommodation> {
     }
   }
 
-  async getRoomPrices(hotelId: number, request: ValuationRequest): Promise<ValuationResponse[]> {
+  async getRoomPrices(hotelId: number, request: ValuationRequest): Promise<HotelOffer[]> {
     const token = await this.getAuthToken();
 
-    // Call the Cloud Function Proxy
     const getPricesFn = httpsCallable(this.functions, 'getRoomPricesProxy');
 
     try {
@@ -54,7 +51,7 @@ export class AccommodationService extends BaseService<Accommodation> {
         payload: request,
       });
 
-      return result.data as ValuationResponse[];
+      return result.data as HotelOffer[];
     } catch (error) {
       console.error('Valuation Proxy Failed', error);
       throw error;

@@ -13,49 +13,79 @@ export interface RoomCandidateApi {
   paxes: PaxApi[];
 }
 
-export interface RoomMappingApi {
-  roomId: number;
-  roomCandidateId: number;
+export interface AvailDestinationApi {
+  type: string; // e.g., "HOT"
+  code: number;
 }
 
 export interface ValuationRequest {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
-  hotelMarketId: number;
-  promotionId: number;
-  mealPlanCode: string;
-  rooms: RoomMappingApi[];
+  availDestinations: AvailDestinationApi[];
   roomCandidates: RoomCandidateApi[];
 }
 
-export interface PriceBreakdown {
+// --- Response Interfaces ---
+
+export interface PricePerDay {
   date: string;
-  roomPrices: {
-    basePrice: number;
-    discountedPrice: number;
-  };
-  mealPlanPrices: {
-    basePrice: number;
-    discountedPrice: number;
-  };
+  price: number;
+  formula: string;
 }
 
-export interface ValuationResponse {
+export interface MealRate {
+  id: number;
+  date: string;
+  pricePerDay: number;
+  adultPrice: number;
+  teenPrice: number;
+  childPrice: number;
+  infantPrice: number;
+}
+
+export interface MealPlan {
+  id: number;
+  name: string;
+  type: string;
+  price: number;
+  mealRates?: MealRate[]; // Optional depending on if detailed rates are needed
+}
+
+export interface Promotion {
+  id: number;
+  name: string;
+  type: string;
+  discount: number;
+  description: string;
+}
+
+export interface PriceWithPromotion {
+  roomPricesPerDays: PricePerDay[];
+  mealPlansWithPricesPerDays: {
+    id: number;
+    name: string;
+    type: string;
+    price: number;
+    mealPlanPricesPerDays: MealRate[];
+  }[];
+  promotion: Promotion;
+}
+
+export interface AvailableRoom {
   roomId: number;
   roomCandidateId: number;
-  formula: string;
+  comboId: number;
   combo: string;
-  mealPlanId: number;
-  mealRateIds: number[];
-  promotionId: number;
-  basePrice: number;
-  discountedPrice: number;
-  mealPlanPrice: number;
-  discountedMealPlanPrice: number;
-  totalPrice: number;
-  totalDiscountedPrice: number;
-  promotionApplied: string;
-  priceBreakdown: PriceBreakdown[];
+  regularRoomPricesPerDays: PricePerDay[];
+  mealPlans: MealPlan[];
+  promotions: Promotion[];
+  pricesPerDaysWithPromotion: PriceWithPromotion[];
+}
+
+export interface HotelOffer {
+  hotelMarketId: number;
+  name: string;
+  availableRooms: AvailableRoom[];
 }
 
 // --- Firestore Document Interface ---
@@ -74,5 +104,5 @@ export interface Accommodation extends BaseDocument {
   valuationRequest: ValuationRequest;
 
   // Store the result from the API
-  valuationResult: ValuationResponse[];
+  valuationResult: HotelOffer[]; // Root response is an array
 }

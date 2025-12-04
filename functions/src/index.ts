@@ -107,7 +107,7 @@ export const getRoomPricesProxy = onCall(async (request) => {
 
   try {
     // 2. Make the request from the Server (Node.js supports GET+Body)
-    const response = await axios.get(`${apiUrl}/valuation/${hotelId}/room-prices`, {
+    const response = await axios.get(`${apiUrl}/offer/${hotelId}`, {
       data: payload, // In Axios, 'data' is the body
       headers: {
         Authorization: `Bearer ${token}`,

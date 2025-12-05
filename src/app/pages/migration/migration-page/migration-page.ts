@@ -12,6 +12,7 @@ import { BaseDocument } from '../../../models/base-document.model';
 import { HotelImportStrategy } from '../strategies/hotel-import.strategy';
 import { TourOperatorImportStrategy } from '../strategies/tour-operator-import.strategy';
 import { SupplierImportStrategy } from '../strategies/supplier-import.strategy';
+import { ItemImportStrategy } from '../strategies/item-import.strategy';
 
 @Component({
   selector: 'app-migration-page',
@@ -58,11 +59,13 @@ export class MigrationPageComponent {
   private hotelStrategy = inject(HotelImportStrategy);
   private tourOperatorStrategy = inject(TourOperatorImportStrategy);
   private supplierStrategy = inject(SupplierImportStrategy);
+  private itemStrategy = inject(ItemImportStrategy);
 
   allStrategies: IImportStrategy<any & BaseDocument>[] = [
     this.hotelStrategy,
     this.tourOperatorStrategy,
     this.supplierStrategy,
+    this.itemStrategy,
   ];
 
   selectedStrategy: IImportStrategy<any & BaseDocument> | null = null;

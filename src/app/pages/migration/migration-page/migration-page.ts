@@ -83,7 +83,7 @@ export class MigrationPageComponent {
     }
   }
 
-  runImport() {
+  async runImport() {
     if (!this.file || !this.selectedStrategy) {
       this.log = ['Error: No file selected or import type not chosen.'];
       return;
@@ -93,6 +93,18 @@ export class MigrationPageComponent {
     const strategy = this.selectedStrategy;
 
     this.log = [`Starting import for: ${strategy.name}...`, `Processing file: ${fileToParse.name}`];
+
+    if (strategy.prepare) {
+      this.log.push('Loading dependencies (Partners, Vehicle Categories)...');
+      try {
+        await strategy.prepare();
+        this.log.push('Dependencies loaded.');
+      } catch (err) {
+        console.error(err);
+        this.log.push('Error loading dependencies. Aborting.');
+        return;
+      }
+    }
 
     Papa.parse<CsvRow>(fileToParse, {
       header: true,

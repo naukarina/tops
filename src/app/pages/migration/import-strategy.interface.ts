@@ -27,4 +27,6 @@ export interface IImportStrategy<T extends BaseDocument> {
    * Returns null if the row is invalid and should be skipped.
    */
   mapRow(row: CsvRow): Partial<T> | null; // <-- CHANGED TO Partial<T>
+
+  prepare?(): Promise<void>;
 }

@@ -1,7 +1,6 @@
 <mat-form-field appearance="outline" class="w-100">
     <mat-label>{{ label }}</mat-label>
-    <mat-select [value]="value" [multiple]="multiple" [disabled]="isDisabled"
-        (selectionChange)="onSelectionChange($event.value)" (blur)="onTouched()">
+    <mat-select [formControl]="internalControl" [multiple]="multiple" (blur)="onTouched()">
         @if (searchable) {
         <mat-option>
             <ngx-mat-select-search [formControl]="searchCtrl" placeholderLabel="Search..."

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, forwardRef, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, forwardRef } from '@angular/core';
 import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { Observable, ReplaySubject, Subject, isObservable, of } from 'rxjs';
-import { takeUntil, startWith, map } from 'rxjs/operators';
+import { takeUntil, startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'app-searchable-select',
@@ -42,8 +42,9 @@ export class SearchableSelectComponent implements OnInit, OnDestroy, ControlValu
   @Input() optionText: string | undefined = undefined; // Property to display
 
   // --- Internal State ---
-  protected value: any = null;
-  protected isDisabled = false;
+  // Replaced simple 'value' property with a FormControl to satisfy ngx-mat-select-search
+  protected internalControl = new FormControl();
+
   protected searchCtrl = new FormControl('');
   protected filteredOptions$ = new ReplaySubject<any[]>(1);
   private options$!: Observable<any[]>;
@@ -54,7 +55,8 @@ export class SearchableSelectComponent implements OnInit, OnDestroy, ControlValu
   onTouched = () => {};
 
   writeValue(value: any): void {
-    this.value = value;
+    // Update the internal control without emitting an event to avoid loops
+    this.internalControl.setValue(value, { emitEvent: false });
   }
 
   registerOnChange(fn: any): void {
@@ -66,15 +68,20 @@ export class SearchableSelectComponent implements OnInit, OnDestroy, ControlValu
   }
 
   setDisabledState?(isDisabled: boolean): void {
-    this.isDisabled = isDisabled;
+    isDisabled ? this.internalControl.disable() : this.internalControl.enable();
   }
 
   // --- Lifecycle Hooks ---
   ngOnInit(): void {
-    // 1. Normalize the options input into an observable
+    // 1. Subscribe to internal control changes to propagate to parent
+    this.internalControl.valueChanges.pipe(takeUntil(this._onDestroy)).subscribe((val) => {
+      this.onChange(val);
+    });
+
+    // 2. Normalize the options input into an observable
     this.options$ = isObservable(this.options) ? this.options : of(this.options || []);
 
-    // 2. Combine options and search to create the filtered list
+    // 3. Combine options and search to create the filtered list
     this.searchCtrl.valueChanges
       .pipe(startWith(''), takeUntil(this._onDestroy))
       .subscribe((search) => {
@@ -107,12 +114,6 @@ export class SearchableSelectComponent implements OnInit, OnDestroy, ControlValu
         return String(text).toLowerCase().includes(searchLower);
       })
     );
-  }
-
-  protected onSelectionChange(value: any) {
-    this.value = value;
-    this.onChange(value);
-    this.onTouched();
   }
 
   // --- Template Helper Methods ---

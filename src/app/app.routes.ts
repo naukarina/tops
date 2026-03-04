@@ -9,13 +9,13 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent),
+    loadComponent: () => import('./features/home/home').then((m) => m.HomeComponent),
     canActivate: [authGuard],
     data: { breadcrumb: 'Home' },
   },
   {
     path: 'login',
-    loadComponent: () => import('./pages/login/login').then((m) => m.LoginComponent),
+    loadComponent: () => import('./features/login/login').then((m) => m.LoginComponent),
     data: {
       showHeader: false,
       showSidenav: false,
@@ -23,7 +23,7 @@ export const routes: Routes = [
   },
   {
     path: 'register',
-    loadComponent: () => import('./pages/register/register').then((m) => m.RegisterComponent),
+    loadComponent: () => import('./features/register/register').then((m) => m.RegisterComponent),
     data: {
       showHeader: false,
       showSidenav: false,
@@ -32,7 +32,7 @@ export const routes: Routes = [
   {
     path: 'forgot-password',
     loadComponent: () =>
-      import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPasswordComponent),
+      import('./features/forgot-password/forgot-password').then((m) => m.ForgotPasswordComponent),
     data: {
       showHeader: false,
       showSidenav: false,
@@ -46,18 +46,24 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/partners/partner-list/partner-list').then((m) => m.PartnerListComponent),
+          import('./features/partners/partner-list/partner-list').then(
+            (m) => m.PartnerListComponent,
+          ),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
+          import('./features/partners/partner-edit/partner-edit').then(
+            (m) => m.PartnerEditComponent,
+          ),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/partners/partner-edit/partner-edit').then((m) => m.PartnerEditComponent),
+          import('./features/partners/partner-edit/partner-edit').then(
+            (m) => m.PartnerEditComponent,
+          ),
         data: { breadcrumb: 'Edit' },
       },
     ],
@@ -70,18 +76,18 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/guests/guest-list/guest-list').then((m) => m.GuestListComponent),
+          import('./features/guests/guest-list/guest-list').then((m) => m.GuestListComponent),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/guests/guest-edit/guest-edit').then((m) => m.GuestEditComponent),
+          import('./features/guests/guest-edit/guest-edit').then((m) => m.GuestEditComponent),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/guests/guest-edit/guest-edit').then((m) => m.GuestEditComponent),
+          import('./features/guests/guest-edit/guest-edit').then((m) => m.GuestEditComponent),
         data: { breadcrumb: 'Edit' },
       },
     ],
@@ -94,18 +100,24 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/products/product-list/product-list').then((m) => m.ProductListComponent),
+          import('./features/products/product-list/product-list').then(
+            (m) => m.ProductListComponent,
+          ),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
+          import('./features/products/product-edit/product-edit').then(
+            (m) => m.ProductEditComponent,
+          ),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/products/product-edit/product-edit').then((m) => m.ProductEditComponent),
+          import('./features/products/product-edit/product-edit').then(
+            (m) => m.ProductEditComponent,
+          ),
         data: { breadcrumb: 'Edit' },
       },
     ],
@@ -118,18 +130,18 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/users/user-list/user-list').then((m) => m.UserListComponent),
+          import('./features/users/user-list/user-list').then((m) => m.UserListComponent),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
+          import('./features/users/user-edit/user-edit').then((m) => m.UserEditComponent),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/users/user-edit/user-edit').then((m) => m.UserEditComponent),
+          import('./features/users/user-edit/user-edit').then((m) => m.UserEditComponent),
         data: { breadcrumb: 'Edit' },
       },
     ],
@@ -142,23 +154,23 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/sales-orders/sales-order-list/sales-order-list').then(
-            (m) => m.SalesOrderListComponent
+          import('./features/sales-orders/pages/sales-order-list/sales-order-list').then(
+            (m) => m.SalesOrderListComponent,
           ),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/sales-orders/sales-order-edit/sales-order-edit').then(
-            (m) => m.SalesOrderEditComponent
+          import('./features/sales-orders/pages/sales-order-edit/sales-order-edit').then(
+            (m) => m.SalesOrderEditComponent,
           ),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/sales-orders/sales-order-edit/sales-order-edit').then(
-            (m) => m.SalesOrderEditComponent
+          import('./features/sales-orders/pages/sales-order-edit/sales-order-edit').then(
+            (m) => m.SalesOrderEditComponent,
           ),
         data: { breadcrumb: 'Edit' },
       },
@@ -172,23 +184,23 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/accommodations/accommodation-list/accommodation-list').then(
-            (m) => m.AccommodationListComponent
+          import('./features/accommodations/accommodation-list/accommodation-list').then(
+            (m) => m.AccommodationListComponent,
           ),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/accommodations/accommodation-edit/accommodation-edit').then(
-            (m) => m.AccommodationEditComponent
+          import('./features/accommodations/accommodation-edit/accommodation-edit').then(
+            (m) => m.AccommodationEditComponent,
           ),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/accommodations/accommodation-edit/accommodation-edit').then(
-            (m) => m.AccommodationEditComponent
+          import('./features/accommodations/accommodation-edit/accommodation-edit').then(
+            (m) => m.AccommodationEditComponent,
           ),
         data: { breadcrumb: 'Edit' },
       },
@@ -202,18 +214,18 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/items/item-list/item-list').then((m) => m.ItemListComponent),
+          import('./features/items/item-list/item-list').then((m) => m.ItemListComponent),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/items/item-edit/item-edit').then((m) => m.ItemEditComponent),
+          import('./features/items/item-edit/item-edit').then((m) => m.ItemEditComponent),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/items/item-edit/item-edit').then((m) => m.ItemEditComponent),
+          import('./features/items/item-edit/item-edit').then((m) => m.ItemEditComponent),
         data: { breadcrumb: 'Edit' },
       },
     ],
@@ -226,23 +238,23 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/vehicle-categories/vehicle-category-list/vehicle-category-list').then(
-            (m) => m.VehicleCategoryListComponent
+          import('./features/vehicle-categories/vehicle-category-list/vehicle-category-list').then(
+            (m) => m.VehicleCategoryListComponent,
           ),
       },
       {
         path: 'new',
         loadComponent: () =>
-          import('./pages/vehicle-categories/vehicle-category-edit/vehicle-category-edit').then(
-            (m) => m.VehicleCategoryEditComponent
+          import('./features/vehicle-categories/vehicle-category-edit/vehicle-category-edit').then(
+            (m) => m.VehicleCategoryEditComponent,
           ),
         data: { breadcrumb: 'Create' },
       },
       {
         path: 'edit/:id',
         loadComponent: () =>
-          import('./pages/vehicle-categories/vehicle-category-edit/vehicle-category-edit').then(
-            (m) => m.VehicleCategoryEditComponent
+          import('./features/vehicle-categories/vehicle-category-edit/vehicle-category-edit').then(
+            (m) => m.VehicleCategoryEditComponent,
           ),
         data: { breadcrumb: 'Edit' },
       },
@@ -252,8 +264,8 @@ export const routes: Routes = [
     path: 'admin/import',
     // You can add a canActivate: [adminGuard] here
     loadComponent: () =>
-      import('./pages/migration/migration-page/migration-page').then(
-        (m) => m.MigrationPageComponent
+      import('./features/migration/migration-page/migration-page').then(
+        (m) => m.MigrationPageComponent,
       ),
   },
   { path: '**', redirectTo: 'home' }, // Wildcard route

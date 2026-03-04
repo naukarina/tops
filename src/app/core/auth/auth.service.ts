@@ -4,9 +4,9 @@ import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { UserProfile } from '../../models/user-profile.model';
-import { CompanyService } from '../../services/company.service';
-import { Company, CompanyType } from '../../models/company.model';
+import { UserProfile } from '../models/user-profile.model';
+import { CompanyService } from '../services/company.service';
+import { Company, CompanyType } from '../models/company.model';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
 @Injectable({
@@ -36,11 +36,11 @@ export class AuthService {
                       companyName: company ? company.name : '',
                       companyType: company ? company.type : undefined,
                     };
-                  })
+                  }),
                 );
               }
               return of(profile);
-            })
+            }),
           )
           .subscribe((enrichedProfile) => {
             this.userProfile$.next(enrichedProfile as UserProfile | null);
@@ -80,7 +80,7 @@ export class AuthService {
     name: string,
     companyId: string,
     companyName: string,
-    companyType: CompanyType
+    companyType: CompanyType,
   ) {
     const createUserFn = httpsCallable(this.functions, 'createUser');
     return await createUserFn({

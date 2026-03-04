@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { Observable } from 'rxjs';
-import { UserProfile } from '../../models/user-profile.model';
+import { UserProfile } from '../models/user-profile.model';
 
 @Component({
   selector: 'app-header',

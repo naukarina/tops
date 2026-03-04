@@ -27,7 +27,7 @@ export class ProductListComponent {
   private productService = inject(ProductService);
   private notificationService = inject(NotificationService);
 
-  products$: Observable<Product[]> = this.productService.getProducts();
+  products$: Observable<Product[]> = this.productService.getAll();
 
   displayedColumns = [
     'name',
@@ -80,7 +80,7 @@ export class ProductListComponent {
     if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
       try {
         if (product.id) {
-          await this.productService.deleteProduct(product.id);
+          await this.productService.delete(product.id);
           this.notificationService.showSuccess('Product deleted successfully.');
         }
       } catch (error) {

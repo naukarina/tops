@@ -116,6 +116,78 @@
 
         </form>
     </div>
+    <div form-fields>
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+            <mat-divider class="my-4"></mat-divider>
+
+            <div class="validity-section-header mb-2">
+                <h4 style="color:#3f51b5; margin:0">Profitability Analysis</h4>
+                <small class="text-muted">Calculated based on latest validity price & linked items</small>
+            </div>
+
+            <div class="profitability-table-container">
+                <table class="profitability-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-end">Value (Incl VAT)</th>
+                            <th class="text-end">Value (Excl VAT)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Price</strong></td>
+                            <td class="text-end">{{ profitability.price | number:'1.2-2' }}</td>
+                            <td class="text-end">{{ profitability.priceExcl | number:'1.2-2' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Items Cost</td>
+                            <td class="text-end text-danger">- {{ profitability.itemsCost | number:'1.2-2' }}</td>
+                            <td class="text-end text-danger">- {{ profitability.itemsCostExcl | number:'1.2-2' }}</td>
+                        </tr>
+                        <tr class="sub-total-row">
+                            <td>Gross Profit</td>
+                            <td class="text-end">{{ profitability.grossProfit | number:'1.2-2' }}</td>
+                            <td class="text-end">{{ profitability.grossProfitExcl | number:'1.2-2' }}</td>
+                        </tr>
+
+                        <tr>
+                            <td colspan="3" class="section-divider">Commissions</td>
+                        </tr>
+                        <tr>
+                            <td>Sales Rep Comm</td>
+                            <td class="text-end text-warning">- {{ profitability.salesRepCommVal | number:'1.2-2' }}
+                            </td>
+                            <td class="text-end text-muted">--</td>
+                        </tr>
+                        <tr>
+                            <td>TO Comm</td>
+                            <td class="text-end text-warning">- {{ profitability.toCommVal | number:'1.2-2' }}</td>
+                            <td class="text-end text-muted">--</td>
+                        </tr>
+                        <tr>
+                            <td>Credit Card Comm</td>
+                            <td class="text-end text-warning">- {{ profitability.creditCardCommVal | number:'1.2-2' }}
+                            </td>
+                            <td class="text-end text-muted">--</td>
+                        </tr>
+
+                        <tr class="total-row">
+                            <td>Total Cost</td>
+                            <td class="text-end">{{ profitability.totalCost | number:'1.2-2' }}</td>
+                            <td class="text-end text-muted">--</td>
+                        </tr>
+                        <tr class="final-profit-row">
+                            <td><strong>Net Profit</strong></td>
+                            <td class="text-end"><strong>{{ profitability.netProfit | number:'1.2-2' }}</strong></td>
+                            <td class="text-end text-muted">--</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </form>
+    </div>
     <div form-actions>
         <button mat-stroked-button color="warn" routerLink="/products" class="me-2">Cancel</button>
         <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="productForm.invalid">Save</button>

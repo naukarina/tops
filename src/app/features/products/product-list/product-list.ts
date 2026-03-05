@@ -29,14 +29,7 @@ export class ProductListComponent {
 
   products$: Observable<Product[]> = this.productService.getAll();
 
-  displayedColumns = [
-    'name',
-    'productCategory',
-    'vehicleCategoryName',
-    'unitType',
-    'partnerName',
-    'actions',
-  ];
+  displayedColumns = ['name', 'productCategory', 'vehicleCategoryName', 'unitType', 'actions'];
 
   columnDefs: ColumnDefinition<Product>[] = [
     { columnDef: 'name', header: 'Name', cell: (p) => p.name, isSortable: true },
@@ -53,7 +46,6 @@ export class ProductListComponent {
       isSortable: true,
     },
     { columnDef: 'unitType', header: 'Unit', cell: (p) => p.unitType, isSortable: true },
-    { columnDef: 'partnerName', header: 'Partner', cell: (p) => p.partnerName, isSortable: true },
   ];
 
   dropdownFilters: DropdownFilter<Product>[] = [

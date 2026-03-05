@@ -12,8 +12,6 @@ export interface Product extends BaseDocument {
   name: string;
   productCategory: ItemCategory;
   unitType: UnitType;
-  partnerId: string;
-  partnerName: string;
 
   validities?: ProductValidity[];
 

@@ -125,7 +125,6 @@ export class ProductEditComponent implements OnInit {
   initForm() {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
-      partnerId: [null], // Optional for products acting as bundles
       productCategory: ['', Validators.required],
       unitType: ['', Validators.required],
       vehicleCategoryId: [null],
@@ -153,7 +152,6 @@ export class ProductEditComponent implements OnInit {
   patchForm(product: Product) {
     this.productForm.patchValue({
       name: product.name,
-      partnerId: product.partnerId,
       productCategory: product.productCategory,
       unitType: product.unitType,
       vehicleCategoryId: product.vehicleCategoryId,

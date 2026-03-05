@@ -15,19 +15,13 @@ export interface CsvRow {
  * Defines the contract for an import strategy.
  */
 export interface IImportStrategy<T extends BaseDocument> {
-  // <-- ADDED CONSTRAINT
-  /** A user-friendly name for the import type (e.g., "Hotel Partners") */
   name: string;
+  service: any; // Or your BaseService<T> type
 
-  /** The service required to add the document */
-  service: BaseService<T>;
+  // ADD THIS LINE (The ? makes it optional so it won't break your other strategies)
+  beforeImport?(): Promise<void>;
 
-  /**
-   * The core mapping logic.
-   * Takes a parsed CSV row and maps it to your app's model.
-   * Returns null if the row is invalid and should be skipped.
-   */
-  mapRow(row: CsvRow): Partial<T> | null; // <-- CHANGED TO Partial<T>
+  mapRow(row: CsvRow): Partial<T> | null;
 
   prepare?(): Promise<void>;
 }

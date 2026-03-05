@@ -21,6 +21,11 @@ export enum UnitType {
   UNIT = 'UNIT',
 }
 
+export enum TransferType {
+  SIC = 'SIC',
+  PRIVATE = 'PRIVATE',
+}
+
 export interface ItemValidity {
   from: Timestamp;
   to: Timestamp;

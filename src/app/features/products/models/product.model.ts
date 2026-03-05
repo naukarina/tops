@@ -1,6 +1,6 @@
 import { BaseDocument } from 'src/app/core/models/base-document.model';
 import { Timestamp } from '@angular/fire/firestore';
-import { ItemCategory, UnitType } from '../../items/models/item.model';
+import { ItemCategory, UnitType, TransferType } from '../../items/models/item.model';
 
 export interface ProductValidity {
   from: Timestamp;
@@ -12,6 +12,7 @@ export interface Product extends BaseDocument {
   name: string;
   productCategory: ItemCategory;
   unitType: UnitType;
+  transferType: TransferType;
 
   validities?: ProductValidity[];
 

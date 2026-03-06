@@ -1,129 +1,117 @@
-<app-edit-page [title]="isEditMode ? 'Edit Product' : 'Create Product'">
+<app-edit-page [title]="isEditMode ? 'Edit Product' : 'New Product'">
     <div form-fields>
         <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
-            <div class="form-row">
-                <mat-form-field appearance="outline">
-                    <mat-label>Product Name</mat-label>
-                    <input matInput formControlName="name" required />
-                </mat-form-field>
 
-                <app-searchable-select label="Partner" formControlName="partnerId" [options]="partners$"
-                    [searchable]="true" optionValue="id" optionText="name">
-                </app-searchable-select>
+            <div class="section-header mt-0">
+                <h4>Basic Details</h4>
+            </div>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Product Name</mat-label>
+                <input matInput formControlName="name" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select formControlName="productCategory" required>
+                    @for (cat of categories; track cat) {
+                    <mat-option [value]="cat">{{ cat }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Unit Type</mat-label>
+                <mat-select formControlName="unitType" required>
+                    @for (unit of unitTypes; track unit) {
+                    <mat-option [value]="unit">{{ unit }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Transfer Type</mat-label>
+                <mat-select formControlName="transferType" required>
+                    @for (type of transferTypes; track type) {
+                    <mat-option [value]="type">{{ type }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <hr>
+
+            <div class="section-header">
+                <h4>Included Items</h4>
+            </div>
+
+            <app-searchable-select label="Linked Items" formControlName="itemIds" [options]="items$" optionText="name"
+                optionValue="id" [multiple]="true" [searchable]="true">
+            </app-searchable-select>
+
+            <hr>
+
+            <div class="section-header">
+                <h4>Commissions (%)</h4>
             </div>
 
             <div class="form-row">
                 <mat-form-field appearance="outline">
-                    <mat-label>Category</mat-label>
-                    <mat-select formControlName="productCategory" required>
-                        @for (cat of categories; track cat) {
-                        <mat-option [value]="cat">{{cat}}</mat-option>
-                        }
-                    </mat-select>
+                    <mat-label>Sales Rep Commission</mat-label>
+                    <input matInput type="number" formControlName="salesRepCommission" min="0" max="100" />
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                    <mat-label>Unit Type</mat-label>
-                    <mat-select formControlName="unitType" required>
-                        @for (unit of unitTypes; track unit) {
-                        <mat-option [value]="unit">{{unit}}</mat-option>
-                        }
-                    </mat-select>
+                    <mat-label>TO Commission</mat-label>
+                    <input matInput type="number" formControlName="toCommission" min="0" max="100" />
                 </mat-form-field>
-            </div>
 
-            <div class="form-row">
-                <app-searchable-select label="Vehicle Category" formControlName="vehicleCategoryId"
-                    [options]="vehicleCategories$" [searchable]="true" optionValue="id" optionText="name">
-                </app-searchable-select>
-            </div>
 
-            <div class="form-row">
-                <app-searchable-select label="Linked Items" formControlName="itemIds" [options]="items$"
-                    [searchable]="true" [multiple]="true" optionValue="id" optionText="name">
-                </app-searchable-select>
-            </div>
-
-            <mat-divider></mat-divider>
-            <div class="validity-section-header mt-3 mb-2">
-                <h4 style="color:#3f51b5; margin:0">Commissions (%)</h4>
-            </div>
-
-            <div class="form-row">
                 <mat-form-field appearance="outline">
-                    <mat-label>Sales Rep</mat-label>
-                    <input matInput type="number" formControlName="salesRepCommission" min="0" max="100">
-                    <span matSuffix>%&nbsp;</span>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>TO</mat-label>
-                    <input matInput type="number" formControlName="toCommission" min="0" max="100">
-                    <span matSuffix>%&nbsp;</span>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Credit Card</mat-label>
-                    <input matInput type="number" formControlName="creditCardCommission" min="0" max="100">
-                    <span matSuffix>%&nbsp;</span>
+                    <mat-label>Credit Card Commission</mat-label>
+                    <input matInput type="number" formControlName="creditCardCommission" min="0" max="100" />
                 </mat-form-field>
             </div>
 
-            <mat-divider></mat-divider>
 
-            <div class="validity-section-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; margin-bottom: 0.5rem;">
-                <h4 style="color:#3f51b5; margin:0">Validity Periods & Price</h4>
+            <hr>
+
+            <div class="section-header d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Validities & Pricing</h4>
                 <button mat-stroked-button color="primary" type="button" (click)="addValidity()">
-                    <mat-icon>add</mat-icon> Add Period
+                    <mat-icon>add</mat-icon> Add Validity
                 </button>
             </div>
 
             <div formArrayName="validities">
-                @for (group of validitiesArray.controls; track group; let i = $index) {
-                <div [formGroupName]="i" class="validity-row"
-                    style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: center; margin-bottom: 0.75rem; background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e0e0e0;">
-
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                        style="width: 100%; margin-bottom: 0;">
-                        <mat-label>From</mat-label>
-                        <input matInput [matDatepicker]="pickerFrom" formControlName="from" required>
-                        <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
-                        <mat-datepicker #pickerFrom></mat-datepicker>
+                @for (validity of validitiesArray.controls; track validity; let i = $index) {
+                <div [formGroupName]="i" class="form-row align-items-center">
+                    <mat-form-field appearance="outline">
+                        <mat-label>From Date</mat-label>
+                        <input matInput [matDatepicker]="fromPicker" formControlName="from" required>
+                        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #fromPicker></mat-datepicker>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                        style="width: 100%; margin-bottom: 0;">
-                        <mat-label>To</mat-label>
-                        <input matInput [matDatepicker]="pickerTo" formControlName="to" [min]="group.get('from')?.value"
-                            required>
-                        <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
-                        <mat-datepicker #pickerTo></mat-datepicker>
+                    <mat-form-field appearance="outline">
+                        <mat-label>To Date</mat-label>
+                        <input matInput [matDatepicker]="toPicker" formControlName="to" required>
+                        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #toPicker></mat-datepicker>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                        style="width: 100%; margin-bottom: 0;">
+                    <mat-form-field appearance="outline">
                         <mat-label>Price</mat-label>
-                        <input matInput type="number" formControlName="price" min="0" required>
-                        <span matPrefix>Rs&nbsp;</span>
+                        <input matInput type="number" formControlName="price" required min="0">
                     </mat-form-field>
 
-                    <button mat-icon-button color="warn" type="button" (click)="removeValidity(i)"
-                        [disabled]="validitiesArray.length === 1" matTooltip="Remove this period">
+                    <button mat-icon-button color="warn" type="button" (click)="removeValidity(i)" class="mb-3">
                         <mat-icon>delete</mat-icon>
                     </button>
                 </div>
                 }
             </div>
 
-        </form>
-    </div>
-    <div form-fields>
-        <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
-            <mat-divider class="my-4"></mat-divider>
-
-            <div class="validity-section-header mb-2">
-                <h4 style="color:#3f51b5; margin:0">Profitability Analysis</h4>
-                <small class="text-muted">Calculated based on latest validity price & linked items</small>
-            </div>
+            <hr>
 
             <div class="profitability-table-container">
                 <table class="profitability-table">
@@ -186,10 +174,45 @@
                 </table>
             </div>
 
+            <hr>
+
+            <div class="section-header">
+                <h4>Profitability Summary</h4>
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 mb-3">
+                <div class="flex-fill p-3 border rounded text-center">
+                    <small class="d-block text-muted">Current Price</small>
+                    <strong class="fs-5">{{ profitability.price | currency }}</strong>
+                </div>
+                <div class="flex-fill p-3 border rounded text-center">
+                    <small class="d-block text-muted">Total Items Cost</small>
+                    <strong class="fs-5">{{ profitability.itemsCost | currency }}</strong>
+                </div>
+                <div class="flex-fill p-3 border rounded text-center">
+                    <small class="d-block text-muted">Total Cost w/ Comm.</small>
+                    <strong class="fs-5">{{ profitability.totalCost | currency }}</strong>
+                </div>
+                <div class="flex-fill p-3 border rounded text-center" [ngClass]="{'bg-light': true}">
+                    <small class="d-block text-muted">Net Profit</small>
+                    <strong class="fs-5"
+                        [ngClass]="{'text-success': profitability.netProfit >= 0, 'text-danger': profitability.netProfit < 0}">
+                        {{ profitability.netProfit | currency }}
+                    </strong>
+                </div>
+            </div>
+
         </form>
     </div>
+
     <div form-actions>
-        <button mat-stroked-button color="warn" routerLink="/products" class="me-2">Cancel</button>
-        <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="productForm.invalid">Save</button>
+        <button mat-stroked-button color="warn" type="button" routerLink="/products" class="me-2">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!productForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
     </div>
 </app-edit-page>

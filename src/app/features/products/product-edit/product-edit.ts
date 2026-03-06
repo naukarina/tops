@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,16 +12,15 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Observable, combineLatest } from 'rxjs';
-import { map, startWith, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
 import { ProductService } from '../services/product.service';
-import { PartnerService } from '../../partners/services/partner.service';
 import { Product } from '../models/product.model';
 import { ItemService } from '@features/items';
-import { VehicleCategoryService } from '@features/vehicle-categories/services/vehicle-category.service';
+import { ItemCategory, UnitType, TransferType } from '../../items/models/item.model';
 
 @Component({
   selector: 'app-product-edit',
@@ -29,7 +28,6 @@ import { VehicleCategoryService } from '@features/vehicle-categories/services/ve
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -52,16 +50,15 @@ export class ProductEditComponent implements OnInit {
   productId: string | null = null;
 
   // Data Observables
-  partners$: Observable<any[]>;
   items$: Observable<any[]>;
-  vehicleCategories$: Observable<any[]>;
 
-  categories = ['Transfer', 'Tour', 'Excursion', 'Package'];
-  unitTypes = ['Per Person', 'Per Vehicle', 'Per Group'];
+  // Enums for dropdowns
+  categories = Object.values(ItemCategory);
+  unitTypes = Object.values(UnitType);
+  transferTypes = Object.values(TransferType);
 
   // --- NEW: Local Data for Calculations ---
   private allItems: any[] = [];
-  private allPartners: any[] = [];
 
   // Assumed Company VAT Rate (This should ideally come from AuthService/CompanyService)
   private companyVatRate = 0.15; // 15%
@@ -84,20 +81,14 @@ export class ProductEditComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private productService: ProductService,
-    private partnerService: PartnerService,
     private itemService: ItemService,
-    private vehicleCategoryService: VehicleCategoryService,
     private route: ActivatedRoute,
     private router: Router,
   ) {
     this.initForm();
 
     // Initialize observables
-    this.partners$ = this.partnerService
-      .getAll()
-      .pipe(tap((partners) => (this.allPartners = partners)));
     this.items$ = this.itemService.getAll().pipe(tap((items) => (this.allItems = items)));
-    this.vehicleCategories$ = this.vehicleCategoryService.getAll();
   }
 
   get validitiesArray() {
@@ -115,7 +106,9 @@ export class ProductEditComponent implements OnInit {
     if (this.productId) {
       this.isEditMode = true;
       this.productService.get(this.productId).subscribe((product) => {
-        this.patchForm(product);
+        if (product) {
+          this.patchForm(product);
+        }
       });
     } else {
       this.addValidity(); // Add default validity for new product
@@ -127,7 +120,7 @@ export class ProductEditComponent implements OnInit {
       name: ['', Validators.required],
       productCategory: ['', Validators.required],
       unitType: ['', Validators.required],
-      vehicleCategoryId: [null],
+      transferType: ['', Validators.required],
       itemIds: [[]], // Array of linked item IDs
       salesRepCommission: [0, [Validators.min(0), Validators.max(100)]],
       toCommission: [0, [Validators.min(0), Validators.max(100)]],
@@ -154,7 +147,7 @@ export class ProductEditComponent implements OnInit {
       name: product.name,
       productCategory: product.productCategory,
       unitType: product.unitType,
-      vehicleCategoryId: product.vehicleCategoryId,
+      transferType: product.transferType,
       itemIds: product.itemIds || [],
       salesRepCommission: product.salesRepCommission || 0,
       toCommission: product.toCommission || 0,
@@ -165,8 +158,8 @@ export class ProductEditComponent implements OnInit {
     if (product.validities) {
       product.validities.forEach((v) => {
         const group = this.fb.group({
-          from: [v.from instanceof Date ? v.from : v.from.toDate(), Validators.required],
-          to: [v.to instanceof Date ? v.to : v.to.toDate(), Validators.required],
+          from: [v.from instanceof Date ? v.from : (v.from as any).toDate(), Validators.required],
+          to: [v.to instanceof Date ? v.to : (v.to as any).toDate(), Validators.required],
           price: [v.price, Validators.required],
         });
         this.validitiesArray.push(group);
@@ -199,18 +192,8 @@ export class ProductEditComponent implements OnInit {
             : 0;
 
         totalItemsCost += itemCost;
-
-        // Check Partner VAT Status
-        const partner = this.allPartners.find((p) => p.id === item.partnerId);
-        const isVatRegistered = partner?.taxInfo?.isVatRegistered ?? false;
-
-        // If partner is VAT registered, exclude VAT from cost (assuming 15% standard if not specified)
-        // Note: Real implementation might use partner specific tax rate
-        if (isVatRegistered) {
-          totalItemsCostExcl += itemCost / (1 + this.companyVatRate);
-        } else {
-          totalItemsCostExcl += itemCost;
-        }
+        // Standard VAT calculation logic applied without partner-specific checks
+        totalItemsCostExcl += itemCost / (1 + this.companyVatRate);
       }
     });
 
@@ -228,7 +211,6 @@ export class ProductEditComponent implements OnInit {
       this.profitability.priceExcl - this.profitability.itemsCostExcl;
 
     // 6. Commissions (Calculated on the Selling Price - Incl VAT)
-    // Note: Adjust logic if commissions should be on Excl VAT price
     const priceBase = this.profitability.price;
 
     this.profitability.salesRepCommVal = priceBase * ((formVal.salesRepCommission || 0) / 100);

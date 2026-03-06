@@ -128,9 +128,18 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
         },
       ],
 
-      salesRepCommission: calculatePercentage(parseFloat(row['salesRepComm']) || 0, basePrice),
-      toCommission: calculatePercentage(parseFloat(row['toComm']) || 0, basePrice),
-      creditCardCommission: calculatePercentage(parseFloat(row['creditCardComm']) || 0, basePrice),
+      salesRepCommission:
+        calculatePercentage(parseFloat(row['salesRepComm']) || 0, basePrice) === 0.01
+          ? 0
+          : calculatePercentage(parseFloat(row['salesRepComm']) || 0, basePrice),
+      toCommission:
+        calculatePercentage(parseFloat(row['toComm']) || 0, basePrice) === 0.01
+          ? 0
+          : calculatePercentage(parseFloat(row['toComm']) || 0, basePrice),
+      creditCardCommission:
+        calculatePercentage(parseFloat(row['creditCardComm']) || 0, basePrice) === 0.01
+          ? 0
+          : calculatePercentage(parseFloat(row['creditCardComm']) || 0, basePrice),
 
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),

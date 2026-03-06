@@ -15,13 +15,14 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
   private itemService = inject(ItemService);
   private itemNameMap: Map<string, string> = new Map();
 
-  // THE FIX: Aggressive normalization to ignore spaces, dashes, and special chars
+  // Aggressive normalization: Removes spaces, dashes, parentheses to prevent matching errors
   private normalizeString(str: string): string {
     if (!str) return '';
     return str.toLowerCase().replace(/[^a-z0-9]/gi, '');
   }
 
-  async beforeImport(): Promise<void> {
+  // 1. THE FIX: Renamed to prepare() to perfectly match your migration-page.ts
+  async prepare(): Promise<void> {
     console.log('Fetching new items database for ID cross-referencing...');
     this.itemNameMap.clear();
 
@@ -34,7 +35,6 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
 
       allItems.forEach((item: any) => {
         if (item.name && item.id) {
-          // Use aggressive normalization on the DB names
           const normalizedName = this.normalizeString(item.name);
           this.itemNameMap.set(normalizedName, item.id);
         }
@@ -42,23 +42,34 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
       console.log(`✅ Loaded ${this.itemNameMap.size} items into memory for ID matching.`);
     } catch (error) {
       console.error('❌ Failed to load items.', error);
+      throw error;
     }
   }
 
+  // 2. Synchronous row mapping
   mapRow(row: CsvRow): Partial<Product> | null {
     const newItemIds: string[] = [];
     const formula = row['itemsCostFormula'] || '';
 
+    // ALIAS MAP: If a name in Excel completely differs from DB, map the EXCEL name to the DB name here
+    const aliasMap: { [key: string]: string } = {
+      'Lunch - Tante Athalie - CHILD': 'Lunch Tante Athalie (Child)',
+    };
+
     if (formula) {
-      // THE FIX: Split using Regex to handle variations in spacing around the '+'
+      // Split by + handling variations in spacing
       const itemEntries = formula.split(/\s*\+\s*/);
 
       for (const entry of itemEntries) {
-        // Remove the pricing block at the end e.g., "(1800/2070)"
-        const extractedName = entry.replace(/\s*\([^)]+\)\s*$/, '').trim();
+        // Strip pricing block (e.g. "(1800/2070)")
+        let extractedName = entry.replace(/\s*\([^)]+\)\s*$/, '').trim();
 
         if (extractedName) {
-          // Use aggressive normalization on the CSV extracted names
+          // Apply alias if needed
+          if (aliasMap[extractedName]) {
+            extractedName = aliasMap[extractedName];
+          }
+
           const normalizedExtracted = this.normalizeString(extractedName);
           const mappedId = this.itemNameMap.get(normalizedExtracted);
 
@@ -87,6 +98,16 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
       return Timestamp.now();
     };
 
+    // Extract the base price once so we can use it in percentage math
+    const basePrice = parseFloat(row['price']) || 0;
+
+    // Helper function to safely calculate percentage
+    const calculatePercentage = (commissionValue: number, price: number): number => {
+      if (!price || price === 0) return 0; // Avoid Division by Zero
+      // Calculates percentage and rounds to 2 decimal places to prevent floating point issues (e.g. 10.0000001)
+      return parseFloat(((commissionValue / price) * 100).toFixed(2));
+    };
+
     return {
       name: row['name'] ? String(row['name']).trim() : 'Unnamed Product',
 
@@ -94,22 +115,22 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
       unitType: (row['unitType'] ? String(row['unitType']).trim() : 'UNIT') as Product['unitType'],
       transferType: (row['transferType']
         ? String(row['transferType']).trim()
-        : TransferType.SIC) as Product['transferType'],
+        : TransferType.PRIVATE) as Product['transferType'],
 
-      // Linked Items
+      // Pushing the successfully mapped Item IDs!
       itemIds: newItemIds,
 
       validities: [
         {
           from: parseDate(row['validityFrom']),
           to: parseDate(row['validityTo']),
-          price: parseFloat(row['price']) || 0,
+          price: basePrice,
         },
       ],
 
-      salesRepCommission: parseFloat(row['salesRepComm']) || 0,
-      toCommission: parseFloat(row['toComm']) || 0,
-      creditCardCommission: parseFloat(row['creditCardComm']) || 0,
+      salesRepCommission: calculatePercentage(parseFloat(row['salesRepComm']) || 0, basePrice),
+      toCommission: calculatePercentage(parseFloat(row['toComm']) || 0, basePrice),
+      creditCardCommission: calculatePercentage(parseFloat(row['creditCardComm']) || 0, basePrice),
 
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),

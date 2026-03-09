@@ -140,7 +140,14 @@ export class MigrationPageComponent {
             const mappedItem = strategy.mapRow(row);
 
             if (mappedItem) {
-              await strategy.service.add(mappedItem as any);
+              // THE FIX: Check if an exact ID was extracted from the CSV
+              if (mappedItem['id']) {
+                // Force Firebase to use this specific string as the Document ID
+                await strategy.service.set(mappedItem['id'], mappedItem as any);
+              } else {
+                // Fallback: Let Firebase generate a random ID if missing
+                await strategy.service.add(mappedItem as any);
+              }
               successCount++;
             } else {
               this.log.push(

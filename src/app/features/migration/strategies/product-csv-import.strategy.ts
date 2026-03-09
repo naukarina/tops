@@ -21,7 +21,6 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
     return str.toLowerCase().replace(/[^a-z0-9]/gi, '');
   }
 
-  // 1. THE FIX: Renamed to prepare() to perfectly match your migration-page.ts
   async prepare(): Promise<void> {
     console.log('Fetching new items database for ID cross-referencing...');
     this.itemNameMap.clear();
@@ -46,26 +45,22 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
     }
   }
 
-  // 2. Synchronous row mapping
   mapRow(row: CsvRow): Partial<Product> | null {
     const newItemIds: string[] = [];
     const formula = row['itemsCostFormula'] || '';
 
-    // ALIAS MAP: If a name in Excel completely differs from DB, map the EXCEL name to the DB name here
+    // ALIAS MAP: If a name in Excel completely differs from DB, map it here
     const aliasMap: { [key: string]: string } = {
       'Lunch - Tante Athalie - CHILD': 'Lunch Tante Athalie (Child)',
     };
 
     if (formula) {
-      // Split by + handling variations in spacing
       const itemEntries = formula.split(/\s*\+\s*/);
 
       for (const entry of itemEntries) {
-        // Strip pricing block (e.g. "(1800/2070)")
         let extractedName = entry.replace(/\s*\([^)]+\)\s*$/, '').trim();
 
         if (extractedName) {
-          // Apply alias if needed
           if (aliasMap[extractedName]) {
             extractedName = aliasMap[extractedName];
           }
@@ -98,50 +93,44 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
       return Timestamp.now();
     };
 
-    // Extract the base price once so we can use it in percentage math
-    const basePrice = parseFloat(row['price']) || 0;
-
-    // Helper function to safely calculate percentage
-    const calculatePercentage = (commissionValue: number, price: number): number => {
-      if (!price || price === 0) return 0; // Avoid Division by Zero
-      // Calculates percentage and rounds to 2 decimal places to prevent floating point issues (e.g. 10.0000001)
-      return parseFloat(((commissionValue / price) * 100).toFixed(2));
-    };
-
     return {
+      // Use the exact ID from the CSV. If missing, pass undefined so the service handles it.
+      id: row['id'] ? String(row['id']).trim() : undefined,
+
       name: row['name'] ? String(row['name']).trim() : 'Unnamed Product',
 
-      productCategory: (row['productCategory']
-        ? String(row['productCategory']).trim()
+      // Mapping the category directly from the CSV
+      productCategory: (row['category']
+        ? String(row['category']).trim().toUpperCase()
         : 'EXCURSION') as Product['productCategory'],
       unitType: (row['unitType'] ? String(row['unitType']).trim() : 'UNIT') as Product['unitType'],
       transferType: (row['transferType']
         ? String(row['transferType']).trim()
         : TransferType.PRIVATE) as Product['transferType'],
 
-      // Pushing the successfully mapped Item IDs!
       itemIds: newItemIds,
 
       validities: [
         {
           from: parseDate(row['validityFrom']),
           to: parseDate(row['validityTo']),
-          price: basePrice,
+          price: parseFloat(row['price']) || 0,
         },
       ],
 
+      // Direct mapping from the new Percentage columns
       salesRepCommission:
-        calculatePercentage(parseFloat(row['salesRepComm']) || 0, basePrice) === 0.01
+        parseFloat(row['salesRepCommPercantage']) === 0.1
           ? 0
-          : calculatePercentage(parseFloat(row['salesRepComm']) || 0, basePrice),
+          : parseFloat(row['salesRepCommPercantage']) || 0,
       toCommission:
-        calculatePercentage(parseFloat(row['toComm']) || 0, basePrice) === 0.01
+        parseFloat(row['toCommissionPercantage']) === 0.1
           ? 0
-          : calculatePercentage(parseFloat(row['toComm']) || 0, basePrice),
+          : parseFloat(row['toCommissionPercantage']) || 0,
       creditCardCommission:
-        calculatePercentage(parseFloat(row['creditCardComm']) || 0, basePrice) === 0.01
+        parseFloat(row['creditCardCommPercantage']) === 0.1
           ? 0
-          : calculatePercentage(parseFloat(row['creditCardComm']) || 0, basePrice),
+          : parseFloat(row['creditCardCommPercantage']) || 0,
 
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),

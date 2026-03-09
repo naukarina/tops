@@ -11,6 +11,7 @@ import {
   query,
   where,
   getDocs,
+  setDoc,
 } from '@angular/fire/firestore';
 import { Observable, of, from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -128,6 +129,33 @@ export abstract class BaseService<T extends BaseDocument> {
     } catch (error) {
       console.error(`Error deleting document from ${this.collectionName}:`, error);
       this.notificationService.showError('Failed to delete the item.');
+      throw error;
+    }
+  }
+
+  async set(id: string, data: Partial<T>): Promise<void> {
+    try {
+      const userProfile = this.authService.currentUserProfile;
+      if (!userProfile) throw new Error('User not logged in or profile not loaded');
+
+      const documentRef = doc(this.firestore, `${this.collectionName}/${id}`);
+
+      const newDoc = {
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        documentStatus: DocStatus.ACTIVE,
+        createdBy: userProfile.id,
+        createdByName: userProfile.name,
+        updatedBy: userProfile.id,
+        updatedByName: userProfile.name,
+        companyId: userProfile.companyId,
+        companyName: userProfile.companyName,
+      };
+      return await await setDoc(documentRef, newDoc, { merge: true });
+    } catch (error) {
+      console.error(`Error adding document to ${this.collectionName}:`, error);
+      this.notificationService.showError('Failed to save the new item.');
       throw error;
     }
   }

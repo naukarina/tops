@@ -111,7 +111,9 @@ export class ProductCsvImportStrategy implements IImportStrategy<Product> {
     return {
       name: row['name'] ? String(row['name']).trim() : 'Unnamed Product',
 
-      productCategory: 'EXCURSION' as Product['productCategory'],
+      productCategory: (row['productCategory']
+        ? String(row['productCategory']).trim()
+        : 'EXCURSION') as Product['productCategory'],
       unitType: (row['unitType'] ? String(row['unitType']).trim() : 'UNIT') as Product['unitType'],
       transferType: (row['transferType']
         ? String(row['transferType']).trim()

@@ -44,9 +44,30 @@
                 <h4>Included Items</h4>
             </div>
 
-            <app-searchable-select label="Linked Items" formControlName="itemIds" [options]="items$" optionText="name"
-                optionValue="id" [multiple]="true" [searchable]="true">
+            <app-searchable-select label="Linked Items" formControlName="itemIds" [options]="items$"
+                optionText="displayName" optionValue="id" [multiple]="true" [searchable]="true">
             </app-searchable-select>
+
+            @if (getSelectedItems().length > 0) {
+            <div class="selected-items-container mb-3">
+                <div class="d-flex flex-column gap-2 mt-2">
+                    @for (item of getSelectedItems(); track item.id) {
+                    <div class="selected-item-row d-flex justify-content-between align-items-center p-2 border rounded">
+                        <span>
+                            <span class="fw-medium">{{ item.name }}</span>
+                            <span class="text-muted ms-2 fst-italic">
+                                - Cost: {{ getItemCostForCurrentDay(item) | currency }}
+                            </span>
+                        </span>
+                        <button mat-icon-button color="warn" type="button" (click)="removeLinkedItem(item.id)"
+                            matTooltip="Remove">
+                            <mat-icon>close</mat-icon>
+                        </button>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
 
             <hr>
 

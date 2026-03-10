@@ -83,3 +83,19 @@
     color: #9e9e9e;
   }
 }
+
+.selected-items-container {
+  .selected-item-row {
+    background-color: #fafafa;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f0f0f0;
+    }
+
+    button {
+      // Make the button a bit smaller to fit the row nicely
+      transform: scale(0.85);
+    }
+  }
+}

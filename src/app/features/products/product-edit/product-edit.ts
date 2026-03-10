@@ -13,7 +13,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
@@ -88,7 +88,18 @@ export class ProductEditComponent implements OnInit {
     this.initForm();
 
     // Initialize observables
-    this.items$ = this.itemService.getAll().pipe(tap((items) => (this.allItems = items)));
+    this.items$ = this.itemService.getAll().pipe(
+      tap((items) => (this.allItems = items)),
+      map((items) =>
+        items.map((item) => {
+          const currentCost = this.getItemCostForCurrentDay(item);
+          return {
+            ...item,
+            displayName: `${item.name} (Cost: ${currentCost})`,
+          };
+        }),
+      ),
+    );
   }
 
   get validitiesArray() {
@@ -245,5 +256,49 @@ export class ProductEditComponent implements OnInit {
         this.router.navigate(['/products']);
       });
     }
+  }
+
+  getSelectedItems(): any[] {
+    const selectedIds = this.productForm.get('itemIds')?.value || [];
+    return this.allItems.filter((item) => selectedIds.includes(item.id));
+  }
+
+  // Remove an item ID from the form control
+  removeLinkedItem(itemIdToRemove: string) {
+    const currentIds = this.productForm.get('itemIds')?.value || [];
+    const updatedIds = currentIds.filter((id: string) => id !== itemIdToRemove);
+
+    // Update the form control with the new array
+    this.productForm.get('itemIds')?.setValue(updatedIds);
+    // Note: The valueChanges subscription will automatically trigger calculateProfitability()
+  }
+
+  getItemCostForCurrentDay(item: any): number {
+    if (!item || !item.validities || item.validities.length === 0) return 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+    // Find the validity block that encompasses today's date
+    const currentValidity = item.validities.find((v: any) => {
+      if (!v.from || !v.to) return false;
+
+      // Handle both standard Dates and Firebase Timestamps (which have a .toDate() method)
+      const fromDate =
+        v.from instanceof Date ? v.from : v.from.toDate ? v.from.toDate() : new Date(v.from);
+      const toDate = v.to instanceof Date ? v.to : v.to.toDate ? v.to.toDate() : new Date(v.to);
+
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(23, 59, 59, 999); // End of the day
+
+      return today >= fromDate && today <= toDate;
+    });
+
+    if (currentValidity) {
+      return currentValidity.cost;
+    }
+
+    // Fallback: If no validity matches today, return the most recent validity's cost
+    return item.validities[item.validities.length - 1].cost || 0;
   }
 }

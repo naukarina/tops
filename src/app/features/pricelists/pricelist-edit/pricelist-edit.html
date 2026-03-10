@@ -28,7 +28,11 @@
 
                 <mat-form-field appearance="outline" class="flex-fill">
                     <mat-label>Currency</mat-label>
-                    <input matInput formControlName="currencyName" placeholder="e.g. EUR" required />
+                    <mat-select formControlName="currencyName" required>
+                        @for (curr of currencyNames; track curr) {
+                        <mat-option [value]="curr">{{ curr }}</mat-option>
+                        }
+                    </mat-select>
                 </mat-form-field>
             </div>
 
@@ -46,7 +50,8 @@
             <div class="selected-items-container mb-3">
                 <div class="d-flex flex-column gap-2 mt-2">
                     @for (to of getSelectedTourOperators(); track to.id) {
-                    <div class="selected-item-row d-flex justify-content-between align-items-center p-2 border rounded">
+                    <div
+                        class="selected-item-row d-flex justify-content-between align-items-center p-2 border rounded bg-light">
                         <span class="fw-medium">{{ to.name }}</span>
                         <button mat-icon-button color="warn" type="button" (click)="removeLinkedTourOperator(to.id)"
                             matTooltip="Remove">
@@ -67,27 +72,103 @@
                 </button>
             </div>
 
-            <div formArrayName="pricelistProducts">
-                @for (product of productsArray.controls; track product; let i = $index) {
-                <div [formGroupName]="i" class="form-row align-items-center d-flex gap-3">
+            <div formArrayName="pricelistProducts" class="d-flex flex-column gap-4">
+                @for (productCtrl of productsArray.controls; track productCtrl; let i = $index) {
 
-                    <app-searchable-select class="flex-fill" label="Base Product" formControlName="baseProductId"
-                        [options]="products$" optionText="name" optionValue="id" [searchable]="true">
-                    </app-searchable-select>
+                <div [formGroupName]="i" class="border p-3 rounded position-relative">
 
-                    <mat-form-field appearance="outline" class="flex-fill">
-                        <mat-label>Display Name</mat-label>
-                        <input matInput formControlName="displayName" required>
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline" class="flex-fill">
-                        <mat-label>Price</mat-label>
-                        <input matInput type="number" formControlName="price" required min="0">
-                    </mat-form-field>
-
-                    <button mat-icon-button color="warn" type="button" (click)="removeProduct(i)" class="mb-3">
+                    <button mat-icon-button color="warn" type="button" (click)="removeProduct(i)"
+                        class="position-absolute top-0 end-0 m-2">
                         <mat-icon>delete</mat-icon>
                     </button>
+
+                    <div class="d-flex gap-3 align-items-center pe-5">
+                        <app-searchable-select class="flex-fill" label="Base Product" formControlName="baseProductId"
+                            [options]="products$" optionText="name" optionValue="id" [searchable]="true">
+                        </app-searchable-select>
+
+                        <mat-form-field appearance="outline" class="flex-fill mb-0">
+                            <mat-label>Pricelist Display Name</mat-label>
+                            <input matInput formControlName="displayName" required>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="flex-fill mb-0">
+                            <mat-label>Pricelist Price ({{ pricelistForm.value.currencyName }})</mat-label>
+                            <input matInput type="number" formControlName="price" required min="0">
+                        </mat-form-field>
+                    </div>
+
+                    @if (getOriginalProductDetails(productCtrl.value.baseProductId); as orig) {
+                    <div class="mt-3 p-3 bg-light rounded border">
+                        <div class="row">
+                            <div class="border-end col">
+                                <small class="d-block text-muted">Orig. Price</small>
+                                <strong class="fs-6">{{ orig.price | currency:'MUR' }}</strong>
+                            </div>
+                            <div class="border-end col">
+                                <small class="d-block text-muted">Orig. Total Cost</small>
+                                <strong class="fs-6 text-danger">{{ orig.totalCost | currency:'MUR' }}</strong>
+                            </div>
+                            <div class="col">
+                                <small class="text-primary fw-bold">Orig. Profit</small>
+                                <strong class="fs-6"
+                                    [ngClass]="{'text-success': orig.netProfit >= 0, 'text-danger': orig.netProfit < 0}">
+                                    {{ orig.netProfit | currency:'MUR' }}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="border-end col">
+                                <small class="d-block text-muted">Converted Price ({{ pricelistForm.value.currencyName
+                                    }})</small>
+                                <strong class="fs-6">{{ convertMurToSelectedCurrency(orig.price) |
+                                    number:'1.2-2' }}</strong>
+                            </div>
+
+                            <div class="border-end col">
+                                <small class="d-block text-muted">Converted Cost ({{ pricelistForm.value.currencyName
+                                    }})</small>
+                                <strong class="fs-6 text-danger">{{ convertMurToSelectedCurrency(orig.totalCost) |
+                                    number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="col">
+                                <small class="d-block text-primary fw-bold">Converted Net Profit ({{
+                                    pricelistForm.value.currencyName }})</small>
+                                <strong class="fs-6"
+                                    [ngClass]="{'text-success': convertMurToSelectedCurrency(orig.netProfit) >= 0, 'text-danger': convertMurToSelectedCurrency(orig.netProfit) < 0}">
+                                    {{ convertMurToSelectedCurrency(orig.netProfit) |
+                                    number:'1.2-2'
+                                    }}
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="border-end col">
+                                <small class="d-block text-muted">Pricelist Price ({{ pricelistForm.value.currencyName
+                                    }})</small>
+                                <strong class="fs-6">{{ productCtrl.value.price }}</strong>
+                            </div>
+
+                            <div class="border-end col">
+                                <small class="d-block text-muted">Pricelist Cost ({{ pricelistForm.value.currencyName
+                                    }})</small>
+                                <strong class="fs-6 text-danger">{{ convertMurToSelectedCurrency(orig.totalCost) |
+                                    number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="col">
+                                <small class="d-block text-primary fw-bold">Pricelist Net Profit ({{
+                                    pricelistForm.value.currencyName }})</small>
+                                <strong class="fs-6"
+                                    [ngClass]="{'text-success': getPricelistNetProfit(productCtrl.value.price, orig.totalCost) >= 0, 'text-danger': getPricelistNetProfit(productCtrl.value.price, orig.totalCost) < 0}">
+                                    {{ getPricelistNetProfit(productCtrl.value.price, orig.totalCost) | number:'1.2-2'
+                                    }}
+                                </strong>
+                            </div>
+                        </div>
+
+                    </div>
+                    }
                 </div>
                 }
             </div>

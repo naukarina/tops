@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
@@ -19,6 +19,10 @@ import { PricelistService } from '../services/pricelist.service';
 import { Pricelist } from '../models/pricelist.model';
 import { PartnerService } from '../../partners/services/partner.service';
 import { ProductService } from '../../products/services/product.service';
+import { ItemService } from '../../items/services/item.service';
+import { CurrencyService } from '../../../core/services/currency.service';
+import { Product } from '../../products/models/product.model';
+import { Currency, CurrencyName } from '../../../core/models/currency.model';
 
 @Component({
   selector: 'app-pricelist-edit',
@@ -46,28 +50,28 @@ export class PricelistEditComponent implements OnInit {
   isEditMode = false;
   pricelistId: string | null = null;
 
-  // Data Observables
-  tourOperators$: Observable<any[]>;
-  products$: Observable<any[]>;
+  tourOperators$!: Observable<any[]>;
+  products$!: Observable<any[]>;
+  currencies$!: Observable<Currency[]>;
 
-  // Local Data for the Linked List View
   private allTourOperators: any[] = [];
+  private allProducts: Product[] = [];
+  private allItems: any[] = [];
+  private allCurrencies: Currency[] = [];
+
+  currencyNames = Object.values(CurrencyName);
 
   constructor(
     private fb: FormBuilder,
     private pricelistService: PricelistService,
     private partnerService: PartnerService,
     private productService: ProductService,
+    private itemService: ItemService,
+    private currencyService: CurrencyService,
     private route: ActivatedRoute,
     private router: Router,
   ) {
     this.initForm();
-
-    // Initialize observables and capture partners locally to resolve selected names
-    this.tourOperators$ = this.partnerService
-      .getAll()
-      .pipe(tap((partners) => (this.allTourOperators = partners)));
-    this.products$ = this.productService.getAll();
   }
 
   get productsArray() {
@@ -80,11 +84,25 @@ export class PricelistEditComponent implements OnInit {
     if (this.pricelistId) {
       this.isEditMode = true;
       this.pricelistService.get(this.pricelistId).subscribe((pricelist) => {
-        if (pricelist) {
-          this.patchForm(pricelist);
-        }
+        if (pricelist) this.patchForm(pricelist);
       });
     }
+
+    this.tourOperators$ = this.partnerService
+      .getAll()
+      .pipe(tap((p) => (this.allTourOperators = p)));
+    this.products$ = this.productService.getAll().pipe(tap((p) => (this.allProducts = p)));
+    this.currencies$ = this.currencyService.getAll().pipe(tap((c) => (this.allCurrencies = c)));
+
+    // Fetch items silently for background cost calculations
+    this.itemService.getAll().subscribe((items) => (this.allItems = items));
+    this.tourOperators$.subscribe((tos) => console.log('Fetched Tour Operators:', tos));
+    this.products$.subscribe((prods) => console.log('Fetched Products:', prods));
+    this.currencies$.subscribe((currs) => console.log('Fetched Currencies:', currs));
+
+    console.log('All Products for selection:', this.allProducts);
+    console.log('All Currencies for selection:', this.allCurrencies);
+    console.log('All Tour Operators for selection:', this.allTourOperators);
   }
 
   initForm() {
@@ -92,8 +110,8 @@ export class PricelistEditComponent implements OnInit {
       name: ['', Validators.required],
       validityFrom: [new Date(), Validators.required],
       validityTo: [new Date(), Validators.required],
-      currencyName: ['EUR', Validators.required],
-      tourOperatorIds: [[]], // Array of linked tour operator IDs
+      currencyName: [CurrencyName.EUR, Validators.required], // Dropdown for currencies
+      tourOperatorIds: [[]],
       pricelistProducts: this.fb.array([]),
     });
   }
@@ -104,6 +122,21 @@ export class PricelistEditComponent implements OnInit {
       displayName: ['', Validators.required],
       price: [0, [Validators.required, Validators.min(0)]],
     });
+
+    // AUTO-FILL LOGIC: Listen to product selection to set default name & converted price
+    productGroup.get('baseProductId')?.valueChanges.subscribe((productId) => {
+      const orig = this.getOriginalProductDetails(productId ?? '');
+      if (orig) {
+        productGroup.patchValue(
+          {
+            displayName: orig.name,
+            price: this.convertMurToSelectedCurrency(orig.price),
+          },
+          { emitEvent: false },
+        ); // prevent infinite loops
+      }
+    });
+
     this.productsArray.push(productGroup);
   }
 
@@ -132,28 +165,87 @@ export class PricelistEditComponent implements OnInit {
           displayName: [p.displayName, Validators.required],
           price: [p.price, Validators.required],
         });
+
+        // Add listener AFTER patching so we don't overwrite existing db values on load
+        group.get('baseProductId')?.valueChanges.subscribe((productId) => {
+          const orig = this.getOriginalProductDetails(productId ?? '');
+          if (orig) {
+            group.patchValue(
+              { displayName: orig.name, price: this.convertMurToSelectedCurrency(orig.price) },
+              { emitEvent: false },
+            );
+          }
+        });
+
         this.productsArray.push(group);
       });
     }
   }
+
   onSubmit() {
     if (this.pricelistForm.invalid) return;
-
-    // Just get the form values without forcing an undefined ID
-    const pricelistData: any = {
-      ...this.pricelistForm.value,
-    };
-
+    const pricelistData: any = { ...this.pricelistForm.value };
     if (this.isEditMode && this.pricelistId) {
-      // Pass the ID to the update method, but it doesn't need to be in the body
-      this.pricelistService.update(this.pricelistId, pricelistData).then(() => {
-        this.router.navigate(['/pricelists']);
-      });
+      this.pricelistService
+        .update(this.pricelistId, pricelistData)
+        .then(() => this.router.navigate(['/pricelists']));
     } else {
-      this.pricelistService.add(pricelistData).then(() => {
-        this.router.navigate(['/pricelists']);
-      });
+      this.pricelistService.add(pricelistData).then(() => this.router.navigate(['/pricelists']));
     }
+  }
+
+  // --- CALCULATION & CONVERSION LOGIC ---
+
+  getOriginalProductDetails(productId: string) {
+    if (!productId) return null;
+    const product = this.allProducts.find((p) => p.id === productId);
+    if (!product) return null;
+
+    // 1. Get original price (from latest validity)
+    const price = product.validities?.length
+      ? product.validities[product.validities.length - 1].price
+      : 0;
+
+    // 2. Get original items cost
+    let itemsCost = 0;
+    (product.itemIds || []).forEach((itemId) => {
+      const item = this.allItems.find((i) => i.id === itemId);
+      if (item && item.validities?.length) {
+        itemsCost += item.validities[item.validities.length - 1].cost;
+      }
+    });
+
+    // 3. Commissions & Total Cost
+    const totalCommissions =
+      price *
+      (((product.salesRepCommission || 0) +
+        (product.toCommission || 0) +
+        (product.creditCardCommission || 0)) /
+        100);
+    const totalCost = itemsCost + totalCommissions;
+
+    return {
+      name: product.name,
+      price: price,
+      totalCost: totalCost,
+      netProfit: price - totalCost,
+    };
+  }
+
+  convertMurToSelectedCurrency(murAmount: number): number {
+    const targetCurrencyName = this.pricelistForm.get('currencyName')?.value;
+    if (!targetCurrencyName || targetCurrencyName === CurrencyName.MUR) return murAmount;
+
+    const currencyObj = this.allCurrencies.find((c) => c.name === targetCurrencyName);
+    if (currencyObj && currencyObj.exchangeRate) {
+      return Number((murAmount / currencyObj.exchangeRate).toFixed(2));
+    }
+    return murAmount;
+  }
+
+  getPricelistNetProfit(formPrice: number, originalMurCost: number): number {
+    const convertedCost = this.convertMurToSelectedCurrency(originalMurCost);
+    return formPrice - convertedCost;
   }
 
   // --- Linked Tour Operators Logic ---
@@ -161,10 +253,10 @@ export class PricelistEditComponent implements OnInit {
     const selectedIds = this.pricelistForm.get('tourOperatorIds')?.value || [];
     return this.allTourOperators.filter((to) => selectedIds.includes(to.id));
   }
-
   removeLinkedTourOperator(idToRemove: string) {
     const currentIds = this.pricelistForm.get('tourOperatorIds')?.value || [];
-    const updatedIds = currentIds.filter((id: string) => id !== idToRemove);
-    this.pricelistForm.get('tourOperatorIds')?.setValue(updatedIds);
+    this.pricelistForm
+      .get('tourOperatorIds')
+      ?.setValue(currentIds.filter((id: string) => id !== idToRemove));
   }
 }

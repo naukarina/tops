@@ -67,39 +67,53 @@
 
             <div class="section-header d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Pricelist Products</h4>
-                <button mat-stroked-button color="primary" type="button" (click)="addProduct()">
-                    <mat-icon>add</mat-icon> Add Product
-                </button>
+                <div class="d-flex align-items-center gap-4">
+                    <mat-slide-toggle color="primary" [checked]="showCostAnalysis"
+                        (change)="showCostAnalysis = $event.checked">
+                        Show Cost Analysis
+                    </mat-slide-toggle>
+                    <button mat-stroked-button color="primary" type="button" (click)="addProduct()">
+                        <mat-icon>add</mat-icon> Add Product
+                    </button>
+                </div>
             </div>
 
             <div formArrayName="pricelistProducts" class="d-flex flex-column gap-4">
                 @for (productCtrl of productsArray.controls; track productCtrl; let i = $index) {
 
-                <div [formGroupName]="i" class="border p-3 rounded position-relative">
+                <div [formGroupName]="i" class="border pb-0 px-3 pt-3 rounded position-relative">
 
                     <button mat-icon-button color="warn" type="button" (click)="removeProduct(i)"
-                        class="position-absolute top-0 end-0 m-2">
+                        class="position-absolute top-0 end-0 mt-3 me-2" matTooltip="Remove Product">
                         <mat-icon>delete</mat-icon>
                     </button>
 
-                    <div class="d-flex gap-3 align-items-center pe-5">
+                    <div class="d-flex gap-1 align-items-center pe-5">
+                        @if (!getOriginalProductDetails(productCtrl.value.baseProductId)) {
                         <app-searchable-select class="flex-fill" label="Base Product" formControlName="baseProductId"
                             [options]="products$" optionText="name" optionValue="id" [searchable]="true">
                         </app-searchable-select>
+                        }
+                        @if (getOriginalProductDetails(productCtrl.value.baseProductId)) {
+                        <div class="col">
+                            <mat-form-field appearance="outline" class="mb-0">
+                                <mat-label>Pricelist Display Name</mat-label>
+                                <input matInput formControlName="displayName" required>
+                            </mat-form-field>
+                        </div>
+                        <div class="col-3">
+                            <mat-form-field appearance="outline" class="mb-0">
+                                <mat-label>Price ({{ pricelistForm.value.currencyName }})</mat-label>
+                                <input matInput type="number" formControlName="price" required min="0">
+                            </mat-form-field>
+                        </div>
 
-                        <mat-form-field appearance="outline" class="flex-fill mb-0">
-                            <mat-label>Pricelist Display Name</mat-label>
-                            <input matInput formControlName="displayName" required>
-                        </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="flex-fill mb-0">
-                            <mat-label>Pricelist Price ({{ pricelistForm.value.currencyName }})</mat-label>
-                            <input matInput type="number" formControlName="price" required min="0">
-                        </mat-form-field>
+                        }
                     </div>
-
+                    @if (showCostAnalysis) {
                     @if (getOriginalProductDetails(productCtrl.value.baseProductId); as orig) {
-                    <div class="mt-3 table-responsive border rounded">
+                    <div class="mb-3 table-responsive border rounded">
                         <table class="table table-sm table-borderless align-middle mb-0">
                             <thead class="border-bottom text-muted">
                                 <tr>
@@ -156,6 +170,7 @@
                             </tbody>
                         </table>
                     </div>
+                    }
                     }
                 </div>
                 }

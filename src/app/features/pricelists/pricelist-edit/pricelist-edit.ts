@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -10,8 +10,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Observable, combineLatest } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { shareReplay, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
@@ -41,6 +43,7 @@ import { Currency, CurrencyName } from '../../../core/models/currency.model';
     MatTooltipModule,
     EditPageComponent,
     SearchableSelectComponent,
+    MatSlideToggleModule,
   ],
   templateUrl: './pricelist-edit.html',
   styleUrls: ['./pricelist-edit.scss'],
@@ -60,6 +63,9 @@ export class PricelistEditComponent implements OnInit {
   private allCurrencies: Currency[] = [];
 
   currencyNames = Object.values(CurrencyName);
+  showCostAnalysis = false;
+
+  destroyRef = inject(DestroyRef);
 
   constructor(
     private fb: FormBuilder,
@@ -88,21 +94,32 @@ export class PricelistEditComponent implements OnInit {
       });
     }
 
-    this.tourOperators$ = this.partnerService
-      .getAll()
-      .pipe(tap((p) => (this.allTourOperators = p)));
-    this.products$ = this.productService.getAll().pipe(tap((p) => (this.allProducts = p)));
-    this.currencies$ = this.currencyService.getAll().pipe(tap((c) => (this.allCurrencies = c)));
-
-    // Fetch items silently for background cost calculations
     this.itemService.getAll().subscribe((items) => (this.allItems = items));
-    this.tourOperators$.subscribe((tos) => console.log('Fetched Tour Operators:', tos));
-    this.products$.subscribe((prods) => console.log('Fetched Products:', prods));
-    this.currencies$.subscribe((currs) => console.log('Fetched Currencies:', currs));
 
-    console.log('All Products for selection:', this.allProducts);
-    console.log('All Currencies for selection:', this.allCurrencies);
-    console.log('All Tour Operators for selection:', this.allTourOperators);
+    this.tourOperators$ = this.partnerService.getAll().pipe(
+      tap((tos) => {
+        this.allTourOperators = tos;
+      }),
+      shareReplay(1),
+    );
+
+    this.products$ = this.productService.getAll().pipe(
+      tap((prods) => {
+        this.allProducts = prods;
+      }),
+      shareReplay(1),
+    );
+
+    this.currencies$ = this.currencyService.getAll().pipe(
+      tap((currs) => {
+        this.allCurrencies = currs;
+      }),
+      shareReplay(1),
+    );
+
+    this.tourOperators$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    this.products$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    this.currencies$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
   initForm() {
@@ -136,7 +153,6 @@ export class PricelistEditComponent implements OnInit {
         ); // prevent infinite loops
       }
     });
-
     this.productsArray.push(productGroup);
   }
 
@@ -158,6 +174,7 @@ export class PricelistEditComponent implements OnInit {
     });
 
     this.productsArray.clear();
+
     if (pricelist.pricelistProducts) {
       pricelist.pricelistProducts.forEach((p) => {
         const group = this.fb.group({
@@ -184,7 +201,9 @@ export class PricelistEditComponent implements OnInit {
 
   onSubmit() {
     if (this.pricelistForm.invalid) return;
+
     const pricelistData: any = { ...this.pricelistForm.value };
+
     if (this.isEditMode && this.pricelistId) {
       this.pricelistService
         .update(this.pricelistId, pricelistData)
@@ -198,6 +217,7 @@ export class PricelistEditComponent implements OnInit {
 
   getOriginalProductDetails(productId: string) {
     if (!productId) return null;
+
     const product = this.allProducts.find((p) => p.id === productId);
     if (!product) return null;
 
@@ -240,6 +260,7 @@ export class PricelistEditComponent implements OnInit {
     if (currencyObj && currencyObj.exchangeRate) {
       return Number((murAmount / currencyObj.exchangeRate).toFixed(2));
     }
+
     return murAmount;
   }
 
@@ -249,10 +270,12 @@ export class PricelistEditComponent implements OnInit {
   }
 
   // --- Linked Tour Operators Logic ---
+
   getSelectedTourOperators(): any[] {
     const selectedIds = this.pricelistForm.get('tourOperatorIds')?.value || [];
     return this.allTourOperators.filter((to) => selectedIds.includes(to.id));
   }
+
   removeLinkedTourOperator(idToRemove: string) {
     const currentIds = this.pricelistForm.get('tourOperatorIds')?.value || [];
     this.pricelistForm

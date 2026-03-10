@@ -123,6 +123,36 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'pricelists',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Pricelists' },
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/pricelists/pricelist-list/pricelist-list').then(
+            (m) => m.PricelistListComponent,
+          ),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/pricelists/pricelist-edit/pricelist-edit').then(
+            (m) => m.PricelistEditComponent,
+          ),
+        data: { breadcrumb: 'Create' },
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () =>
+          import('./features/pricelists/pricelist-edit/pricelist-edit').then(
+            (m) => m.PricelistEditComponent,
+          ),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
+  {
     path: 'users',
     canActivate: [authGuard],
     data: { breadcrumb: 'Users' },

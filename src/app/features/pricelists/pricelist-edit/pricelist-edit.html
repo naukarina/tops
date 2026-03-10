@@ -1,1 +1,108 @@
-<p>pricelist-edit works!</p>
+<app-edit-page [title]="isEditMode ? 'Edit Pricelist' : 'New Pricelist'">
+    <div form-fields>
+        <form [formGroup]="pricelistForm" (ngSubmit)="onSubmit()">
+
+            <div class="section-header mt-0">
+                <h4>Basic Details</h4>
+            </div>
+
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Pricelist Name</mat-label>
+                <input matInput formControlName="name" required />
+            </mat-form-field>
+
+            <div class="d-flex gap-3">
+                <mat-form-field appearance="outline" class="flex-fill">
+                    <mat-label>Valid From</mat-label>
+                    <input matInput [matDatepicker]="fromPicker" formControlName="validityFrom" required>
+                    <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #fromPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-fill">
+                    <mat-label>Valid To</mat-label>
+                    <input matInput [matDatepicker]="toPicker" formControlName="validityTo" required>
+                    <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #toPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-fill">
+                    <mat-label>Currency</mat-label>
+                    <input matInput formControlName="currencyName" placeholder="e.g. EUR" required />
+                </mat-form-field>
+            </div>
+
+            <hr>
+
+            <div class="section-header">
+                <h4>Linked Tour Operators</h4>
+            </div>
+
+            <app-searchable-select label="Select Tour Operators" formControlName="tourOperatorIds"
+                [options]="tourOperators$" optionText="name" optionValue="id" [multiple]="true" [searchable]="true">
+            </app-searchable-select>
+
+            @if (getSelectedTourOperators().length > 0) {
+            <div class="selected-items-container mb-3">
+                <div class="d-flex flex-column gap-2 mt-2">
+                    @for (to of getSelectedTourOperators(); track to.id) {
+                    <div class="selected-item-row d-flex justify-content-between align-items-center p-2 border rounded">
+                        <span class="fw-medium">{{ to.name }}</span>
+                        <button mat-icon-button color="warn" type="button" (click)="removeLinkedTourOperator(to.id)"
+                            matTooltip="Remove">
+                            <mat-icon>close</mat-icon>
+                        </button>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+
+            <hr>
+
+            <div class="section-header d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Pricelist Products</h4>
+                <button mat-stroked-button color="primary" type="button" (click)="addProduct()">
+                    <mat-icon>add</mat-icon> Add Product
+                </button>
+            </div>
+
+            <div formArrayName="pricelistProducts">
+                @for (product of productsArray.controls; track product; let i = $index) {
+                <div [formGroupName]="i" class="form-row align-items-center d-flex gap-3">
+
+                    <app-searchable-select class="flex-fill" label="Base Product" formControlName="baseProductId"
+                        [options]="products$" optionText="name" optionValue="id" [searchable]="true">
+                    </app-searchable-select>
+
+                    <mat-form-field appearance="outline" class="flex-fill">
+                        <mat-label>Display Name</mat-label>
+                        <input matInput formControlName="displayName" required>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="flex-fill">
+                        <mat-label>Price</mat-label>
+                        <input matInput type="number" formControlName="price" required min="0">
+                    </mat-form-field>
+
+                    <button mat-icon-button color="warn" type="button" (click)="removeProduct(i)" class="mb-3">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+                }
+            </div>
+
+        </form>
+    </div>
+
+    <div form-actions>
+        <button mat-stroked-button color="warn" type="button" routerLink="/pricelists" class="me-2">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!pricelistForm.valid" (click)="onSubmit()">
+            <mat-icon>save</mat-icon>
+            <span>Save</span>
+        </button>
+    </div>
+</app-edit-page>

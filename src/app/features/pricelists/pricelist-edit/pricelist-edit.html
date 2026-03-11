@@ -74,13 +74,16 @@
                         <div class="d-flex gap-3 mb-3">
                             <mat-form-field appearance="outline" class="flex-fill mb-0">
                                 <mat-label>Valid From</mat-label>
-                                <input matInput [matDatepicker]="fromPicker" formControlName="validityFrom" required>
+                                <input matInput [matDatepicker]="fromPicker" formControlName="validityFrom"
+                                    [min]="getMinFromDate(pIndex)" required>
                                 <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
                                 <mat-datepicker #fromPicker></mat-datepicker>
                             </mat-form-field>
+
                             <mat-form-field appearance="outline" class="flex-fill mb-0">
                                 <mat-label>Valid To</mat-label>
-                                <input matInput [matDatepicker]="toPicker" formControlName="validityTo" required>
+                                <input matInput [matDatepicker]="toPicker" formControlName="validityTo"
+                                    [min]="getMinToDate(pIndex)" required>
                                 <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
                                 <mat-datepicker #toPicker></mat-datepicker>
                             </mat-form-field>

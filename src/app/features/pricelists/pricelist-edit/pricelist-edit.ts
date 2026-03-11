@@ -149,12 +149,79 @@ export class PricelistEditComponent implements OnInit {
   }
 
   addPeriod() {
+    let fromDate = new Date();
+    let toDate = new Date();
+
+    // Default for the very first period: Valid To is 1 year from today
+    toDate.setFullYear(toDate.getFullYear() + 1);
+
+    if (this.periodsArray.length > 0) {
+      // Get the validityTo of the previous period
+      const prevToRaw = this.periodsArray.at(this.periodsArray.length - 1).get('validityTo')?.value;
+
+      if (prevToRaw) {
+        // Convert to Date (Handling both JS Date and Firebase Timestamp)
+        const prevTo =
+          prevToRaw instanceof Date
+            ? prevToRaw
+            : prevToRaw?.toDate
+              ? prevToRaw.toDate()
+              : new Date(prevToRaw);
+
+        // Next period starts 1 day after the previous period ends
+        fromDate = new Date(prevTo);
+        fromDate.setDate(fromDate.getDate() + 1);
+
+        // Next period ends 1 year after it starts
+        toDate = new Date(fromDate);
+        toDate.setFullYear(toDate.getFullYear() + 1);
+      }
+    }
+
     const periodGroup = this.fb.group({
-      validityFrom: [new Date(), Validators.required],
-      validityTo: [new Date(), Validators.required],
+      validityFrom: [fromDate, Validators.required],
+      validityTo: [toDate, Validators.required],
       pricelistProducts: this.fb.array([]),
     });
+
     this.periodsArray.push(periodGroup);
+  }
+
+  // --- CALENDAR DATE RESTRICTIONS ---
+
+  // Ensures "Valid From" cannot be set before the end of the previous period
+  getMinFromDate(index: number): Date | null {
+    if (index === 0) return null; // No restriction on the first period
+
+    const prevToRaw = this.periodsArray.at(index - 1).get('validityTo')?.value;
+    if (prevToRaw) {
+      const prevTo =
+        prevToRaw instanceof Date
+          ? prevToRaw
+          : prevToRaw?.toDate
+            ? prevToRaw.toDate()
+            : new Date(prevToRaw);
+
+      const minDate = new Date(prevTo);
+      minDate.setDate(minDate.getDate() + 1);
+      return minDate;
+    }
+    return null;
+  }
+
+  // Ensures "Valid To" cannot be set before "Valid From" of the current period
+  getMinToDate(index: number): Date | null {
+    const currentFromRaw = this.periodsArray.at(index).get('validityFrom')?.value;
+    if (currentFromRaw) {
+      const currentFrom =
+        currentFromRaw instanceof Date
+          ? currentFromRaw
+          : currentFromRaw?.toDate
+            ? currentFromRaw.toDate()
+            : new Date(currentFromRaw);
+      return new Date(currentFrom);
+    }
+    return null;
   }
 
   removePeriod(periodIndex: number) {

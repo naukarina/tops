@@ -36,7 +36,6 @@ export class PricelistListComponent {
   private notificationService = inject(NotificationService);
   private datePipe = inject(DatePipe);
 
-  // Combine Pricelists and Partners to resolve Tour Operator names
   pricelists$: Observable<PricelistWithDetails[]> = combineLatest([
     this.pricelistService.getAll(),
     this.partnerService.getAll(),
@@ -59,7 +58,13 @@ export class PricelistListComponent {
     }),
   );
 
-  displayedColumns = ['name', 'currencyName', 'tourOperatorNames', 'actions'];
+  displayedColumns = [
+    'name',
+    'currencyName',
+    'tourOperatorNames',
+    'periods', // <-- Replaced validityFrom and validityTo with the new column
+    'actions',
+  ];
 
   columnDefs: ColumnDefinition<PricelistWithDetails>[] = [
     { columnDef: 'name', header: 'Name', cell: (p) => p.name, isSortable: true },
@@ -73,6 +78,32 @@ export class PricelistListComponent {
       columnDef: 'tourOperatorNames',
       header: 'Tour Operators',
       cell: (p) => p.tourOperatorNames,
+      isSortable: false,
+    },
+    // NEW: Dynamically build a string showing all periods formatted clearly
+    {
+      columnDef: 'periods',
+      header: 'Periods (From - To)',
+      cell: (p) => {
+        if (!p.periods || p.periods.length === 0) return 'No periods';
+
+        return p.periods
+          .map((period, index) => {
+            const dateFrom = period.validityFrom?.toDate
+              ? period.validityFrom.toDate()
+              : new Date(period.validityFrom);
+            const dateTo = period.validityTo?.toDate
+              ? period.validityTo.toDate()
+              : new Date(period.validityTo);
+
+            // Updated date format here
+            const fromStr = this.datePipe.transform(dateFrom, 'dd/MM/yyyy');
+            const toStr = this.datePipe.transform(dateTo, 'dd/MM/yyyy');
+
+            return `${index > 0 ? ' ' : ''}${fromStr} - ${toStr} (${period.pricelistProducts.length})`;
+          })
+          .join('\n'); // Replaced ' | ' with a newline character
+      },
       isSortable: false,
     },
   ];

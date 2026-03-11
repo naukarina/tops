@@ -67,12 +67,18 @@
 
             <div class="section-header d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Pricelist Products</h4>
-                <div class="d-flex align-items-center gap-4">
+                <div class="d-flex align-items-center gap-3">
                     <mat-slide-toggle color="primary" [checked]="showCostAnalysis"
-                        (change)="showCostAnalysis = $event.checked">
+                        (change)="showCostAnalysis = $event.checked" class="me-2">
                         Show Cost Analysis
                     </mat-slide-toggle>
-                    <button mat-stroked-button color="primary" type="button" (click)="addProduct()">
+
+                    <input type="file" #csvFileInput hidden accept=".csv" (change)="onCsvImport($event)">
+                    <button mat-stroked-button color="primary" type="button" (click)="csvFileInput.click()">
+                        <mat-icon>upload_file</mat-icon> Import CSV
+                    </button>
+
+                    <button mat-flat-button color="primary" type="button" (click)="addProduct()">
                         <mat-icon>add</mat-icon> Add Product
                     </button>
                 </div>

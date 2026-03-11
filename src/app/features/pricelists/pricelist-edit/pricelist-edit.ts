@@ -282,4 +282,106 @@ export class PricelistEditComponent implements OnInit {
       .get('tourOperatorIds')
       ?.setValue(currentIds.filter((id: string) => id !== idToRemove));
   }
+
+  onCsvImport(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      this.processCsvData(text);
+      // Reset input so the same file can be uploaded again if needed
+      input.value = '';
+    };
+
+    reader.readAsText(file);
+  }
+
+  private processCsvData(csvText: string) {
+    const lines = csvText.split('\n').filter((line) => line.trim().length > 0);
+    if (lines.length < 2) {
+      alert('CSV file is empty or missing data rows.');
+      return;
+    }
+
+    const headers = this.parseCsvRow(lines[0]);
+    // Look for exact column names (case-insensitive)
+    const idIdx = headers.findIndex((h) => h.toLowerCase() === 'productid');
+    const priceIdx = headers.findIndex((h) => h.toLowerCase() === 'price');
+    const nameIdx = headers.findIndex(
+      (h) => h.toLowerCase() === 'displayname' || h.toLowerCase() === 'product',
+    );
+
+    if (idIdx === -1 || priceIdx === -1) {
+      alert('CSV must contain "productId" and "price" columns.');
+      return;
+    }
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = this.parseCsvRow(lines[i]);
+      if (values.length <= Math.max(idIdx, priceIdx)) continue; // Skip malformed rows
+
+      const productId = values[idIdx];
+      const price = parseFloat(values[priceIdx]);
+      let displayName = nameIdx !== -1 ? values[nameIdx] : '';
+
+      // Skip if essential data is missing
+      if (!productId || isNaN(price)) continue;
+
+      // Fallback: if name is missing in CSV, try to find it in loaded products
+      if (!displayName) {
+        const matchedProduct = this.allProducts.find((p) => p.id === productId);
+        displayName = matchedProduct ? matchedProduct.name : 'Imported Product';
+      }
+
+      // Create the FormGroup without triggering the auto-fill overwrite
+      const productGroup = this.fb.group({
+        baseProductId: [productId, Validators.required],
+        displayName: [displayName, Validators.required],
+        price: [price, [Validators.required, Validators.min(0)]],
+      });
+
+      // Attach the listener so manual edits later still work
+      this.setupProductListener(productGroup);
+
+      this.productsArray.push(productGroup);
+    }
+  }
+  private setupProductListener(productGroup: FormGroup) {
+    productGroup.get('baseProductId')?.valueChanges.subscribe((productId) => {
+      const orig = this.getOriginalProductDetails(productId ?? '');
+      if (orig) {
+        productGroup.patchValue(
+          {
+            displayName: orig.name,
+            price: this.convertMurToSelectedCurrency(orig.price),
+          },
+          { emitEvent: false }, // emitEvent: false prevents infinite loops
+        );
+      }
+    });
+  }
+
+  // A robust row parser that handles commas inside quote marks properly
+  private parseCsvRow(row: string): string[] {
+    const result = [];
+    let insideQuote = false;
+    let currentVal = '';
+    for (let i = 0; i < row.length; i++) {
+      const char = row[i];
+      if (char === '"') {
+        insideQuote = !insideQuote;
+      } else if (char === ',' && !insideQuote) {
+        result.push(currentVal.trim());
+        currentVal = '';
+      } else {
+        currentVal += char;
+      }
+    }
+    result.push(currentVal.trim());
+    return result.map((val) => val.replace(/^"|"$/g, '')); // Strip surrounding quotes
+  }
 }

@@ -123,4 +123,72 @@ export class PricelistListComponent {
       }
     }
   }
+
+  onExport(selectedPricelists: PricelistWithDetails[]) {
+    // Check if there's anything to export
+    if (!selectedPricelists || selectedPricelists.length === 0) {
+      this.notificationService.showError('No pricelists selected for export.');
+      return;
+    }
+
+    let exportedCount = 0;
+
+    selectedPricelists.forEach((pricelist) => {
+      // Skip if the pricelist has no periods
+      if (!pricelist.periods || pricelist.periods.length === 0) return;
+
+      pricelist.periods.forEach((period, index) => {
+        // 1. Format Dates for the filename
+        const dateFrom = period.validityFrom?.toDate
+          ? period.validityFrom.toDate()
+          : new Date(period.validityFrom);
+        const dateTo = period.validityTo?.toDate
+          ? period.validityTo.toDate()
+          : new Date(period.validityTo);
+        const fromStr = this.datePipe.transform(dateFrom, 'yyyy-MM-dd') || 'start';
+        const toStr = this.datePipe.transform(dateTo, 'yyyy-MM-dd') || 'end';
+
+        // 2. Build the CSV content matching your import format
+        let csvContent = 'productId,displayName,price\n';
+
+        if (period.pricelistProducts) {
+          period.pricelistProducts.forEach((product) => {
+            // Safely escape quotes in names (e.g., if a product is named 5" Screen)
+            const safeName = product.displayName
+              ? `"${product.displayName.replace(/"/g, '""')}"`
+              : '""';
+            csvContent += `${product.baseProductId},${safeName},${product.price}\n`;
+          });
+        }
+
+        // 3. Create a Blob and trigger the download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        // Clean up the pricelist name so it's safe for Windows/Mac filenames
+        const safePricelistName = pricelist.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+        // Example filename: summer_2024_period_1_2024-06-01_to_2024-10-31.csv
+        link.setAttribute('href', url);
+        link.setAttribute(
+          'download',
+          `${safePricelistName}_period_${index + 1}_${fromStr}_to_${toStr}.csv`,
+        );
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        exportedCount++;
+      });
+    });
+
+    if (exportedCount > 0) {
+      this.notificationService.showSuccess(`Exported ${exportedCount} period CSV(s) successfully.`);
+    } else {
+      this.notificationService.showError('No periods found in the selected pricelist(s).');
+    }
+  }
 }

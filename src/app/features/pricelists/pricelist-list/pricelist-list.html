@@ -1,7 +1,8 @@
-<app-list-page>
+<app-list-page title="Pricelists" createRoute="/pricelists/new">
     <app-data-table [dataInput]="pricelists$" [columnDefinitions]="columnDefs"
         [displayedColumnsInput]="displayedColumns" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
-        [enablePaginator]="true" filterPlaceholder="Search pricelists..." [editRoute]="editRoute" [enableDelete]="true"
+        [enablePaginator]="true" [enableExport]="true" (exportAction)="onExport($event)"
+        filterPlaceholder="Search pricelists..." [editRoute]="editRoute" [enableDelete]="true"
         (deleteAction)="onDelete($event)" title="Pricelists" newRoute="/pricelists/new" newButtonText="Add Pricelist">
     </app-data-table>
 </app-list-page>

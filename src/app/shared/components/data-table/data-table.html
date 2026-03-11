@@ -20,11 +20,9 @@
             Filters
         </button>
         }
-        @if (enableSelection) {
-        <button mat-stroked-button color="accent" (click)="extractToCsv()" class="filter-button"
-            [disabled]="selection.selected.length === 0">
-            <mat-icon>download</mat-icon>
-            Extract Selected
+        @if (enableExport) {
+        <button mat-button class="mat-stroked-button" (click)="handleExport()">
+            <mat-icon>download</mat-icon> Export
         </button>
         }
         <button mat-flat-button color="primary" [routerLink]="newRoute" class="filter-button">

@@ -73,6 +73,8 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   private dialog = inject(MatDialog);
 
   @Input() dataInput: Observable<T[]> | T[] = [];
+  @Input() enableExport: boolean = true; // Defaults to true so existing pages don't break
+  @Output() exportAction = new EventEmitter<T[]>();
   @Input() columnDefinitions: ColumnDefinition<T>[] = [];
   @Input() set displayedColumnsInput(cols: string[]) {
     this._displayedColumnsInput = cols;
@@ -109,7 +111,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   activeFilterCount = computed(() => {
     const filters = this.activeDropdownFilters();
     return Object.values(filters).filter((value) =>
-      Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined
+      Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined,
     ).length;
   });
 
@@ -226,7 +228,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
             this.dataSource.data = data || []; // Update internal data first
             this.applyCurrentFilters(); // Apply filters
             return this.dataSource.filteredData; // Pass filtered data downstream if needed
-          })
+          }),
         )
         .subscribe((filteredData) => {
           // Use filteredData if needed for selection checks, or just use dataSource.data/filteredData directly
@@ -341,7 +343,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
       this.dataSource.sort = this.sort;
     } else if (this.enableSort) {
       console.warn(
-        'DataTableComponent: MatSort ViewChild is not available or dataSource not ready.'
+        'DataTableComponent: MatSort ViewChild is not available or dataSource not ready.',
       );
     }
     if (this.paginator && this.dataSource) {
@@ -349,7 +351,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
       this.dataSource.paginator = this.paginator;
     } else if (this.enablePaginator) {
       console.warn(
-        'DataTableComponent: MatPaginator ViewChild is not available or dataSource not ready.'
+        'DataTableComponent: MatPaginator ViewChild is not available or dataSource not ready.',
       );
     }
   }
@@ -445,7 +447,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
 
     const dataToExport = this.selection.selected;
     const columns = this.columnDefinitions.filter((cd) =>
-      this._displayedColumnsInput.includes(cd.columnDef)
+      this._displayedColumnsInput.includes(cd.columnDef),
     ); // Use the input columns
 
     // 1. Create Headers
@@ -491,6 +493,16 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url); // Clean up
+    }
+  }
+
+  handleExport() {
+    // If the parent component (like PricelistList) is listening, emit the selected rows to it
+    if (this.exportAction.observed) {
+      this.exportAction.emit(this.selection.selected);
+    } else {
+      // Otherwise, use the standard default data table export
+      this.extractToCsv();
     }
   }
 }

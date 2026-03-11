@@ -54,21 +54,12 @@ export class PricelistListComponent {
         return {
           ...p,
           tourOperatorNames: names || 'None',
-          productCount: p.pricelistProducts?.length || 0,
         } as PricelistWithDetails;
       });
     }),
   );
 
-  displayedColumns = [
-    'name',
-    'currencyName',
-    'tourOperatorNames',
-    'productCount',
-    'validityFrom',
-    'validityTo',
-    'actions',
-  ];
+  displayedColumns = ['name', 'currencyName', 'tourOperatorNames', 'actions'];
 
   columnDefs: ColumnDefinition<PricelistWithDetails>[] = [
     { columnDef: 'name', header: 'Name', cell: (p) => p.name, isSortable: true },
@@ -83,30 +74,6 @@ export class PricelistListComponent {
       header: 'Tour Operators',
       cell: (p) => p.tourOperatorNames,
       isSortable: false,
-    },
-    {
-      columnDef: 'productCount',
-      header: 'Linked Products',
-      cell: (p) => p.productCount.toString(),
-      isSortable: true,
-    },
-    {
-      columnDef: 'validityFrom',
-      header: 'Valid From',
-      cell: (p) => {
-        const date = p.validityFrom?.toDate ? p.validityFrom.toDate() : new Date(p.validityFrom);
-        return this.datePipe.transform(date, 'mediumDate') || '';
-      },
-      isSortable: true,
-    },
-    {
-      columnDef: 'validityTo',
-      header: 'Valid To',
-      cell: (p) => {
-        const date = p.validityTo?.toDate ? p.validityTo.toDate() : new Date(p.validityTo);
-        return this.datePipe.transform(date, 'mediumDate') || '';
-      },
-      isSortable: true,
     },
   ];
 

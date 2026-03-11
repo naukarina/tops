@@ -1,0 +1,139 @@
+<h2 mat-dialog-title class="border-bottom py-3 mb-0 d-flex justify-content-between align-items-center">
+    <span>Manage Products</span>
+    <div class="d-flex align-items-center gap-3">
+        <mat-slide-toggle color="primary" [checked]="showCostAnalysis" (change)="showCostAnalysis = $event.checked"
+            class="fs-6 fw-normal">
+            Show Cost Analysis
+        </mat-slide-toggle>
+        <input type="file" #csvFileInput hidden accept=".csv" (change)="onCsvImport($event)" />
+        <button mat-stroked-button color="primary" (click)="csvFileInput.click()">
+            <mat-icon>upload_file</mat-icon> Import CSV
+        </button>
+        <button mat-flat-button color="primary" (click)="addProduct()">
+            <mat-icon>add</mat-icon> Add Product
+        </button>
+    </div>
+</h2>
+
+<mat-dialog-content class="pt-4 bg-light">
+    <form [formGroup]="form">
+        <div formArrayName="products" class="d-flex flex-column gap-3">
+            @if (productsArray.controls.length === 0) {
+            <div class="text-center text-muted p-5 bg-white rounded border">
+                No products added to this period yet. Click "Add Product" or "Import CSV" to begin.
+            </div>
+            }
+
+            @for (productCtrl of productsArray.controls; track productCtrl; let i = $index) {
+            <div [formGroupName]="i" class="border rounded shadow-sm bg-white overflow-hidden">
+                <div class="p-3 pb-0 d-flex gap-3 align-items-start">
+                    <div style="flex: 2;">
+                        <app-searchable-select label="Base Product" formControlName="baseProductId"
+                            [options]="data.allProducts" optionText="name" optionValue="id" [searchable]="true">
+                        </app-searchable-select>
+                    </div>
+                    <div style="flex: 2;">
+                        <mat-form-field appearance="outline" class="w-100 mb-0">
+                            <mat-label>Pricelist Display Name</mat-label>
+                            <input matInput formControlName="displayName" required />
+                        </mat-form-field>
+                    </div>
+                    <div style="flex: 1;">
+                        <mat-form-field appearance="outline" class="w-100 mb-0">
+                            <mat-label>Price ({{ data.currencyName }})</mat-label>
+                            <input matInput type="number" formControlName="price" required min="0" />
+                        </mat-form-field>
+                    </div>
+                    <div class="pt-1">
+                        <button mat-icon-button color="warn" (click)="removeProduct(i)" matTooltip="Remove Product">
+                            <mat-icon>delete_outline</mat-icon>
+                        </button>
+                    </div>
+                </div>
+
+                @if (showCostAnalysis) {
+                @if (getOriginalProductDetails(productCtrl.value.baseProductId); as orig) {
+                <div class="mt-3 table-responsive border-top">
+                    <table class="table table-sm table-borderless align-middle mb-0 bg-light">
+                        <thead class="border-bottom text-muted">
+                            <tr>
+                                <th class="text-start ps-3 fw-semibold">Metric Type</th>
+                                <th class="text-center fw-semibold">Original (MUR)</th>
+                                <th class="text-center fw-semibold">
+                                    Converted ({{ data.currencyName }})
+                                </th>
+                                <th class="text-center pe-3 fw-semibold">
+                                    Pricelist ({{ data.currencyName }})
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-bottom">
+                                <td class="text-start ps-3 text-dark">Price</td>
+                                <td class="text-center">{{ orig.price | number: '1.2-2' }}</td>
+                                <td class="text-center">
+                                    {{ convertMurToSelectedCurrency(orig.price) | number: '1.2-2' }}
+                                </td>
+                                <td class="text-center pe-3">
+                                    {{ productCtrl.value.price | number: '1.2-2' }}
+                                </td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-start ps-3 text-dark">Cost Breakdown</td>
+                                <td class="text-center">{{ orig.totalCost | number: '1.2-2' }}</td>
+                                <td class="text-center">
+                                    {{ convertMurToSelectedCurrency(orig.totalCost) | number: '1.2-2' }}
+                                </td>
+                                <td class="text-center pe-3">
+                                    {{ convertMurToSelectedCurrency(orig.totalCost) | number: '1.2-2' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-start ps-3 text-dark fw-bold d-flex align-items-center gap-2">
+                                    <mat-icon class="text-success"
+                                        style="font-size: 1.2rem; height: 1.2rem; width: 1.2rem;">trending_up</mat-icon>
+                                    Net Profit
+                                </td>
+                                <td class="text-center" [ngClass]="{
+                              'text-success fw-bold': orig.netProfit >= 0,
+                              'text-danger fw-bold': orig.netProfit < 0,
+                            }">
+                                    {{ orig.netProfit | number: '1.2-2' }}
+                                </td>
+                                <td class="text-center" [ngClass]="{
+                              'text-success fw-bold':
+                                convertMurToSelectedCurrency(orig.netProfit) >= 0,
+                              'text-danger fw-bold':
+                                convertMurToSelectedCurrency(orig.netProfit) < 0,
+                            }">
+                                    {{ convertMurToSelectedCurrency(orig.netProfit) | number: '1.2-2' }}
+                                </td>
+                                <td class="text-center pe-3" [ngClass]="{
+                              'text-success fw-bold':
+                                getPricelistNetProfit(productCtrl.value.price, orig.totalCost) >= 0,
+                              'text-danger fw-bold':
+                                getPricelistNetProfit(productCtrl.value.price, orig.totalCost) < 0,
+                            }">
+                                    {{
+                                    getPricelistNetProfit(productCtrl.value.price, orig.totalCost)
+                                    | number: '1.2-2'
+                                    }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                }
+                }
+            </div>
+            }
+        </div>
+    </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="border-top pt-3">
+    <button mat-stroked-button color="warn" mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="onSave()">
+        Save Products
+    </button>
+</mat-dialog-actions>

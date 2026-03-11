@@ -2,6 +2,8 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+
+// Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -10,21 +12,25 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { Observable, combineLatest } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // <-- NEW
+
+// RxJS
+import { Observable } from 'rxjs';
 import { shareReplay, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+// Shared & Services
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select';
 import { PricelistService } from '../services/pricelist.service';
-import { Pricelist } from '../models/pricelist.model';
+import { Pricelist, PricelistProduct } from '../models/pricelist.model';
 import { PartnerService } from '../../partners/services/partner.service';
 import { ProductService } from '../../products/services/product.service';
 import { ItemService } from '../../items/services/item.service';
 import { CurrencyService } from '../../../core/services/currency.service';
 import { Product } from '../../products/models/product.model';
 import { Currency, CurrencyName } from '../../../core/models/currency.model';
+import { PricelistProductsDialogComponent } from './pricelist-products-dialog/pricelist-products-dialog';
 
 @Component({
   selector: 'app-pricelist-edit',
@@ -41,14 +47,25 @@ import { Currency, CurrencyName } from '../../../core/models/currency.model';
     MatDatepickerModule,
     MatNativeDateModule,
     MatTooltipModule,
+    MatDialogModule, // <-- NEW
     EditPageComponent,
     SearchableSelectComponent,
-    MatSlideToggleModule,
   ],
   templateUrl: './pricelist-edit.html',
   styleUrls: ['./pricelist-edit.scss'],
 })
 export class PricelistEditComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private pricelistService = inject(PricelistService);
+  private partnerService = inject(PartnerService);
+  private productService = inject(ProductService);
+  private itemService = inject(ItemService);
+  private currencyService = inject(CurrencyService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  private dialog = inject(MatDialog); // <-- NEW
+
   pricelistForm!: FormGroup;
   isEditMode = false;
   pricelistId: string | null = null;
@@ -63,25 +80,17 @@ export class PricelistEditComponent implements OnInit {
   private allCurrencies: Currency[] = [];
 
   currencyNames = Object.values(CurrencyName);
-  showCostAnalysis = false;
 
-  destroyRef = inject(DestroyRef);
-
-  constructor(
-    private fb: FormBuilder,
-    private pricelistService: PricelistService,
-    private partnerService: PartnerService,
-    private productService: ProductService,
-    private itemService: ItemService,
-    private currencyService: CurrencyService,
-    private route: ActivatedRoute,
-    private router: Router,
-  ) {
+  constructor() {
     this.initForm();
   }
 
-  get productsArray() {
-    return this.pricelistForm.get('pricelistProducts') as FormArray;
+  get periodsArray() {
+    return this.pricelistForm.get('periods') as FormArray;
+  }
+
+  getProductsArray(periodIndex: number) {
+    return this.periodsArray.at(periodIndex).get('pricelistProducts') as FormArray;
   }
 
   ngOnInit(): void {
@@ -89,12 +98,20 @@ export class PricelistEditComponent implements OnInit {
 
     if (this.pricelistId) {
       this.isEditMode = true;
-      this.pricelistService.get(this.pricelistId).subscribe((pricelist) => {
-        if (pricelist) this.patchForm(pricelist);
-      });
+      this.pricelistService
+        .get(this.pricelistId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((pricelist) => {
+          if (pricelist) this.patchForm(pricelist);
+        });
+    } else {
+      this.addPeriod();
     }
 
-    this.itemService.getAll().subscribe((items) => (this.allItems = items));
+    this.itemService
+      .getAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((items) => (this.allItems = items));
 
     this.tourOperators$ = this.partnerService.getAll().pipe(
       tap((tos) => {
@@ -125,85 +142,108 @@ export class PricelistEditComponent implements OnInit {
   initForm() {
     this.pricelistForm = this.fb.group({
       name: ['', Validators.required],
+      currencyName: [CurrencyName.EUR, Validators.required],
+      tourOperatorIds: [[]],
+      periods: this.fb.array([]),
+    });
+  }
+
+  addPeriod() {
+    const periodGroup = this.fb.group({
       validityFrom: [new Date(), Validators.required],
       validityTo: [new Date(), Validators.required],
-      currencyName: [CurrencyName.EUR, Validators.required], // Dropdown for currencies
-      tourOperatorIds: [[]],
       pricelistProducts: this.fb.array([]),
     });
+    this.periodsArray.push(periodGroup);
   }
 
-  addProduct() {
-    const productGroup = this.fb.group({
-      baseProductId: ['', Validators.required],
-      displayName: ['', Validators.required],
-      price: [0, [Validators.required, Validators.min(0)]],
+  removePeriod(periodIndex: number) {
+    this.periodsArray.removeAt(periodIndex);
+  }
+
+  // --- DIALOG INTEGRATION ---
+  openProductsDialog(periodIndex: number) {
+    const currentProducts = this.getProductsArray(periodIndex).value;
+    const currencyName = this.pricelistForm.get('currencyName')?.value;
+
+    const dialogRef = this.dialog.open(PricelistProductsDialogComponent, {
+      width: '90vw', // Wide dialog for the table
+      maxWidth: '1200px',
+      disableClose: true, // Prevent accidental closes
+      data: {
+        products: currentProducts,
+        currencyName: currencyName,
+        allProducts: this.allProducts,
+        allItems: this.allItems,
+        allCurrencies: this.allCurrencies,
+      },
     });
 
-    // AUTO-FILL LOGIC: Listen to product selection to set default name & converted price
-    productGroup.get('baseProductId')?.valueChanges.subscribe((productId) => {
-      const orig = this.getOriginalProductDetails(productId ?? '');
-      if (orig) {
-        productGroup.patchValue(
-          {
-            displayName: orig.name,
-            price: this.convertMurToSelectedCurrency(orig.price),
-          },
-          { emitEvent: false },
-        ); // prevent infinite loops
+    dialogRef.afterClosed().subscribe((result: PricelistProduct[]) => {
+      if (result) {
+        const productsArray = this.getProductsArray(periodIndex);
+        productsArray.clear(); // Clear old FormArray
+
+        // Rebuild FormArray with new data
+        result.forEach((p) => {
+          productsArray.push(
+            this.fb.group({
+              baseProductId: [p.baseProductId, Validators.required],
+              displayName: [p.displayName, Validators.required],
+              price: [p.price, Validators.required],
+            }),
+          );
+        });
+
+        this.pricelistForm.markAsDirty();
       }
     });
-    this.productsArray.push(productGroup);
   }
 
-  removeProduct(index: number) {
-    this.productsArray.removeAt(index);
-  }
-
-  patchForm(pricelist: Pricelist) {
+  patchForm(pricelist: any) {
     this.pricelistForm.patchValue({
       name: pricelist.name,
-      validityFrom: pricelist.validityFrom?.toDate
-        ? pricelist.validityFrom.toDate()
-        : new Date(pricelist.validityFrom),
-      validityTo: pricelist.validityTo?.toDate
-        ? pricelist.validityTo.toDate()
-        : new Date(pricelist.validityTo),
       currencyName: pricelist.currencyName,
       tourOperatorIds: pricelist.tourOperatorIds || [],
     });
 
-    this.productsArray.clear();
+    this.periodsArray.clear();
+    const periodsToLoad = pricelist.periods || [];
 
-    if (pricelist.pricelistProducts) {
-      pricelist.pricelistProducts.forEach((p) => {
-        const group = this.fb.group({
-          baseProductId: [p.baseProductId, Validators.required],
-          displayName: [p.displayName, Validators.required],
-          price: [p.price, Validators.required],
-        });
-
-        // Add listener AFTER patching so we don't overwrite existing db values on load
-        group.get('baseProductId')?.valueChanges.subscribe((productId) => {
-          const orig = this.getOriginalProductDetails(productId ?? '');
-          if (orig) {
-            group.patchValue(
-              { displayName: orig.name, price: this.convertMurToSelectedCurrency(orig.price) },
-              { emitEvent: false },
-            );
-          }
-        });
-
-        this.productsArray.push(group);
+    periodsToLoad.forEach((period: any) => {
+      const periodGroup = this.fb.group({
+        validityFrom: [
+          period.validityFrom?.toDate
+            ? period.validityFrom.toDate()
+            : new Date(period.validityFrom),
+          Validators.required,
+        ],
+        validityTo: [
+          period.validityTo?.toDate ? period.validityTo.toDate() : new Date(period.validityTo),
+          Validators.required,
+        ],
+        pricelistProducts: this.fb.array([]),
       });
-    }
+
+      if (period.pricelistProducts) {
+        const productsArray = periodGroup.get('pricelistProducts') as FormArray;
+        period.pricelistProducts.forEach((p: any) => {
+          productsArray.push(
+            this.fb.group({
+              baseProductId: [p.baseProductId, Validators.required],
+              displayName: [p.displayName, Validators.required],
+              price: [p.price, Validators.required],
+            }),
+          );
+        });
+      }
+      this.periodsArray.push(periodGroup);
+    });
   }
 
   onSubmit() {
     if (this.pricelistForm.invalid) return;
-
     const pricelistData: any = { ...this.pricelistForm.value };
-
     if (this.isEditMode && this.pricelistId) {
       this.pricelistService
         .update(this.pricelistId, pricelistData)
@@ -212,64 +252,6 @@ export class PricelistEditComponent implements OnInit {
       this.pricelistService.add(pricelistData).then(() => this.router.navigate(['/pricelists']));
     }
   }
-
-  // --- CALCULATION & CONVERSION LOGIC ---
-
-  getOriginalProductDetails(productId: string) {
-    if (!productId) return null;
-
-    const product = this.allProducts.find((p) => p.id === productId);
-    if (!product) return null;
-
-    // 1. Get original price (from latest validity)
-    const price = product.validities?.length
-      ? product.validities[product.validities.length - 1].price
-      : 0;
-
-    // 2. Get original items cost
-    let itemsCost = 0;
-    (product.itemIds || []).forEach((itemId) => {
-      const item = this.allItems.find((i) => i.id === itemId);
-      if (item && item.validities?.length) {
-        itemsCost += item.validities[item.validities.length - 1].cost;
-      }
-    });
-
-    // 3. Commissions & Total Cost
-    const totalCommissions =
-      price *
-      (((product.salesRepCommission || 0) +
-        (product.toCommission || 0) +
-        (product.creditCardCommission || 0)) /
-        100);
-    const totalCost = itemsCost + totalCommissions;
-
-    return {
-      name: product.name,
-      price: price,
-      totalCost: totalCost,
-      netProfit: price - totalCost,
-    };
-  }
-
-  convertMurToSelectedCurrency(murAmount: number): number {
-    const targetCurrencyName = this.pricelistForm.get('currencyName')?.value;
-    if (!targetCurrencyName || targetCurrencyName === CurrencyName.MUR) return murAmount;
-
-    const currencyObj = this.allCurrencies.find((c) => c.name === targetCurrencyName);
-    if (currencyObj && currencyObj.exchangeRate) {
-      return Number((murAmount / currencyObj.exchangeRate).toFixed(2));
-    }
-
-    return murAmount;
-  }
-
-  getPricelistNetProfit(formPrice: number, originalMurCost: number): number {
-    const convertedCost = this.convertMurToSelectedCurrency(originalMurCost);
-    return formPrice - convertedCost;
-  }
-
-  // --- Linked Tour Operators Logic ---
 
   getSelectedTourOperators(): any[] {
     const selectedIds = this.pricelistForm.get('tourOperatorIds')?.value || [];
@@ -281,107 +263,5 @@ export class PricelistEditComponent implements OnInit {
     this.pricelistForm
       .get('tourOperatorIds')
       ?.setValue(currentIds.filter((id: string) => id !== idToRemove));
-  }
-
-  onCsvImport(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      this.processCsvData(text);
-      // Reset input so the same file can be uploaded again if needed
-      input.value = '';
-    };
-
-    reader.readAsText(file);
-  }
-
-  private processCsvData(csvText: string) {
-    const lines = csvText.split('\n').filter((line) => line.trim().length > 0);
-    if (lines.length < 2) {
-      alert('CSV file is empty or missing data rows.');
-      return;
-    }
-
-    const headers = this.parseCsvRow(lines[0]);
-    // Look for exact column names (case-insensitive)
-    const idIdx = headers.findIndex((h) => h.toLowerCase() === 'productid');
-    const priceIdx = headers.findIndex((h) => h.toLowerCase() === 'price');
-    const nameIdx = headers.findIndex(
-      (h) => h.toLowerCase() === 'displayname' || h.toLowerCase() === 'product',
-    );
-
-    if (idIdx === -1 || priceIdx === -1) {
-      alert('CSV must contain "productId" and "price" columns.');
-      return;
-    }
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = this.parseCsvRow(lines[i]);
-      if (values.length <= Math.max(idIdx, priceIdx)) continue; // Skip malformed rows
-
-      const productId = values[idIdx];
-      const price = parseFloat(values[priceIdx]);
-      let displayName = nameIdx !== -1 ? values[nameIdx] : '';
-
-      // Skip if essential data is missing
-      if (!productId || isNaN(price)) continue;
-
-      // Fallback: if name is missing in CSV, try to find it in loaded products
-      if (!displayName) {
-        const matchedProduct = this.allProducts.find((p) => p.id === productId);
-        displayName = matchedProduct ? matchedProduct.name : 'Imported Product';
-      }
-
-      // Create the FormGroup without triggering the auto-fill overwrite
-      const productGroup = this.fb.group({
-        baseProductId: [productId, Validators.required],
-        displayName: [displayName, Validators.required],
-        price: [price, [Validators.required, Validators.min(0)]],
-      });
-
-      // Attach the listener so manual edits later still work
-      this.setupProductListener(productGroup);
-
-      this.productsArray.push(productGroup);
-    }
-  }
-  private setupProductListener(productGroup: FormGroup) {
-    productGroup.get('baseProductId')?.valueChanges.subscribe((productId) => {
-      const orig = this.getOriginalProductDetails(productId ?? '');
-      if (orig) {
-        productGroup.patchValue(
-          {
-            displayName: orig.name,
-            price: this.convertMurToSelectedCurrency(orig.price),
-          },
-          { emitEvent: false }, // emitEvent: false prevents infinite loops
-        );
-      }
-    });
-  }
-
-  // A robust row parser that handles commas inside quote marks properly
-  private parseCsvRow(row: string): string[] {
-    const result = [];
-    let insideQuote = false;
-    let currentVal = '';
-    for (let i = 0; i < row.length; i++) {
-      const char = row[i];
-      if (char === '"') {
-        insideQuote = !insideQuote;
-      } else if (char === ',' && !insideQuote) {
-        result.push(currentVal.trim());
-        currentVal = '';
-      } else {
-        currentVal += char;
-      }
-    }
-    result.push(currentVal.trim());
-    return result.map((val) => val.replace(/^"|"$/g, '')); // Strip surrounding quotes
   }
 }

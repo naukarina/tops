@@ -6,11 +6,15 @@ export interface PricelistProduct {
   price: number;
 }
 
-export interface Pricelist extends BaseDocument {
-  name: string;
+export interface PricelistPeriod {
   validityFrom: any; // Using 'any' to accommodate both JS Date and Firebase Timestamp
   validityTo: any;
+  pricelistProducts: PricelistProduct[];
+}
+
+export interface Pricelist extends BaseDocument {
+  name: string;
   tourOperatorIds: string[];
   currencyName: string;
-  pricelistProducts: PricelistProduct[];
+  periods: PricelistPeriod[];
 }

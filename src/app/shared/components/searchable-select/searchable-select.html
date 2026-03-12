@@ -10,7 +10,7 @@
         } @if (!multiple) {
         <mat-option [value]="null">-- None --</mat-option>
         } @for (option of (filteredOptions$ | async); track option) {
-        <mat-option [value]="getOptionValue(option)">
+        <mat-option [value]="option[optionValue ?? 'value']" [disabled]="isDisabled(option)">
             {{ getOptionText(option) }}
         </mat-option>
         }

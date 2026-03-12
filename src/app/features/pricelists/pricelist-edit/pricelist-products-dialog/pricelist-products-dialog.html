@@ -29,8 +29,8 @@
                 <div class="p-3 pb-0 d-flex gap-3 align-items-start">
                     <div style="flex: 2;">
                         <app-searchable-select label="Base Product" formControlName="baseProductId"
-                            [options]="data.allProducts" optionText="name" optionValue="id" [searchable]="true">
-                        </app-searchable-select>
+                            [options]="data.allProducts" optionText="name" optionValue="id" [searchable]="true"
+                            [disabledValues]="getDisabledProductIds(i)"> </app-searchable-select>
                     </div>
                     <div style="flex: 2;">
                         <mat-form-field appearance="outline" class="w-100 mb-0">

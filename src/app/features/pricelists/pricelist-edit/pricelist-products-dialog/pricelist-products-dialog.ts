@@ -157,6 +157,7 @@ export class PricelistProductsDialogComponent implements OnInit {
       });
 
       this.setupProductListener(productGroup);
+
       this.productsArray.push(productGroup);
     }
   }
@@ -215,5 +216,18 @@ export class PricelistProductsDialogComponent implements OnInit {
 
   getPricelistNetProfit(formPrice: number, originalMurCost: number): number {
     return formPrice - this.convertMurToSelectedCurrency(originalMurCost);
+  }
+
+  getDisabledProductIds(currentIndex: number): string[] {
+    // 1. Get all selected IDs across the entire form array
+    const allSelected = this.productsArray.controls
+      .map((c) => c.get('baseProductId')?.value)
+      .filter((val) => !!val); // filter out empty selections
+
+    // 2. Get the ID selected in the current row
+    const currentSelected = this.productsArray.at(currentIndex).get('baseProductId')?.value;
+
+    // 3. Return all IDs EXCEPT the one currently active in this dropdown
+    return allSelected.filter((id) => id !== currentSelected);
   }
 }

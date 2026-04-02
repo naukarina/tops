@@ -1,6 +1,13 @@
 import { Component, Inject, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormControl,
+} from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -45,6 +52,8 @@ export class PricelistProductsDialogComponent implements OnInit {
 
   form!: FormGroup;
   showCostAnalysis = false;
+
+  searchControl = new FormControl('');
 
   constructor(
     public dialogRef: MatDialogRef<PricelistProductsDialogComponent>,
@@ -229,5 +238,19 @@ export class PricelistProductsDialogComponent implements OnInit {
 
     // 3. Return all IDs EXCEPT the one currently active in this dropdown
     return allSelected.filter((id) => id !== currentSelected);
+  }
+
+  matchesSearch(control: any): boolean {
+    const term = this.searchControl.value?.toLowerCase().trim() || '';
+    if (!term) return true;
+
+    // Search by displayName
+    const displayName = control.get('displayName')?.value?.toLowerCase() || '';
+    return displayName.includes(term);
+  }
+
+  getVisibleCount(): number {
+    if (!this.productsArray) return 0;
+    return this.productsArray.controls.filter((c) => this.matchesSearch(c)).length;
   }
 }

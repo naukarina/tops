@@ -25,7 +25,8 @@
             <mat-icon>download</mat-icon> Export
         </button>
         }
-        <button mat-flat-button color="primary" [routerLink]="newRoute" class="filter-button">
+        <button *appHasAccess="[featureName, 'user']" mat-flat-button color="primary" [routerLink]="newRoute"
+            class="filter-button">
             <mat-icon>add</mat-icon>
             {{ newButtonText }}
         </button>
@@ -67,12 +68,18 @@
                 <button mat-icon-button color="primary" [routerLink]="viewRoute(element)">
                     <mat-icon>search</mat-icon>
                 </button>
-                } @if (editRoute) {
-                <button mat-icon-button color="accent" [routerLink]="editRoute(element)">
+                }
+
+                @if (editRoute) {
+                <button *appHasAccess="[featureName, 'user']" mat-icon-button color="accent"
+                    [routerLink]="editRoute(element)">
                     <mat-icon>edit</mat-icon>
                 </button>
-                } @if (enableDelete) {
-                <button mat-icon-button color="warn" (click)="onDeleteClick(element)">
+                }
+
+                @if (enableDelete) {
+                <button *appHasAccess="[featureName, 'admin']" mat-icon-button color="warn"
+                    (click)="onDeleteClick(element)">
                     <mat-icon>delete</mat-icon>
                 </button>
                 }

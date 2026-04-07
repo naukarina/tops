@@ -1,5 +1,5 @@
 <app-list-page>
-    <app-data-table [dataInput]="accommodations$" [columnDefinitions]="columnDefs"
+    <app-data-table featureName="accommodations" [dataInput]="accommodations$" [columnDefinitions]="columnDefs"
         [displayedColumnsInput]="displayedColumns" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
         [enablePaginator]="true" [pageSizeOptions]="[10, 25, 50]" filterPlaceholder="Search bookings..."
         [editRoute]="editRoute" [enableDelete]="true" (deleteAction)="onDelete($event)" title="Accommodations"

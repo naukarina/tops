@@ -1,5 +1,5 @@
 <app-list-page title="Pricelists" createRoute="/pricelists/new">
-    <app-data-table [dataInput]="pricelists$" [columnDefinitions]="columnDefs"
+    <app-data-table featureName="pricelists" [dataInput]="pricelists$" [columnDefinitions]="columnDefs"
         [displayedColumnsInput]="displayedColumns" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
         [enablePaginator]="true" [enableExport]="true" (exportAction)="onExport($event)"
         filterPlaceholder="Search pricelists..." [editRoute]="editRoute" [enableDelete]="true"

@@ -1,8 +1,8 @@
 <app-list-page>
-    <app-data-table [dataInput]="products$" [columnDefinitions]="columnDefs" [displayedColumnsInput]="displayedColumns"
-        [enableSelection]="true" [enableFilter]="true" [enableSort]="true" [enablePaginator]="true"
-        [dropdownFilters]="dropdownFilters" filterPlaceholder="Search products..." [editRoute]="editRoute"
-        [enableDelete]="true" (deleteAction)="onDelete($event)" title="Products" newRoute="/products/new"
-        newButtonText="Add Product">
+    <app-data-table featureName="products" [dataInput]="products$" [columnDefinitions]="columnDefs"
+        [displayedColumnsInput]="displayedColumns" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
+        [enablePaginator]="true" [dropdownFilters]="dropdownFilters" filterPlaceholder="Search products..."
+        [editRoute]="editRoute" [enableDelete]="true" (deleteAction)="onDelete($event)" title="Products"
+        newRoute="/products/new" newButtonText="Add Product">
     </app-data-table>
 </app-list-page>

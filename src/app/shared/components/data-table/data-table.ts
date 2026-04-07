@@ -33,6 +33,7 @@ import { ColumnDefinition } from './column-definition.model';
 import { FilterDialogComponent, FilterDialogData } from '../filter-dialog/filter-dialog';
 import { MatBadgeModule } from '@angular/material/badge';
 import { SelectionModel } from '@angular/cdk/collections';
+import { HasAccessDirective } from '@shared/directives/has-access.directive';
 
 export interface DropdownFilter<T> {
   columnDef: keyof T | string;
@@ -64,6 +65,7 @@ export interface DropdownFilter<T> {
     MatDialogModule,
     MatBadgeModule,
     MatCheckboxModule,
+    HasAccessDirective,
   ],
   templateUrl: './data-table.html',
   styleUrls: ['./data-table.scss'],
@@ -98,6 +100,7 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   @Input() title = '';
   @Input() newRoute = '';
   @Input() newButtonText = 'Add New';
+  @Input({ required: true }) featureName!: string;
 
   @Output() deleteAction = new EventEmitter<T>();
 

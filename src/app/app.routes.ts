@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth-guard';
+import { featureGuard } from '@core/auth/feature.guard';
 
 export const routes: Routes = [
   {
@@ -129,6 +130,8 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        // Viewing the list requires 'readonly' access
+        canActivate: [featureGuard('pricelists', 'readonly')],
         loadComponent: () =>
           import('./features/pricelists/pricelist-list/pricelist-list').then(
             (m) => m.PricelistListComponent,
@@ -136,6 +139,8 @@ export const routes: Routes = [
       },
       {
         path: 'new',
+        // Creating a new one requires standard 'user' access
+        canActivate: [featureGuard('pricelists', 'user')],
         loadComponent: () =>
           import('./features/pricelists/pricelist-edit/pricelist-edit').then(
             (m) => m.PricelistEditComponent,
@@ -144,6 +149,8 @@ export const routes: Routes = [
       },
       {
         path: 'edit/:id',
+        // Editing requires standard 'user' access
+        canActivate: [featureGuard('pricelists', 'user')],
         loadComponent: () =>
           import('./features/pricelists/pricelist-edit/pricelist-edit').then(
             (m) => m.PricelistEditComponent,

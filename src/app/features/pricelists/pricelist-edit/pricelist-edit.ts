@@ -150,10 +150,11 @@ export class PricelistEditComponent implements OnInit {
 
   addPeriod() {
     let fromDate = new Date();
-    let toDate = new Date();
+    let toDate = new Date(fromDate);
 
-    // Default for the very first period: Valid To is 1 year from today
+    // Default for the very first period: Valid To is 1 year from today MINUS 1 day
     toDate.setFullYear(toDate.getFullYear() + 1);
+    toDate.setDate(toDate.getDate() - 1);
 
     if (this.periodsArray.length > 0) {
       // Get the validityTo of the previous period
@@ -172,9 +173,10 @@ export class PricelistEditComponent implements OnInit {
         fromDate = new Date(prevTo);
         fromDate.setDate(fromDate.getDate() + 1);
 
-        // Next period ends 1 year after it starts
+        // Next period ends 1 year after it starts MINUS 1 day
         toDate = new Date(fromDate);
         toDate.setFullYear(toDate.getFullYear() + 1);
+        toDate.setDate(toDate.getDate() - 1);
       }
     }
 
@@ -184,7 +186,35 @@ export class PricelistEditComponent implements OnInit {
       pricelistProducts: this.fb.array([]),
     });
 
+    // ATTACH THE LISTENER TO THIS NEW PERIOD
+    this.setupPeriodDateListener(periodGroup);
+
     this.periodsArray.push(periodGroup);
+  }
+
+  private setupPeriodDateListener(periodGroup: FormGroup) {
+    periodGroup
+      .get('validityFrom')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((fromDateRaw) => {
+        if (!fromDateRaw) return;
+
+        // Safely parse the incoming date
+        const fromDate =
+          fromDateRaw instanceof Date
+            ? fromDateRaw
+            : fromDateRaw?.toDate
+              ? fromDateRaw.toDate()
+              : new Date(fromDateRaw);
+
+        // Calculate 1 year minus 1 day
+        const newToDate = new Date(fromDate);
+        newToDate.setFullYear(newToDate.getFullYear() + 1);
+        newToDate.setDate(newToDate.getDate() - 1);
+
+        // Patch the value without emitting a new event to prevent infinite loops
+        periodGroup.patchValue({ validityTo: newToDate }, { emitEvent: false });
+      });
   }
 
   // --- CALENDAR DATE RESTRICTIONS ---
@@ -335,6 +365,8 @@ export class PricelistEditComponent implements OnInit {
           );
         });
       }
+
+      this.setupPeriodDateListener(periodGroup);
       this.periodsArray.push(periodGroup);
     });
   }

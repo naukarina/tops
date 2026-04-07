@@ -15,6 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 
 import { SearchableSelectComponent } from '../../../../shared/components/searchable-select/searchable-select';
 import { PricelistProduct } from '../../models/pricelist.model';
@@ -27,6 +28,7 @@ export interface PricelistProductsDialogData {
   allProducts: Product[];
   allItems: any[];
   allCurrencies: Currency[];
+  availablePeriodsToCopy: { label: string; products: PricelistProduct[] }[];
 }
 
 @Component({
@@ -42,6 +44,7 @@ export interface PricelistProductsDialogData {
     MatIconModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    MatMenuModule,
     SearchableSelectComponent,
   ],
   templateUrl: './pricelist-products-dialog.html',
@@ -252,5 +255,27 @@ export class PricelistProductsDialogComponent implements OnInit {
   getVisibleCount(): number {
     if (!this.productsArray) return 0;
     return this.productsArray.controls.filter((c) => this.matchesSearch(c)).length;
+  }
+
+  copyFromPeriod(productsToCopy: PricelistProduct[]) {
+    if (!productsToCopy || productsToCopy.length === 0) return;
+
+    productsToCopy.forEach((p) => {
+      // Check if product already exists to avoid duplicates
+      const exists = this.productsArray.controls.some(
+        (ctrl) => ctrl.get('baseProductId')?.value === p.baseProductId,
+      );
+
+      if (!exists) {
+        const group = this.fb.group({
+          baseProductId: [p.baseProductId, Validators.required],
+          displayName: [p.displayName, Validators.required],
+          price: [p.price, [Validators.required, Validators.min(0)]],
+        });
+
+        this.setupProductListener(group);
+        this.productsArray.push(group);
+      }
+    });
   }
 }

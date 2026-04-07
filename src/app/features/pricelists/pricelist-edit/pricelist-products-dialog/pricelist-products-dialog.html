@@ -5,6 +5,19 @@
             class="fs-6 fw-normal">
             Show Cost Analysis
         </mat-slide-toggle>
+
+        @if (data.availablePeriodsToCopy && data.availablePeriodsToCopy.length > 0) {
+        <button mat-stroked-button color="primary" [matMenuTriggerFor]="copyMenu">
+            <mat-icon>content_copy</mat-icon> Copy From...
+        </button>
+        <mat-menu #copyMenu="matMenu">
+            @for (period of data.availablePeriodsToCopy; track period.label) {
+            <button mat-menu-item (click)="copyFromPeriod(period.products)">
+                {{ period.label }}
+            </button>
+            }
+        </mat-menu>
+        }
         <input type="file" #csvFileInput hidden accept=".csv" (change)="onCsvImport($event)" />
         <button mat-stroked-button color="primary" (click)="csvFileInput.click()">
             <mat-icon>upload_file</mat-icon> Import CSV

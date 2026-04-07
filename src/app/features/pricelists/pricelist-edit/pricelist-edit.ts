@@ -233,6 +233,36 @@ export class PricelistEditComponent implements OnInit {
     const currentProducts = this.getProductsArray(periodIndex).value;
     const currencyName = this.pricelistForm.get('currencyName')?.value;
 
+    const allPeriods = this.periodsArray.value;
+    const availablePeriodsToCopy = allPeriods
+      .map((p: any, idx: number) => {
+        // Format dates safely handling both JS Date and Firebase Timestamp
+        const fromDate =
+          p.validityFrom instanceof Date
+            ? p.validityFrom
+            : p.validityFrom?.toDate
+              ? p.validityFrom.toDate()
+              : new Date(p.validityFrom);
+        const toDate =
+          p.validityTo instanceof Date
+            ? p.validityTo
+            : p.validityTo?.toDate
+              ? p.validityTo.toDate()
+              : new Date(p.validityTo);
+
+        const fromStr = fromDate?.toLocaleDateString() || 'N/A';
+        const toStr = toDate?.toLocaleDateString() || 'N/A';
+
+        return {
+          label: `Period ${idx + 1} (${fromStr} - ${toStr})`,
+          products: p.pricelistProducts || [],
+          index: idx,
+        };
+      })
+      // Filter out the current period being edited AND periods with no products
+      .filter((p: any) => p.index !== periodIndex && p.products.length > 0);
+    // --------------------------------------------------
+
     const dialogRef = this.dialog.open(PricelistProductsDialogComponent, {
       width: '90vw', // Wide dialog for the table
       maxWidth: '1200px',
@@ -243,6 +273,7 @@ export class PricelistEditComponent implements OnInit {
         allProducts: this.allProducts,
         allItems: this.allItems,
         allCurrencies: this.allCurrencies,
+        availablePeriodsToCopy: availablePeriodsToCopy,
       },
     });
 

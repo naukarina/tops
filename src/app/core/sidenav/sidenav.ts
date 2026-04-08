@@ -5,11 +5,19 @@ import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { HasAccessDirective } from '@shared/directives/has-access.directive';
 
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, MatListModule, MatIconModule, RouterLink, RouterLinkActive],
+  imports: [
+    CommonModule,
+    MatListModule,
+    MatIconModule,
+    RouterLink,
+    RouterLinkActive,
+    HasAccessDirective,
+  ],
   templateUrl: './sidenav.html',
   styleUrls: ['./sidenav.scss'],
 })

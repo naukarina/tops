@@ -40,5 +40,10 @@
             <mat-icon matListItemIcon>request_quote</mat-icon>
             <div matListItemTitle>Pricelists</div>
         </a>
+        <a mat-list-item routerLink="/app-features" routerLinkActive="active-link"
+            *appHasAccess="['app-features', 'admin']">
+            <mat-icon matListItemIcon>settings_applications</mat-icon>
+            <span matListItemTitle>System Features</span>
+        </a>
     </mat-nav-list>
 </div>

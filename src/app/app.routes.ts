@@ -308,5 +308,39 @@ export const routes: Routes = [
         (m) => m.MigrationPageComponent,
       ),
   },
+  {
+    path: 'app-features',
+    canActivate: [authGuard],
+    data: { breadcrumb: 'System Features' },
+    children: [
+      {
+        path: '',
+        // Require at least admin to even see the settings page
+        canActivate: [featureGuard('app-features', 'admin')],
+        loadComponent: () =>
+          import('./features/app-features/app-feature-list/app-feature-list').then(
+            (m) => m.AppFeatureListComponent,
+          ),
+      },
+      {
+        path: 'new',
+        canActivate: [featureGuard('app-features', 'admin')],
+        loadComponent: () =>
+          import('./features/app-features/app-feature-edit/app-feature-edit').then(
+            (m) => m.AppFeatureEditComponent,
+          ),
+        data: { breadcrumb: 'New' },
+      },
+      {
+        path: 'edit/:id',
+        canActivate: [featureGuard('app-features', 'admin')],
+        loadComponent: () =>
+          import('./features/app-features/app-feature-edit/app-feature-edit').then(
+            (m) => m.AppFeatureEditComponent,
+          ),
+        data: { breadcrumb: 'Edit' },
+      },
+    ],
+  },
   { path: '**', redirectTo: 'home' }, // Wildcard route
 ];

@@ -1,0 +1,8 @@
+<app-list-page>
+    <app-data-table featureName="app-features" [dataInput]="features$" [columnDefinitions]="columnDefs"
+        [displayedColumnsInput]="columnsForTable" [enableSelection]="false" [enableFilter]="true" [enableSort]="true"
+        [enablePaginator]="true" [pageSizeOptions]="[10, 25, 50]" filterPlaceholder="Search features..."
+        [editRoute]="editRoute" [enableDelete]="true" (deleteAction)="deleteFeature($event)" title="System Features"
+        newRoute="/app-features/new" newButtonText="Add Feature">
+    </app-data-table>
+</app-list-page>

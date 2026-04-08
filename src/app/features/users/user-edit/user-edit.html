@@ -19,6 +19,28 @@
                     }
                 </mat-select>
             </mat-form-field>
+
+            <mat-divider class="my-4"></mat-divider>
+
+            <h3 class="mat-h3 mb-3">Feature Access & Permissions</h3>
+
+            <div formGroupName="permissions" class="permissions-grid">
+
+                @for (feature of appFeatures; track feature.key) {
+                <mat-form-field appearance="outline">
+                    <mat-label>{{ feature.label }}</mat-label>
+
+                    <mat-select [formControlName]="feature.key">
+                        @for (level of accessLevels; track level.value) {
+                        <mat-option [value]="level.value">
+                            {{ level.label }}
+                        </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                }
+
+            </div>
         </form>
     </div>
     <div form-actions>

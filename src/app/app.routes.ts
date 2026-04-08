@@ -100,6 +100,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        canActivate: [featureGuard('products', 'readonly')],
         loadComponent: () =>
           import('./features/products/product-list/product-list').then(
             (m) => m.ProductListComponent,
@@ -107,6 +108,7 @@ export const routes: Routes = [
       },
       {
         path: 'new',
+        canActivate: [featureGuard('products', 'user')],
         loadComponent: () =>
           import('./features/products/product-edit/product-edit').then(
             (m) => m.ProductEditComponent,
@@ -115,6 +117,7 @@ export const routes: Routes = [
       },
       {
         path: 'edit/:id',
+        canActivate: [featureGuard('products', 'user')],
         loadComponent: () =>
           import('./features/products/product-edit/product-edit').then(
             (m) => m.ProductEditComponent,

@@ -1,8 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { CommonModule } from '@angular/common';
 
 import { AppFeature } from '../../../core/models/app-feature.model';
 import { AppFeatureService } from '../../../core/services/app-feature.service';
@@ -12,7 +12,6 @@ import { EditPageComponent } from '../../../shared/components/edit-page/edit-pag
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 @Component({
@@ -26,10 +25,10 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatIconModule,
     MatSlideToggleModule,
   ],
   templateUrl: './app-feature-edit.html',
+  styleUrls: ['./app-feature-edit.scss'], // Link the standard SCSS
 })
 export class AppFeatureEditComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -47,11 +46,11 @@ export class AppFeatureEditComponent implements OnInit {
     this.isEditMode = !!this.featureId;
 
     this.featureForm = this.fb.group({
-      // Key should ideally not be changed once set to prevent breaking code references
+      // Key is disabled in edit mode because changing it would break existing permissions
       key: [{ value: '', disabled: this.isEditMode }, Validators.required],
       label: ['', Validators.required],
       description: [''],
-      order: [0, Validators.min(0)],
+      order: [0, [Validators.required, Validators.min(0)]],
       isActive: [true],
     });
 
@@ -65,6 +64,9 @@ export class AppFeatureEditComponent implements OnInit {
       const feature = await firstValueFrom(this.featureService.get(id));
       if (feature) {
         this.featureForm.patchValue(feature);
+      } else {
+        this.notificationService.showError('Feature not found.');
+        this.router.navigate(['/app-features']);
       }
     } catch (error) {
       console.error('Error loading feature:', error);
@@ -74,7 +76,8 @@ export class AppFeatureEditComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (this.featureForm.invalid) {
-      this.notificationService.showError('Please fill in all required fields.');
+      this.featureForm.markAllAsTouched(); // Show validation errors on submit
+      this.notificationService.showError('Please fill in all required fields correctly.');
       return;
     }
 
@@ -83,7 +86,7 @@ export class AppFeatureEditComponent implements OnInit {
       const formValue = this.featureForm.getRawValue();
 
       if (this.isEditMode && this.featureId) {
-        await this.featureService.update(this.featureId, formValue as Partial<AppFeature>);
+        await this.featureService.update(this.featureId, formValue);
         this.notificationService.showSuccess('Feature updated successfully!');
       } else {
         await this.featureService.add(formValue as AppFeature);

@@ -40,6 +40,16 @@
                     }
                 </mat-form-field>
 
+                <mat-form-field appearance="outline">
+                    <mat-label>Material Icon</mat-label>
+                    <input matInput formControlName="icon" placeholder="e.g., inventory_2, hotel">
+                    @if (form.get('icon')?.value) {
+                    <mat-icon matSuffix>{{ form.get('icon')?.value }}</mat-icon>
+                    }
+                    <mat-hint>Find names at <a href="https://fonts.google.com/icons" target="_blank">Google
+                            Icons</a></mat-hint>
+                </mat-form-field>
+
                 <mat-slide-toggle formControlName="isActive" color="primary">
                     Feature is Active
                 </mat-slide-toggle>

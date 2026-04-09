@@ -13,6 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon'; // <-- Add this import
 
 @Component({
   selector: 'app-app-feature-edit',
@@ -26,6 +27,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatInputModule,
     MatButtonModule,
     MatSlideToggleModule,
+    MatIconModule, // <-- Add to imports array
   ],
   templateUrl: './app-feature-edit.html',
   styleUrls: ['./app-feature-edit.scss'],
@@ -37,7 +39,7 @@ export class AppFeatureEditComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  form!: FormGroup; // Renamed to "form" for standardization
+  form!: FormGroup;
   isEditMode = false;
   private featureId: string | null = null;
 
@@ -46,10 +48,10 @@ export class AppFeatureEditComponent implements OnInit {
     this.isEditMode = !!this.featureId;
 
     this.form = this.fb.group({
-      // Key is disabled in edit mode because changing it would break existing permissions
       key: [{ value: '', disabled: this.isEditMode }, Validators.required],
       label: ['', Validators.required],
       description: [''],
+      icon: [''], // <-- Add the icon form control
       order: [0, [Validators.required, Validators.min(0)]],
       isActive: [true],
     });
@@ -59,6 +61,7 @@ export class AppFeatureEditComponent implements OnInit {
     }
   }
 
+  // ... (loadFeatureData and onSubmit remain exactly the same)
   private async loadFeatureData(id: string) {
     try {
       const feature = await firstValueFrom(this.featureService.get(id));
@@ -82,7 +85,6 @@ export class AppFeatureEditComponent implements OnInit {
     }
 
     try {
-      // Use getRawValue so we grab the 'key' even if the input is disabled
       const formValue = this.form.getRawValue();
 
       if (this.isEditMode && this.featureId) {

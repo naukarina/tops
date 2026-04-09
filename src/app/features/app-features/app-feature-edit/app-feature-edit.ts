@@ -28,7 +28,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatSlideToggleModule,
   ],
   templateUrl: './app-feature-edit.html',
-  styleUrls: ['./app-feature-edit.scss'], // Link the standard SCSS
+  styleUrls: ['./app-feature-edit.scss'],
 })
 export class AppFeatureEditComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -37,7 +37,7 @@ export class AppFeatureEditComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  featureForm!: FormGroup;
+  form!: FormGroup; // Renamed to "form" for standardization
   isEditMode = false;
   private featureId: string | null = null;
 
@@ -45,7 +45,7 @@ export class AppFeatureEditComponent implements OnInit {
     this.featureId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.featureId;
 
-    this.featureForm = this.fb.group({
+    this.form = this.fb.group({
       // Key is disabled in edit mode because changing it would break existing permissions
       key: [{ value: '', disabled: this.isEditMode }, Validators.required],
       label: ['', Validators.required],
@@ -63,7 +63,7 @@ export class AppFeatureEditComponent implements OnInit {
     try {
       const feature = await firstValueFrom(this.featureService.get(id));
       if (feature) {
-        this.featureForm.patchValue(feature);
+        this.form.patchValue(feature);
       } else {
         this.notificationService.showError('Feature not found.');
         this.router.navigate(['/app-features']);
@@ -75,15 +75,15 @@ export class AppFeatureEditComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.featureForm.invalid) {
-      this.featureForm.markAllAsTouched(); // Show validation errors on submit
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       this.notificationService.showError('Please fill in all required fields correctly.');
       return;
     }
 
     try {
       // Use getRawValue so we grab the 'key' even if the input is disabled
-      const formValue = this.featureForm.getRawValue();
+      const formValue = this.form.getRawValue();
 
       if (this.isEditMode && this.featureId) {
         await this.featureService.update(this.featureId, formValue);

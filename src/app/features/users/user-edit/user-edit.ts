@@ -140,13 +140,7 @@ export class UserEditComponent implements OnInit {
       } else {
         // NOTE: If you implemented the Cloud Function `createUser` from earlier,
         // you might want to call `this.userService.createNewUser(formValue)` here instead!
-        await this.authService.createUser(
-          formValue.email,
-          formValue.displayName, // Updated
-          formValue.companyId,
-          selectedCompany.name,
-          selectedCompany.type,
-        );
+        await this.userService.createNewUser(formValue, selectedCompany);
         this.notificationService.showSuccess('User created successfully!');
       }
       this.router.navigate(['/users']);

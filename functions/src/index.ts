@@ -12,39 +12,47 @@ interface CreateUserData {
   email: string;
   password?: string; // Make password dynamic from the form
   displayName: string;
-  permissions: Record<string, string>; // e.g., { 'products': 'write', 'partners': 'read' }
+  permissions: Record<string, string>;
+  companyId: string;
+  companyName: string;
+  companyType: string; // e.g., { 'products': 'write', 'partners': 'read' }
   isActive: boolean;
 }
 
 // Callable function to create a new user
 export const createUser = onCall(async (request) => {
   if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    throw new HttpsError('unauthenticated', 'Must be authenticated.');
   }
 
-  // 2. Destructure the new data payload
-  const { email, password, displayName, permissions, isActive }: CreateUserData = request.data;
+  // 2. Destructure the exact keys
+  const { email, displayName, companyId, companyName, companyType, permissions }: CreateUserData =
+    request.data;
   const adminId = request.auth.uid;
 
   try {
     const adminUserRecord = await admin.auth().getUser(adminId);
     const adminName = adminUserRecord.displayName || 'Admin';
 
-    // 3. Create the user in Firebase Auth
+    // 3. Create the Auth User
     const userRecord = await admin.auth().createUser({
       email: email,
-      password: password || 'asdf1234', // Fallback if none provided
+      password: 'asdf1234', // Default password
       displayName: displayName,
     });
 
-    // 4. Create the UserProfile document in Firestore matching your new model
+    // 4. Create the Firestore Document
     const userDocRef = admin.firestore().collection('users').doc(userRecord.uid);
+
+    // IF ANY OF THESE ARE UNDEFINED, THIS BLOCK WILL CRASH!
     await userDocRef.set({
-      id: userRecord.uid, // Good practice to store the ID inside the doc as well
+      id: userRecord.uid,
       displayName: displayName,
       email: email,
+      companyId: companyId,
+      companyName: companyName,
+      companyType: companyType,
       permissions: permissions || {},
-      isActive: isActive ?? true,
       documentStatus: 'ACTIVE',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -54,13 +62,10 @@ export const createUser = onCall(async (request) => {
       updatedByName: adminName,
     });
 
-    return { result: `Successfully created user ${email}`, uid: userRecord.uid };
-  } catch (error) {
-    console.error('Error creating new user:', error);
-    if (error instanceof Error) {
-      throw new HttpsError('internal', error.message);
-    }
-    throw new HttpsError('internal', 'An error occurred while creating the user.');
+    return { result: `Successfully created user ${email}` };
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    throw new HttpsError('internal', error.message || 'Failed to create user.');
   }
 });
 

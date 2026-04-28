@@ -13,7 +13,7 @@ export class UserService extends BaseService<UserProfile> {
     super('users');
   }
 
-  async createNewUser(userData: any): Promise<void> {
+  async createNewUser(userData: any, company: any): Promise<void> {
     const createUserFn = httpsCallable(this.functions, 'createUser');
 
     // This single call handles both Auth and Firestore securely on the backend
@@ -21,6 +21,9 @@ export class UserService extends BaseService<UserProfile> {
       email: userData.email,
       password: userData.password,
       displayName: userData.displayName,
+      companyId: company.id,
+      companyName: company.name,
+      companyType: company.type,
       permissions: userData.permissions,
       isActive: userData.isActive,
     });

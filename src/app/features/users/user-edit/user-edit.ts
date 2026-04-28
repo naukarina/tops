@@ -11,6 +11,8 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { UserService } from '../services/user.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { AppFeatureService } from '../../../core/services/app-feature.service';
+import { AppFeature } from '../../../core/models/app-feature.model';
 
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,9 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDividerModule } from '@angular/material/divider'; // Added for the UI separator
-import { AppFeatureService } from '@core/services/app-feature.service';
-import { AppFeature } from '@core/models/app-feature.model';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-user-edit',
@@ -35,7 +35,7 @@ import { AppFeature } from '@core/models/app-feature.model';
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
-    MatDividerModule, // Added
+    MatDividerModule,
   ],
   templateUrl: './user-edit.html',
 })
@@ -56,7 +56,6 @@ export class UserEditComponent implements OnInit {
 
   appFeatures: AppFeature[] = [];
 
-  // 2. Define the available access levels
   accessLevels: { value: AccessLevel; label: string }[] = [
     { value: 'none', label: 'None' },
     { value: 'readonly', label: 'Read Only' },
@@ -69,12 +68,10 @@ export class UserEditComponent implements OnInit {
     this.isEditMode = !!this.userId;
     this.companies$ = this.companyService.getAll();
 
-    // 3. Dynamically build the permissions group controls with 'none' as default
     const permissionsControls: Record<string, any> = {};
-    // 1. Fetch the active features from Firestore first
+
     try {
       const allFeatures = await firstValueFrom(this.featureService.getAll());
-      // Optional: Filter only active features and sort them by order or label
       this.appFeatures = allFeatures
         .filter((f) => f.isActive !== false)
         .sort((a, b) => a.label.localeCompare(b.label));
@@ -87,18 +84,18 @@ export class UserEditComponent implements OnInit {
       permissionsControls[feature.key] = ['none'];
     });
 
-    // 4. Initialize the form with the nested permissions group
+    // NOW that we have features, we build the form. The @if in HTML protects us until this point.
     this.userForm = this.fb.group({
-      name: ['', Validators.required],
+      displayName: ['', Validators.required], // Updated field name
       email: ['', [Validators.required, Validators.email]],
       companyId: ['', Validators.required],
-      permissions: this.fb.group(permissionsControls), // <-- Added
+      permissions: this.fb.group(permissionsControls),
     });
 
     if (this.isEditMode) {
-      this.userForm.get('email')?.disable(); // Prevent email change in edit mode
+      this.userForm.get('email')?.disable();
       if (this.userId) {
-        this.loadUserData(this.userId);
+        await this.loadUserData(this.userId);
       }
     }
   }
@@ -106,8 +103,6 @@ export class UserEditComponent implements OnInit {
   private async loadUserData(id: string) {
     const user = await firstValueFrom(this.userService.get(id));
     if (user) {
-      // 5. Patch the form. This will automatically fill the nested permissions group
-      // if the user document already has a permissions object.
       this.userForm.patchValue({
         ...user,
         permissions: user.permissions || {},
@@ -116,13 +111,13 @@ export class UserEditComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.userForm.invalid) {
+    if (!this.userForm || this.userForm.invalid) {
       this.notificationService.showError('Please fill in all required fields.');
       return;
     }
 
     try {
-      const formValue = this.userForm.getRawValue(); // Use getRawValue for disabled fields
+      const formValue = this.userForm.getRawValue();
       const companies = await firstValueFrom(this.companies$);
       const selectedCompany = companies.find((c) => c.id === formValue.companyId);
 
@@ -132,23 +127,22 @@ export class UserEditComponent implements OnInit {
       }
 
       if (this.isEditMode && this.userId) {
-        // Update existing user's Firestore profile
+        // Use displayName instead of name
         const updatedProfile: Partial<UserProfile> = {
-          name: formValue.name,
+          displayName: formValue.displayName,
           companyId: formValue.companyId,
           companyName: selectedCompany.name,
           companyType: selectedCompany.type,
-          permissions: formValue.permissions, // <-- 6. Save permissions to Firestore
+          permissions: formValue.permissions,
         };
         await this.userService.update(this.userId, updatedProfile);
         this.notificationService.showSuccess('User updated successfully!');
       } else {
-        // Create a new user (Auth and Firestore)
-        // Note: You may need to update your authService.createUser method if you want
-        // to pass `formValue.permissions` directly during the initial creation step.
+        // NOTE: If you implemented the Cloud Function `createUser` from earlier,
+        // you might want to call `this.userService.createNewUser(formValue)` here instead!
         await this.authService.createUser(
           formValue.email,
-          formValue.name,
+          formValue.displayName, // Updated
           formValue.companyId,
           selectedCompany.name,
           selectedCompany.type,

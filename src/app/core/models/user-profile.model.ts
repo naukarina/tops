@@ -17,7 +17,7 @@ export interface FeaturePermissions {
 }
 
 export interface UserProfile extends BaseDocument {
-  name: string;
+  displayName: string;
   email: string;
   roles: string[];
   isActive: boolean;

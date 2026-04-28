@@ -10,44 +10,41 @@ admin.initializeApp();
 // Define an interface for the expected data payload
 interface CreateUserData {
   email: string;
-  name: string;
-  companyId: string;
-  companyName: string;
-  companyType: string;
+  password?: string; // Make password dynamic from the form
+  displayName: string;
+  permissions: Record<string, string>; // e.g., { 'products': 'write', 'partners': 'read' }
+  isActive: boolean;
 }
 
 // Callable function to create a new user
 export const createUser = onCall(async (request) => {
-  // Check if the user is authenticated.
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
   }
 
-  const { email, name, companyId, companyName, companyType }: CreateUserData = request.data;
-  const defaultPassword = 'asdf1234';
-  const adminId = request.auth.uid; // Get admin's UID from the context
+  // 2. Destructure the new data payload
+  const { email, password, displayName, permissions, isActive }: CreateUserData = request.data;
+  const adminId = request.auth.uid;
 
   try {
-    // 1. Fetch the admin's display name
     const adminUserRecord = await admin.auth().getUser(adminId);
     const adminName = adminUserRecord.displayName || 'Admin';
 
-    // 2. Create the user in Firebase Authentication
+    // 3. Create the user in Firebase Auth
     const userRecord = await admin.auth().createUser({
       email: email,
-      password: defaultPassword,
-      displayName: name,
+      password: password || 'asdf1234', // Fallback if none provided
+      displayName: displayName,
     });
 
-    // 3. Create the user's profile document in Firestore
+    // 4. Create the UserProfile document in Firestore matching your new model
     const userDocRef = admin.firestore().collection('users').doc(userRecord.uid);
     await userDocRef.set({
-      name: name,
+      id: userRecord.uid, // Good practice to store the ID inside the doc as well
+      displayName: displayName,
       email: email,
-      roles: ['user'],
-      companyId: companyId,
-      companyName: companyName,
-      companyType: companyType,
+      permissions: permissions || {},
+      isActive: isActive ?? true,
       documentStatus: 'ACTIVE',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -57,7 +54,7 @@ export const createUser = onCall(async (request) => {
       updatedByName: adminName,
     });
 
-    return { result: `Successfully created user ${email}` };
+    return { result: `Successfully created user ${email}`, uid: userRecord.uid };
   } catch (error) {
     console.error('Error creating new user:', error);
     if (error instanceof Error) {
@@ -124,7 +121,7 @@ export const getRoomPricesProxy = onCall(async (request) => {
     throw new HttpsError(
       'internal',
       error.response?.statusText || 'API Error',
-      error.response?.data
+      error.response?.data,
     );
   }
 });

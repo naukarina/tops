@@ -7,13 +7,13 @@
 
     @if (userProfile$ | async; as user) {
     <div class="user-info">
-        <span>{{ user.name }}</span>
+        <span>{{ user.displayName }}</span>
         <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-avatar">
             <mat-icon>account_circle</mat-icon>
         </button>
         <mat-menu #userMenu="matMenu" xPosition="before">
             <div class="user-menu-header">
-                <h3>{{ user.name }}</h3>
+                <h3>{{ user.displayName }}</h3>
                 <p class="mat-body-2">{{ user.email }}</p>
             </div>
             <mat-divider></mat-divider>

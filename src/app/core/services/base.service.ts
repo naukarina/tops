@@ -88,9 +88,9 @@ export abstract class BaseService<T extends BaseDocument> {
         updatedAt: new Date(),
         documentStatus: DocStatus.ACTIVE,
         createdBy: userProfile.id,
-        createdByName: userProfile.name,
+        createdByName: userProfile.displayName,
         updatedBy: userProfile.id,
-        updatedByName: userProfile.name,
+        updatedByName: userProfile.displayName,
         companyId: userProfile.companyId,
         companyName: userProfile.companyName,
       };
@@ -112,7 +112,7 @@ export abstract class BaseService<T extends BaseDocument> {
         ...item,
         updatedAt: new Date(),
         updatedBy: userProfile.id,
-        updatedByName: userProfile.name,
+        updatedByName: userProfile.displayName,
       };
       return await updateDoc(docRef, updatedDoc);
     } catch (error) {
@@ -146,9 +146,9 @@ export abstract class BaseService<T extends BaseDocument> {
         updatedAt: new Date(),
         documentStatus: DocStatus.ACTIVE,
         createdBy: userProfile.id,
-        createdByName: userProfile.name,
+        createdByName: userProfile.displayName,
         updatedBy: userProfile.id,
-        updatedByName: userProfile.name,
+        updatedByName: userProfile.displayName,
         companyId: userProfile.companyId,
         companyName: userProfile.companyName,
       };

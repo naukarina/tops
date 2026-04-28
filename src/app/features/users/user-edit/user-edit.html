@@ -1,56 +1,64 @@
 <app-edit-page [title]="isEditMode ? 'Edit User' : 'Create User'">
     <div form-fields>
-        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-                <mat-label>Name</mat-label>
-                <input matInput formControlName="name" required />
-            </mat-form-field>
+        @if (userForm) {
+        <form [formGroup]="userForm">
 
-            <mat-form-field appearance="outline">
-                <mat-label>Email</mat-label>
-                <input matInput formControlName="email" type="email" required />
-            </mat-form-field>
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Display Name</mat-label>
+                    <input matInput formControlName="displayName" required />
+                </mat-form-field>
 
-            <mat-form-field appearance="outline">
-                <mat-label>Company</mat-label>
-                <mat-select formControlName="companyId" required>
-                    @for (company of companies$ | async; track company.id) {
-                    <mat-option [value]="company.id">{{ company.name }}</mat-option>
-                    }
-                </mat-select>
-            </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" type="email" required />
+                </mat-form-field>
+            </div>
+
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Company</mat-label>
+                    <mat-select formControlName="companyId" required>
+                        @for (company of companies$ | async; track company.id) {
+                        <mat-option [value]="company.id">{{ company.name }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
 
             <mat-divider class="my-4"></mat-divider>
 
             <h3 class="mat-h3 mb-3">Feature Access & Permissions</h3>
 
-            <div formGroupName="permissions" class="permissions-grid">
-
+            <div formGroupName="permissions" class="row">
                 @for (feature of appFeatures; track feature.key) {
-                <mat-form-field appearance="outline">
-                    <mat-label>{{ feature.label }}</mat-label>
-
-                    <mat-select [formControlName]="feature.key">
-                        @for (level of accessLevels; track level.value) {
-                        <mat-option [value]="level.value">
-                            {{ level.label }}
-                        </mat-option>
-                        }
-                    </mat-select>
-                </mat-form-field>
+                <div class="col-md-6 mb-3">
+                    <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>{{ feature.label }}</mat-label>
+                        <mat-select [formControlName]="feature.key">
+                            @for (level of accessLevels; track level.value) {
+                            <mat-option [value]="level.value">
+                                {{ level.label }}
+                            </mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
                 }
-
             </div>
         </form>
+        } @else {
+        <div class="p-4 text-center">Loading user details...</div>
+        }
     </div>
+
     <div form-actions>
-        <button mat-stroked-button color="warn" type="button" routerLink="/users">
-            <mat-icon>cancel</mat-icon>
-            <span>Cancel</span>
+        <button mat-stroked-button color="warn" type="button" routerLink="/users" class="me-2">
+            Cancel
         </button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="!userForm.valid" (click)="onSubmit()">
-            <mat-icon>save</mat-icon>
-            <span>Save</span>
+        <button mat-flat-button color="primary" type="submit" [disabled]="userForm && !userForm.valid"
+            (click)="onSubmit()">
+            Save
         </button>
     </div>
 </app-edit-page>

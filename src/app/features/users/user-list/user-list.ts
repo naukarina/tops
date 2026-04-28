@@ -31,11 +31,16 @@ export class UserListComponent implements OnInit {
   users$!: Observable<UserProfile[]>;
 
   // Define the columns to display (matching your existing ones)
-  columnsForTable = ['name', 'email', 'companyName'];
+  columnsForTable = ['displayName', 'email', 'companyName'];
 
   // Define how the data table should read and display the data
   columnDefs: ColumnDefinition<UserProfile>[] = [
-    { columnDef: 'name', header: 'Name', cell: (u) => u.name, isSortable: true },
+    {
+      columnDef: 'displayName',
+      header: 'Display Name',
+      cell: (u) => u.displayName,
+      isSortable: true,
+    },
     { columnDef: 'email', header: 'Email', cell: (u) => u.email, isSortable: true },
     {
       columnDef: 'companyName',
@@ -56,7 +61,7 @@ export class UserListComponent implements OnInit {
   async deleteUser(user: UserProfile) {
     // Note: This only deletes the Firestore document. Deleting the actual
     // Firebase Auth user requires a Cloud Function with Admin privileges.
-    if (confirm(`Are you sure you want to delete the user profile for "${user.name}"?`)) {
+    if (confirm(`Are you sure you want to delete the user profile for "${user.displayName}"?`)) {
       try {
         await this.userService.delete(user.id);
         this.notificationService.showSuccess('User deleted successfully.');

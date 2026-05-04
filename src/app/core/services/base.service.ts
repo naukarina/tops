@@ -13,12 +13,13 @@ import {
   getDocs,
   setDoc,
 } from '@angular/fire/firestore';
-import { Observable, of, from } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, of, from, defer } from 'rxjs';
+import { finalize, switchMap, tap } from 'rxjs/operators';
 import { BaseDocument, DocStatus } from '../models/base-document.model';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../auth/auth.service';
 import { CompanyType } from '../models/company.model';
+import { LoadingService } from './loading.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,47 +30,75 @@ export abstract class BaseService<T extends BaseDocument> {
   protected firestore: Firestore = inject(Firestore);
   protected notificationService: NotificationService = inject(NotificationService);
   protected authService: AuthService = inject(AuthService);
+  protected loadingService = inject(LoadingService);
 
   constructor(protected collectionName: string) {
     this.collection = collection(this.firestore, this.collectionName);
   }
 
   getAll(): Observable<T[]> {
-    return this.authService.userProfileState$.pipe(
-      switchMap((userProfile) => {
-        if (!userProfile || !userProfile.companyId) {
-          return of([]); // If no user or company, return empty array.
-        }
+    // defer() ensures the setup logic runs only when a component subscribes
+    return defer(() => {
+      this.loadingService.show();
+      let initialLoad = true;
 
-        if (userProfile.companyType === CompanyType.PLANNING) {
-          // User is in a PLANNING company, so fetch docs for all related DMCs.
-          const companiesCollection = collection(this.firestore, 'companies');
-          const planningQuery = query(
-            companiesCollection,
-            where('planningCompanyId', '==', userProfile.companyId),
-          );
+      return this.authService.userProfileState$.pipe(
+        switchMap((userProfile) => {
+          if (!userProfile || !userProfile.companyId) {
+            return of([]); // If no user or company, return empty array.
+          }
 
-          return from(getDocs(planningQuery)).pipe(
-            switchMap((snapshot) => {
-              const dmcCompanyIds = snapshot.docs.map((doc) => doc.id);
-              // Also include the planning company's own documents.
-              const allCompanyIds = [userProfile.companyId, ...dmcCompanyIds];
+          if (userProfile.companyType === CompanyType.PLANNING) {
+            // User is in a PLANNING company, so fetch docs for all related DMCs.
+            const companiesCollection = collection(this.firestore, 'companies');
+            const planningQuery = query(
+              companiesCollection,
+              where('planningCompanyId', '==', userProfile.companyId),
+            );
 
-              if (allCompanyIds.length === 0) {
-                return of([]);
-              }
+            return from(getDocs(planningQuery)).pipe(
+              switchMap((snapshot) => {
+                const dmcCompanyIds = snapshot.docs.map((doc) => doc.id);
+                // Also include the planning company's own documents.
+                const allCompanyIds = [userProfile.companyId, ...dmcCompanyIds];
 
-              const finalQuery = query(this.collection, where('companyId', 'in', allCompanyIds));
-              return collectionData(finalQuery, { idField: 'id' }) as Observable<T[]>;
-            }),
-          );
-        } else {
-          // For all other company types, fetch docs for their own companyId.
-          const q = query(this.collection, where('companyId', '==', userProfile.companyId));
-          return collectionData(q, { idField: 'id' }) as Observable<T[]>;
-        }
-      }),
-    );
+                if (allCompanyIds.length === 0) {
+                  return of([]);
+                }
+
+                const finalQuery = query(this.collection, where('companyId', 'in', allCompanyIds));
+                return collectionData(finalQuery, { idField: 'id' }) as Observable<T[]>;
+              }),
+            );
+          } else {
+            // For all other company types, fetch docs for their own companyId.
+            const q = query(this.collection, where('companyId', '==', userProfile.companyId));
+            return collectionData(q, { idField: 'id' }) as Observable<T[]>;
+          }
+        }),
+        // Apply the loading logic to the final merged stream
+        tap({
+          next: () => {
+            if (initialLoad) {
+              this.loadingService.hide();
+              initialLoad = false;
+            }
+          },
+          error: () => {
+            if (initialLoad) {
+              this.loadingService.hide();
+              initialLoad = false;
+            }
+          },
+        }),
+        finalize(() => {
+          // Safety net: hides the spinner if the component is destroyed before data loads
+          if (initialLoad) {
+            this.loadingService.hide();
+          }
+        }),
+      );
+    });
   }
 
   get(id: string): Observable<T> {

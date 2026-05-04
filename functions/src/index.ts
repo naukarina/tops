@@ -101,16 +101,16 @@ export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', a
   }
 });
 
-// Proxy function to handle GET requests with bodies (which browsers can't do)
+// Proxy function to handle GET requests with bodies
 export const getRoomPricesProxy = onCall(async (request) => {
-  // 1. Extract data sent from Angular
-  const { token, hotelId, payload } = request.data;
+  // 1. Extract token, merchantId, and payload sent from Angular
+  const { token, merchantId, payload } = request.data;
   const apiUrl = 'https://api.kreola-dev.com';
 
   try {
-    // 2. Make the request from the Server (Node.js supports GET+Body)
-    const response = await axios.get(`${apiUrl}/offer/${hotelId}`, {
-      data: payload, // In Axios, 'data' is the body
+    // 2. Make the request to the new availability endpoint
+    const response = await axios.get(`${apiUrl}/availability/${merchantId}`, {
+      data: payload,
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -118,11 +118,9 @@ export const getRoomPricesProxy = onCall(async (request) => {
       },
     });
 
-    // 3. Return data back to Angular
     return response.data;
   } catch (error: any) {
     console.error('Proxy Error:', error.response?.data || error.message);
-    // Pass the error back to the client
     throw new HttpsError(
       'internal',
       error.response?.statusText || 'API Error',
@@ -130,4 +128,3 @@ export const getRoomPricesProxy = onCall(async (request) => {
     );
   }
 });
-// --- END ADD ---

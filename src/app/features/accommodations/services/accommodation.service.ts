@@ -24,6 +24,7 @@ export class AccommodationService extends BaseService<Accommodation> {
     super('accommodations');
   }
 
+  // 1. Fetch the token from the Kreola API
   private async getAuthToken(): Promise<string> {
     if (this.accessToken) return this.accessToken;
 
@@ -39,19 +40,19 @@ export class AccommodationService extends BaseService<Accommodation> {
     }
   }
 
-  async getRoomPrices(hotelId: number, request: ValuationRequest): Promise<HotelOffer[]> {
+  // 2. Pass the token and the payload to the Firebase Proxy to bypass CORS/GET body limitations
+  async getRoomPrices(merchantId: number, request: any): Promise<any[]> {
     const token = await this.getAuthToken();
-
     const getPricesFn = httpsCallable(this.functions, 'getRoomPricesProxy');
 
     try {
       const result = await getPricesFn({
         token: token,
-        hotelId: hotelId,
+        merchantId: merchantId, // Send the Merchant ID to the proxy
         payload: request,
       });
 
-      return result.data as HotelOffer[];
+      return result.data as any[];
     } catch (error) {
       console.error('Valuation Proxy Failed', error);
       throw error;

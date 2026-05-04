@@ -23,6 +23,11 @@ export interface ValuationRequest {
   endDate: string; // YYYY-MM-DD
   availDestinations: AvailDestinationApi[];
   roomCandidates: RoomCandidateApi[];
+  mealPlanCode?: string;
+  promotionId?: string;
+  comboPromotionId?: string;
+  rooms?: any[];
+  hotelMarketId?: string;
 }
 
 // --- Response Interfaces ---

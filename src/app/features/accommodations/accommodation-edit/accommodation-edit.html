@@ -102,6 +102,12 @@
                             <td>{{res.roomName}}</td>
                             <td><span class="text-muted">#{{res.roomId}}</span></td>
                             <td>{{res.mealPlan}}</td>
+                            <td>
+                                {{res.promotion}}
+                                @if(res.isDiscounted) {
+                                <span class="badge bg-success ms-2">{{res.discountText}}</span>
+                                }
+                            </td>
                             <td class="text-end">
                                 <strong>{{res.price | number:'1.2-2'}}</strong>
                             </td>

@@ -203,35 +203,92 @@ export class AccommodationEditComponent implements OnInit {
   }
 
   processResults(offers: any[]) {
-    this.valuationResults = [];
+    // Build a temporary array first to ensure Angular triggers change detection when we assign it
+    const results: any[] = [];
 
-    // The API returns an array, usually with 1 object for the requested hotel
     if (!offers || offers.length === 0) return;
-    const hotelData = offers[0];
+    const hotelData = offers[0]; // The API returns an array containing the hotel object
 
     if (hotelData.availableRooms) {
       hotelData.availableRooms.forEach((room: any) => {
-        // 1. Sum up the base room price across all daily rates
-        const baseRoomPrice = room.regularRoomPricesPerDays.reduce(
-          (sum: number, day: any) => sum + day.price,
-          0,
-        );
+        // --- 1. Process Regular Prices (No Promotion) ---
+        if (room.regularRoomPricesPerDays && room.mealPlans) {
+          // Sum up the base room price across all days
+          const baseRoomPrice = room.regularRoomPricesPerDays.reduce(
+            (sum: number, day: any) => sum + day.price,
+            0,
+          );
 
-        // 2. Add the specific meal plan package price
-        room.mealPlans.forEach((plan: any) => {
-          const grandTotal = baseRoomPrice + plan.price;
+          room.mealPlans.forEach((plan: any) => {
+            // Sum up the meal plan price across all days (safeguard in case mealRates is missing)
+            const baseMealPrice = plan.mealRates
+              ? plan.mealRates.reduce((sum: number, day: any) => sum + day.pricePerDay, 0)
+              : 0;
 
-          this.valuationResults.push({
-            roomCandidateId: room.roomCandidateId,
-            roomId: room.roomId,
-            roomName: room.roomName,
-            mealPlan: plan.name,
-            price: grandTotal,
-            breakdown: this.createBreakdown(room.regularRoomPricesPerDays, plan.mealRates),
+            const grandTotal = baseRoomPrice + baseMealPrice;
+
+            results.push({
+              roomCandidateId: room.roomCandidateId,
+              roomId: room.roomId,
+              roomName: room.roomName,
+              mealPlan: plan.name,
+              promotion: 'None',
+              price: grandTotal,
+              isDiscounted: false,
+              breakdown: this.createBreakdown(room.regularRoomPricesPerDays, plan.mealRates),
+            });
           });
-        });
+        }
+
+        // --- 2. Process Promotional Prices ---
+        if (room.pricesPerDaysWithPromotion && room.pricesPerDaysWithPromotion.length > 0) {
+          room.pricesPerDaysWithPromotion.forEach((promoPricing: any) => {
+            // Calculate the discounted room total
+            const discountedRoomPrice = promoPricing.roomPricesPerDays
+              ? promoPricing.roomPricesPerDays.reduce((sum: number, day: any) => sum + day.price, 0)
+              : 0;
+
+            // Loop through the array of promotional meal plans
+            if (
+              promoPricing.mealPlansWithPricesPerDays &&
+              promoPricing.mealPlansWithPricesPerDays.length > 0
+            ) {
+              promoPricing.mealPlansWithPricesPerDays.forEach((promoPlan: any) => {
+                // Sum up the meal plan price across all days for this specific plan
+                const mealPrice = promoPlan.mealPlanPricesPerDays
+                  ? promoPlan.mealPlanPricesPerDays.reduce(
+                      (sum: number, day: any) => sum + day.pricePerDay,
+                      0,
+                    )
+                  : 0;
+
+                const grandTotal = discountedRoomPrice + mealPrice;
+
+                results.push({
+                  roomCandidateId: room.roomCandidateId,
+                  roomId: room.roomId,
+                  roomName: room.roomName,
+                  mealPlan: promoPlan.name, // The JSON provides the meal plan name here
+                  // Safely grab the promotion name from the various places the API puts it
+                  promotion: room.promotionFullName || room.promotion?.name || 'Promotional Offer',
+                  price: grandTotal,
+                  isDiscounted: true,
+                  // Grab the discount text ("discount: 20%")
+                  discountText: room.promotionFullDiscountAndFlatRate || 'Discount Applied',
+                  breakdown: this.createBreakdown(
+                    promoPricing.roomPricesPerDays,
+                    promoPlan.mealPlanPricesPerDays,
+                  ),
+                });
+              });
+            }
+          });
+        }
       });
     }
+
+    // Reassign the array reference so Angular's @if block detects the change instantly
+    this.valuationResults = [...results];
   }
 
   private createBreakdown(roomPrices: any[], mealPrices?: any[]) {

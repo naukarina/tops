@@ -15,6 +15,7 @@ import { HeaderComponent } from './core/header/header';
 import { SidenavComponent } from './core/sidenav/sidenav';
 import { Breadcrumb, BreadcrumbComponent } from './core/breadcrumb/breadcrumb';
 import { FooterComponent } from './core/footer/footer';
+import { GlobalLoaderComponent } from './core/global-loader/global-loader';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,7 @@ import { FooterComponent } from './core/footer/footer';
     SidenavComponent,
     BreadcrumbComponent,
     FooterComponent,
+    GlobalLoaderComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

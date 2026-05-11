@@ -14,12 +14,11 @@ import {
   setDoc,
 } from '@angular/fire/firestore';
 import { Observable, of, from, defer } from 'rxjs';
-import { finalize, switchMap, tap } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { BaseDocument, DocStatus } from '../models/base-document.model';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../auth/auth.service';
 import { CompanyType } from '../models/company.model';
-import { LoadingService } from './loading.service';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +29,6 @@ export abstract class BaseService<T extends BaseDocument> {
   protected firestore: Firestore = inject(Firestore);
   protected notificationService: NotificationService = inject(NotificationService);
   protected authService: AuthService = inject(AuthService);
-  protected loadingService = inject(LoadingService);
 
   constructor(protected collectionName: string) {
     this.collection = collection(this.firestore, this.collectionName);
@@ -38,9 +36,6 @@ export abstract class BaseService<T extends BaseDocument> {
 
   getAll(): Observable<T[]> {
     return defer(() => {
-      this.loadingService.show();
-      let initialLoad = true;
-
       return this.authService.userProfileState$.pipe(
         switchMap((userProfile) => {
           if (!userProfile || !userProfile.companyId) {
@@ -75,61 +70,16 @@ export abstract class BaseService<T extends BaseDocument> {
             return collectionData(q, { idField: 'id' }) as Observable<T[]>;
           }
         }),
-        tap({
-          next: () => {
-            if (initialLoad) {
-              this.loadingService.hide();
-              initialLoad = false;
-            }
-          },
-          error: () => {
-            if (initialLoad) {
-              this.loadingService.hide();
-              initialLoad = false;
-            }
-          },
-        }),
-        finalize(() => {
-          if (initialLoad) {
-            this.loadingService.hide();
-          }
-        }),
       );
     });
   }
 
   get(id: string): Observable<T> {
-    return defer(() => {
-      this.loadingService.show();
-      let initialLoad = true;
-
-      const docRef = doc(this.firestore, this.collectionName, id);
-      return (docData(docRef, { idField: 'id' }) as Observable<T>).pipe(
-        tap({
-          next: () => {
-            if (initialLoad) {
-              this.loadingService.hide();
-              initialLoad = false;
-            }
-          },
-          error: () => {
-            if (initialLoad) {
-              this.loadingService.hide();
-              initialLoad = false;
-            }
-          },
-        }),
-        finalize(() => {
-          if (initialLoad) {
-            this.loadingService.hide();
-          }
-        }),
-      );
-    });
+    const docRef = doc(this.firestore, this.collectionName, id);
+    return docData(docRef, { idField: 'id' }) as Observable<T>;
   }
 
   async add(item: T) {
-    this.loadingService.show();
     try {
       const userProfile = this.authService.currentUserProfile;
       if (!userProfile) throw new Error('User not logged in or profile not loaded');
@@ -151,13 +101,10 @@ export abstract class BaseService<T extends BaseDocument> {
       console.error(`Error adding document to ${this.collectionName}:`, error);
       this.notificationService.showError('Failed to save the new item.');
       throw error;
-    } finally {
-      this.loadingService.hide();
     }
   }
 
   async update(id: string, item: Partial<T>) {
-    this.loadingService.show();
     try {
       const userProfile = this.authService.currentUserProfile;
       if (!userProfile) throw new Error('User not logged in or profile not loaded');
@@ -174,13 +121,10 @@ export abstract class BaseService<T extends BaseDocument> {
       console.error(`Error updating document in ${this.collectionName}:`, error);
       this.notificationService.showError('Failed to update the item.');
       throw error;
-    } finally {
-      this.loadingService.hide();
     }
   }
 
   async delete(id: string) {
-    this.loadingService.show();
     try {
       const docRef = doc(this.firestore, this.collectionName, id);
       return await deleteDoc(docRef);
@@ -188,13 +132,10 @@ export abstract class BaseService<T extends BaseDocument> {
       console.error(`Error deleting document from ${this.collectionName}:`, error);
       this.notificationService.showError('Failed to delete the item.');
       throw error;
-    } finally {
-      this.loadingService.hide();
     }
   }
 
   async set(id: string, data: Partial<T>): Promise<void> {
-    this.loadingService.show();
     try {
       const userProfile = this.authService.currentUserProfile;
       if (!userProfile) throw new Error('User not logged in or profile not loaded');
@@ -218,8 +159,6 @@ export abstract class BaseService<T extends BaseDocument> {
       console.error(`Error adding document to ${this.collectionName}:`, error);
       this.notificationService.showError('Failed to save the new item.');
       throw error;
-    } finally {
-      this.loadingService.hide();
     }
   }
 }

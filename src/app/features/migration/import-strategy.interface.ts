@@ -21,4 +21,7 @@ export interface IImportStrategy<T extends BaseDocument> {
   mapRow(row: CsvRow): Partial<T> | null;
 
   prepare?(): Promise<void>;
+
+  /** Alternative to mapRow for update-style imports. Return true on success, false to skip. */
+  processRow?(row: CsvRow): Promise<boolean>;
 }

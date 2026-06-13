@@ -19,6 +19,7 @@ import { AccommodationService } from '../services/accommodation.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Accommodation } from '../models/accommodation.model';
 import { PriceDetailsDialogComponent } from './price-details-dialog';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-accommodation-edit',
@@ -47,7 +48,7 @@ export class AccommodationEditComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
-
+  private http = inject(HttpClient);
   form!: FormGroup;
   isEditMode = false;
   bookingId: string | null = null;
@@ -157,6 +158,28 @@ export class AccommodationEditComponent implements OnInit {
     }
   }
 
+  testKreolaPing() {
+    const base = 'http://192.168.1.69:3100'; // your Mac, absolute URL — no proxy
+    this.http
+      .post<{ access_token: string }>(`${base}/auth/sign-in`, {
+        email: 'admin@kreola-dev.com',
+        password: 'secret',
+      })
+      .subscribe({
+        next: ({ access_token }) => {
+          this.http
+            .get(`${base}/availability/ping`, {
+              headers: { Authorization: `Bearer ${access_token}` },
+            })
+            .subscribe({
+              next: (res) => console.log('✅ PING OK', res), // {status:'ok', service:'availability'}
+              error: (err) => console.error('❌ PING FAILED', err),
+            });
+        },
+        error: (err) => console.error('❌ SIGN-IN FAILED', err),
+      });
+  }
+
   async calculatePrice() {
     if (this.form.invalid) {
       this.notification.showError('Please fill all required fields');
@@ -194,6 +217,8 @@ export class AccommodationEditComponent implements OnInit {
       const results = await this.service.getRoomPrices(merchantId, requestPayload);
 
       this.rawValuationResult = results;
+
+      console.log('API Results:', results);
       this.processResults(results);
       this.notification.showSuccess('Offers retrieved successfully!');
     } catch (e) {

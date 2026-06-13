@@ -44,7 +44,7 @@ export class SearchableSelectComponent implements OnInit, OnDestroy, ControlValu
 
   isDisabled(option: any): boolean {
     if (!this.disabledValues || !Array.isArray(this.disabledValues)) return false;
-    return this.disabledValues.includes(option[this.optionValue ?? 'value']);
+    return this.disabledValues.includes(this.getOptionValue(option));
   }
   // --- Internal State ---
   // Replaced simple 'value' property with a FormControl to satisfy ngx-mat-select-search

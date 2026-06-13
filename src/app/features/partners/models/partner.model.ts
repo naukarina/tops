@@ -21,6 +21,7 @@ export interface Partner extends BaseDocument {
     town?: string;
     country?: string;
   };
+  contractCountries?: string[]; // List of country codes where the partner has contracts
   taxinfo?: {
     brn?: string;
     isVatRegistered: boolean;
@@ -35,4 +36,5 @@ export interface Partner extends BaseDocument {
   isActive: boolean;
   companyId: string; // Assigned automatically based on the user creating the partner
   subDmc?: string;
+  apiCode?: string;
 }

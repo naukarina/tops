@@ -101,15 +101,26 @@ export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', a
   }
 });
 
-// Proxy function to handle GET requests with bodies
+const KREOLA_API_URL = 'http://192.168.1.69:3100';
+const KREOLA_CREDS = { email: 'admin@kreola-dev.com', password: 'secret' };
+
+async function getKreolaToken(): Promise<string> {
+  const res = await axios.post<{ access_token: string }>(
+    `${KREOLA_API_URL}/auth/sign-in`,
+    KREOLA_CREDS,
+  );
+  return res.data.access_token;
+}
+
 export const getRoomPricesProxy = onCall(async (request) => {
-  // 1. Extract token, merchantId, and payload sent from Angular
-  const { token, merchantId, payload } = request.data;
-  const apiUrl = 'https://api.kreola-dev.com';
+  const { payload } = request.data;
 
   try {
-    // 2. Make the request to the new availability endpoint
-    const response = await axios.get(`${apiUrl}/availability/${merchantId}`, {
+    const token = await getKreolaToken();
+
+    console.log('Proxying request to Kreola API with payload:', payload);
+
+    const response = await axios.get(`${KREOLA_API_URL}/merchants`, {
       data: payload,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -118,7 +129,7 @@ export const getRoomPricesProxy = onCall(async (request) => {
       },
     });
 
-    return response.data;
+    return { data: response.data, test: 'test' };
   } catch (error: any) {
     console.error('Proxy Error:', error.response?.data || error.message);
     throw new HttpsError(

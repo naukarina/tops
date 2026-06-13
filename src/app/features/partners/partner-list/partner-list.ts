@@ -65,7 +65,7 @@ export class PartnerListComponent {
   );
   // --- END DERIVE OPTIONS ---
 
-  displayedColumns = ['name', 'type', 'currencyName', 'contactInfo.country', 'subDmc', 'actions'];
+  displayedColumns = ['name', 'type', 'currencyName', 'contactInfo.country', 'subDmc', 'apiCode', 'actions'];
 
   columnsForTable = [
     'name',
@@ -74,6 +74,7 @@ export class PartnerListComponent {
     'contactInfo.country',
     'subDmc',
     'contactInfo.address',
+    'apiCode',
   ];
 
   // Column definitions remain the same
@@ -99,6 +100,7 @@ export class PartnerListComponent {
       cell: (p) => p.contactInfo?.address || '',
       isSortable: true,
     },
+    { columnDef: 'apiCode', header: 'API Code', cell: (p) => p.apiCode || '', isSortable: true },
   ];
 
   // --- UPDATE Dropdown Filters to use Observables ---

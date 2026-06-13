@@ -27,8 +27,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { ReactiveFormsModule, FormBuilder, FormControl } from '@angular/forms';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Observable, Subscription, isObservable, Subject, of } from 'rxjs';
-import { takeUntil, startWith, filter as rxFilter, map } from 'rxjs/operators';
+import { Observable, Subscription, isObservable, Subject } from 'rxjs';
+import { takeUntil, startWith, filter as rxFilter } from 'rxjs/operators';
 import { ColumnDefinition } from './column-definition.model';
 import { FilterDialogComponent, FilterDialogData } from '../filter-dialog/filter-dialog';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -203,48 +203,20 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
 
   private subscribeToData(): void {
     this.dataSubscription?.unsubscribe();
+
     const processData = (data: T[]) => {
-      if (!this.dataSource) {
-        this.dataSource = new MatTableDataSource<T>(data || []);
-        // Set accessor here too in case AfterViewInit runs before data arrives
-        this.dataSource.sortingDataAccessor = (item: T, property: string) => {
-          return this.getPropertyValue(item, property);
-        };
-      } else {
-        this.dataSource.data = data || [];
-      }
-      // Re-apply filters whenever data changes
+      this.dataSource.data = data || [];
       this.applyCurrentFilters();
-      // Apply pagination/sort AFTER data is loaded and filters applied
-      // This ensures paginator length is correct
       this.setupDataSource();
-      // Clear selection when underlying data changes significantly
       this.selection.clear();
     };
 
     if (isObservable(this.dataInput)) {
-      this.dataSubscription = this.dataInput
-        .pipe(
-          takeUntil(this._onDestroy),
-          // Get the data that passes the current filters for selection logic
-          map((data) => {
-            this.dataSource.data = data || []; // Update internal data first
-            this.applyCurrentFilters(); // Apply filters
-            return this.dataSource.filteredData; // Pass filtered data downstream if needed
-          }),
-        )
-        .subscribe((filteredData) => {
-          // Use filteredData if needed for selection checks, or just use dataSource.data/filteredData directly
-          processData(this.dataSource.data); // Still process original data but filters are applied now
-        });
+      this.dataSubscription = (this.dataInput as Observable<T[]>)
+        .pipe(takeUntil(this._onDestroy))
+        .subscribe((data) => processData(data || []));
     } else {
-      if (!this.dataSource) {
-        this.dataSource = new MatTableDataSource<T>([]);
-        this.dataSource.sortingDataAccessor = (item: T, property: string) => {
-          return this.getPropertyValue(item, property);
-        };
-      }
-      processData(this.dataInput || []);
+      processData((this.dataInput as T[]) || []);
     }
   }
 

@@ -50,7 +50,9 @@ export interface PartnerForm {
     vatNumber: FormControl<string | null>;
   }>;
   currencyName: FormControl<CurrencyName | null>;
+  contractCountries: FormControl<string[] | null>;
   remarks: FormControl<string | null>;
+  apiCode: FormControl<string | null>;
   hotelInfo?: FormGroup<{
     starRating: FormControl<number | null>;
     region: FormControl<Region | null>;
@@ -116,7 +118,7 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
       contactInfo: this.fb.group({
         email: this.fb.control('', {
           nonNullable: true,
-          validators: [Validators.required, Validators.email],
+          validators: [Validators.email],
         }),
         tel: this.fb.control(''),
         tel2: this.fb.control(''),
@@ -131,7 +133,9 @@ export class PartnerEditComponent implements OnInit, OnDestroy {
         vatNumber: this.fb.control(''),
       }),
       currencyName: this.fb.control<CurrencyName | null>(null, Validators.required),
+      contractCountries: this.fb.control<string[] | null>(null),
       remarks: this.fb.control(''),
+      apiCode: this.fb.control<string | null>(null),
     });
 
     // Use the observable directly from the service

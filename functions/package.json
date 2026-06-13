@@ -14,11 +14,13 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@angular/animations": "^21.2.16",
     "axios": "^1.13.2",
     "firebase-admin": "^12.1.0",
     "firebase-functions": "^5.0.1"
   },
   "devDependencies": {
+    "baseline-browser-mapping": "^2.10.34",
     "firebase-functions-test": "^3.1.0",
     "typescript": "^5.7.3"
   },

@@ -14,6 +14,7 @@ import { TourOperatorImportStrategy } from '../strategies/tour-operator-import.s
 import { SupplierImportStrategy } from '../strategies/supplier-import.strategy';
 import { ItemImportStrategy } from '../strategies/item-import.strategy';
 import { ProductCsvImportStrategy } from '../strategies/product-csv-import.strategy';
+import { PartnerApiCodeImportStrategy } from '../strategies/partner-api-code-import.strategy';
 
 @Component({
   selector: 'app-migration-page',
@@ -62,6 +63,7 @@ export class MigrationPageComponent {
   private supplierStrategy = inject(SupplierImportStrategy);
   private itemStrategy = inject(ItemImportStrategy);
   private productCsvStrategy = inject(ProductCsvImportStrategy);
+  private partnerApiCodeStrategy = inject(PartnerApiCodeImportStrategy);
 
   allStrategies: IImportStrategy<any & BaseDocument>[] = [
     this.hotelStrategy,
@@ -69,6 +71,7 @@ export class MigrationPageComponent {
     this.supplierStrategy,
     this.itemStrategy,
     this.productCsvStrategy,
+    this.partnerApiCodeStrategy,
   ];
 
   selectedStrategy: IImportStrategy<any & BaseDocument> | null = null;
@@ -137,23 +140,33 @@ export class MigrationPageComponent {
               continue;
             }
 
-            const mappedItem = strategy.mapRow(row);
-
-            if (mappedItem) {
-              // THE FIX: Check if an exact ID was extracted from the CSV
-              if (mappedItem['id']) {
-                // Force Firebase to use this specific string as the Document ID
-                await strategy.service.set(mappedItem['id'], mappedItem as any);
+            if (strategy.processRow) {
+              const ok = await strategy.processRow(row);
+              if (ok) {
+                successCount++;
               } else {
-                // Fallback: Let Firebase generate a random ID if missing
-                await strategy.service.add(mappedItem as any);
+                this.log.push(`SKIPPED row ${rowNumber}: No matching record found for "${row['name']}".`);
+                skippedCount++;
               }
-              successCount++;
             } else {
-              this.log.push(
-                `SKIPPED row ${rowNumber}: Invalid or incomplete data according to mapping rules.`,
-              );
-              skippedCount++;
+              const mappedItem = strategy.mapRow(row);
+
+              if (mappedItem) {
+                // THE FIX: Check if an exact ID was extracted from the CSV
+                if (mappedItem['id']) {
+                  // Force Firebase to use this specific string as the Document ID
+                  await strategy.service.set(mappedItem['id'], mappedItem as any);
+                } else {
+                  // Fallback: Let Firebase generate a random ID if missing
+                  await strategy.service.add(mappedItem as any);
+                }
+                successCount++;
+              } else {
+                this.log.push(
+                  `SKIPPED row ${rowNumber}: Invalid or incomplete data according to mapping rules.`,
+                );
+                skippedCount++;
+              }
             }
           } catch (error: any) {
             this.log.push(

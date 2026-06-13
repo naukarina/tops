@@ -52,7 +52,7 @@
                 </div>
                 <mat-form-field appearance="outline">
                     <mat-label>Email</mat-label>
-                    <input matInput formControlName="email" type="email" required />
+                    <input matInput formControlName="email" type="email" />
                 </mat-form-field>
                 <div class="form-row">
                     <mat-form-field appearance="outline">
@@ -109,6 +109,9 @@
                 </mat-select>
             </mat-form-field>
 
+            <app-searchable-select label="Contract Countries" formControlName="contractCountries" [options]="countries"
+                [multiple]="true" [searchable]="true"></app-searchable-select>
+
             @if ((subDmcs$ | async)?.length) {
             <mat-form-field appearance="outline">
                 <mat-label>Sub-DMC</mat-label>
@@ -123,6 +126,11 @@
             <mat-form-field appearance="outline">
                 <mat-label>Remarks</mat-label>
                 <textarea matInput formControlName="remarks"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>API Code</mat-label>
+                <input matInput formControlName="apiCode" />
             </mat-form-field>
 
         </form>

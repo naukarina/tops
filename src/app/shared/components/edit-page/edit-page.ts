@@ -13,4 +13,5 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class EditPageComponent {
   @Input() title = '';
+  @Input() maxWidth = '600px';
 }

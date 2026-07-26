@@ -1,134 +1,197 @@
-<app-edit-page [title]="isEditMode ? 'Edit Accommodation' : 'New Accommodation'">
+<app-edit-page [title]="isEditMode ? 'Edit Accommodation' : 'New Accommodation'" maxWidth="1000px">
     <div form-fields>
         <form [formGroup]="form">
+
+            <!-- Guest & Reference -->
             <div class="form-row">
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="outline" class="flex-1">
                     <mat-label>Guest Name</mat-label>
+                    <mat-icon matPrefix>person</mat-icon>
                     <input matInput formControlName="guestName" required />
                 </mat-form-field>
+                <mat-form-field appearance="outline" class="flex-1">
+                    <mat-label>File Ref</mat-label>
+                    <mat-icon matPrefix>tag</mat-icon>
+                    <input matInput formControlName="fileRef" placeholder="e.g. ACC-2026-001" required />
+                </mat-form-field>
+            </div>
+
+            <div class="section-label">Trip Details</div>
+
+            <!-- Merchant & Hotel -->
+            <div class="form-row">
                 <mat-form-field appearance="outline">
-                    <mat-label>Status</mat-label>
-                    <mat-select formControlName="status">
-                        <mat-option value="QUOTATION">Quotation</mat-option>
-                        <mat-option value="CONFIRMED">Confirmed</mat-option>
-                        <mat-option value="CANCELLED">Cancelled</mat-option>
+                    <mat-label>Merchant</mat-label>
+                    <mat-select [formControl]="merchantCtrl" [compareWith]="compareMerchants"
+                        (selectionChange)="onMerchantSelected($event.value)">
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="merchantSearchCtrl"
+                                placeholderLabel="Search merchants..." noEntriesFoundLabel="No merchants found">
+                            </ngx-mat-select-search>
+                        </mat-option>
+                        @if (merchantsLoading) {
+                        <mat-option disabled>Loading...</mat-option>
+                        }
+                        @for (merchant of filteredMerchants; track merchant.id) {
+                        <mat-option [value]="merchant">{{merchant.name}}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Hotel</mat-label>
+                    <mat-select formControlName="hotelMarketId" required [disabled]="hotels.length === 0"
+                        (selectionChange)="onHotelSelected($event.value)">
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="hotelSearchCtrl"
+                                placeholderLabel="Search hotels..." noEntriesFoundLabel="No hotels found">
+                            </ngx-mat-select-search>
+                        </mat-option>
+                        @if (hotelsLoading) {
+                        <mat-option disabled>Loading hotels...</mat-option>
+                        }
+                        @for (hotel of filteredHotels; track hotel.code) {
+                        <mat-option [value]="hotel.code">{{hotel.name}}</mat-option>
+                        }
                     </mat-select>
                 </mat-form-field>
             </div>
 
-            <h4 class="section-header">Trip Details</h4>
-
+            <!-- Dates -->
             <div class="form-row">
                 <mat-form-field appearance="outline">
-                    <mat-label>Hotel ID (Market)</mat-label>
-                    <input matInput type="number" formControlName="hotelMarketId" placeholder="e.g. 27" required />
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                    <mat-label>Start Date</mat-label>
+                    <mat-label>Check-in</mat-label>
+                    <mat-icon matPrefix>flight_land</mat-icon>
                     <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
                     <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
                     <mat-datepicker #startPicker></mat-datepicker>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                    <mat-label>End Date</mat-label>
+                    <mat-label>Check-out</mat-label>
+                    <mat-icon matPrefix>flight_takeoff</mat-icon>
                     <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
                     <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
                     <mat-datepicker #endPicker></mat-datepicker>
                 </mat-form-field>
             </div>
 
-            <div class="section-header mt-4">
-                <h4>Room Candidates</h4>
-                <button mat-button color="primary" type="button" (click)="addRoom()">+ Add Room</button>
+            <!-- Room Candidates -->
+            <div class="section-label">
+                Room Candidates
+                <button mat-button color="primary" type="button" (click)="addRoom()">
+                    <mat-icon>add</mat-icon> Add Room
+                </button>
             </div>
 
             <div formArrayName="rooms">
                 @for (room of roomsArray.controls; track room; let i = $index) {
-                <div [formGroupName]="i" class="room-card mb-3 p-3 border rounded">
-                    <div class="room-header d-flex justify-content-between align-items-center mb-2">
-                        <strong>Candidate {{i}}</strong>
-                        <button mat-icon-button color="warn" type="button" (click)="removeRoom(i)">
-                            <mat-icon>delete</mat-icon>
+                <div [formGroupName]="i" class="room-card">
+                    <span class="room-label">Room {{ i + 1 }}</span>
+                    <div formArrayName="paxes" class="pax-row">
+                        @for (pax of getPaxArray(i).controls; track pax; let j = $index) {
+                        <div [formGroupName]="j" class="pax-item">
+                            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                                <mat-label>Pax {{ j + 1 }}</mat-label>
+                                <input matInput type="number" formControlName="age" required>
+                                <span matSuffix class="pax-suffix">yrs</span>
+                            </mat-form-field>
+                            <button mat-icon-button color="warn" type="button" (click)="removePax(i, j)">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+                        }
+                        <button mat-icon-button color="primary" type="button" title="Add pax" (click)="addPax(i)">
+                            <mat-icon>person_add</mat-icon>
                         </button>
                     </div>
-
-                    <div formArrayName="paxes">
-                        <div class="pax-list d-flex flex-wrap gap-2">
-                            @for (pax of getPaxArray(i).controls; track pax; let j = $index) {
-                            <div [formGroupName]="j" class="pax-item d-flex align-items-center">
-                                <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 100px;">
-                                    <mat-label>Pax {{j}} Age</mat-label>
-                                    <input matInput type="number" formControlName="age" required>
-                                </mat-form-field>
-                                <button mat-icon-button color="warn" type="button" (click)="removePax(i, j)">
-                                    <mat-icon>close</mat-icon>
-                                </button>
-                            </div>
-                            }
-                        </div>
-                        <button mat-button type="button" color="primary" class="mt-2" (click)="addPax(i)">+ Add
-                            Pax</button>
-                    </div>
+                    <button mat-icon-button color="warn" type="button" (click)="removeRoom(i)">
+                        <mat-icon>delete_outline</mat-icon>
+                    </button>
                 </div>
                 }
             </div>
 
-            <div class="action-bar mt-4">
-                <button mat-raised-button color="accent" type="button" (click)="calculatePrice()">
+            <!-- Actions -->
+            <div class="action-bar">
+                <button mat-flat-button color="accent" type="button" (click)="calculatePrice()">
                     <mat-icon>search</mat-icon> Get Available Offers
                 </button>
             </div>
 
+            <!-- Results -->
             @if (valuationResults.length > 0) {
-            <div class="results-container mt-4">
-                <h4>Available Offers</h4>
-                <table class="table table-hover align-middle shadow-sm rounded overflow-hidden">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Candidate</th>
-                            <th>Room Name</th>
-                            <th>Room ID</th>
-                            <th>Meal Plan</th>
-                            <th class="text-end">Total Price</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (res of valuationResults; track res) {
-                        <tr (click)="selectOption(res)" style="cursor: pointer;">
-                            <td>{{res.roomCandidateId}}</td>
-                            <td>{{res.roomName}}</td>
-                            <td><span class="text-muted">#{{res.roomId}}</span></td>
-                            <td>{{res.mealPlan}}</td>
-                            <td>
-                                {{res.promotion}}
-                                @if(res.isDiscounted) {
-                                <span class="badge bg-success ms-2">{{res.discountText}}</span>
-                                }
-                            </td>
-                            <td class="text-end">
-                                <strong>{{res.price | number:'1.2-2'}}</strong>
-                            </td>
-                            <td class="text-center">
-                                <button mat-stroked-button color="primary" type="button"
-                                    (click)="$event.stopPropagation(); openDetails(res)">
-                                    Details
-                                </button>
-                                <button mat-icon-button color="primary" type="button" title="Select this price"
-                                    class="ms-2">
-                                    <mat-icon>check_circle</mat-icon>
-                                </button>
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="results-container">
+                <div class="section-label">Available Offers</div>
 
-                <div class="mt-3 d-flex justify-content-end align-items-center gap-2">
-                    <span class="mat-body-2 fw-bold">Selected Total:</span>
-                    <mat-form-field appearance="outline" style="width: 150px;">
+                <!-- Meal plan filter -->
+                <div class="meal-filter">
+                    <span class="meal-filter-label">Meal plan</span>
+                    <mat-button-toggle-group [value]="mealPlanFilter" hideSingleSelectionIndicator
+                        (change)="onMealPlanFilterChange($event.value)">
+                        @for (plan of availableMealPlans; track plan) {
+                        <mat-button-toggle [value]="plan">{{ plan }}</mat-button-toggle>
+                        }
+                    </mat-button-toggle-group>
+                </div>
+
+                @for (card of offerCards; track card.key) {
+                <div class="offer-card">
+                    <!-- Column 1: Room type -->
+                    <div class="oc-col oc-room">
+                        <div class="oc-col-label">Room {{ card.roomCandidateId + 1 }}</div>
+                        <strong>{{ card.roomName }}</strong>
+                    </div>
+
+                    <!-- Column 2: promotion options of the active meal plan (one pick per room candidate) -->
+                    <div class="oc-col oc-options">
+                        @for (offer of card.options; track offer) {
+                        <label class="oc-option" [class.oc-option-selected]="isSelected(offer)">
+                            <input type="radio" name="offer-room-{{ card.roomCandidateId }}"
+                                [checked]="isSelected(offer)" (change)="selectOption(offer)" />
+                            <span class="oc-option-promo">{{ promoLabel(offer) }}</span>
+                            @if (offer.isDiscounted) {
+                            <button type="button" class="oc-promo-info" title="Promotion details"
+                                (click)="openPromotionInfo(offer, $event)">
+                                <mat-icon>info_outline</mat-icon>
+                            </button>
+                            }
+                            <span class="oc-promo-price">{{ offer.price | number:'1.0-0' }}</span>
+                        </label>
+                        }
+                    </div>
+
+                    <!-- Column 4: Total for the selected offer of this room -->
+                    <div class="oc-col oc-total">
+                        <div class="oc-col-label">Total</div>
+                        @if (selectedOfferForRoom(card.roomCandidateId, card.roomId); as sel) {
+                        <span class="oc-total-value">{{ sel.price | number:'1.0-0' }}</span>
+                        } @else {
+                        <span class="text-muted">—</span>
+                        }
+                    </div>
+
+                    <!-- Column 5: Info & select -->
+                    <div class="oc-col oc-actions">
+                        @if (selectedOfferForRoom(card.roomCandidateId, card.roomId); as sel) {
+                        <button mat-icon-button color="primary" type="button" title="View breakdown"
+                            (click)="openDetails(sel)">
+                            <mat-icon>info_outline</mat-icon>
+                        </button>
+                        <button mat-icon-button color="accent" type="button" title="Selected">
+                            <mat-icon>check_circle</mat-icon>
+                        </button>
+                        } @else {
+                        <span class="text-muted small">Select an option</span>
+                        }
+                    </div>
+                </div>
+                }
+
+                <div class="selected-total">
+                    <span class="label">Selected Total</span>
+                    <mat-form-field appearance="outline" style="width: 160px;">
+                        <mat-icon matPrefix>euro</mat-icon>
                         <input matInput type="number" formControlName="totalPrice">
                     </mat-form-field>
                 </div>

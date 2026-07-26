@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AccommodationService } from '../services/accommodation.service';
@@ -14,12 +14,13 @@ import { Accommodation } from '../models/accommodation.model';
   standalone: true,
   imports: [CommonModule, RouterModule, ListPageComponent, DataTableComponent],
   templateUrl: './accommodation-list.html',
-  providers: [DatePipe],
+  providers: [DatePipe, DecimalPipe],
 })
 export class AccommodationListComponent {
   private service = inject(AccommodationService);
   private notification = inject(NotificationService);
   private datePipe = inject(DatePipe);
+  private decimalPipe = inject(DecimalPipe);
 
   accommodations$: Observable<Accommodation[]> = this.service.getAll();
 
@@ -48,7 +49,16 @@ export class AccommodationListComponent {
       cell: (row) => (row.endDate ? this.datePipe.transform(row.endDate.toDate()) : ''),
       isSortable: true,
     },
-    { columnDef: 'totalPrice', header: 'Total', cell: (row) => row.totalPrice, isSortable: true },
+    {
+      columnDef: 'totalPrice',
+      header: 'Total',
+      // Same style as the edit page: rounded up, no decimals, thousands separators
+      cell: (row) =>
+        row.totalPrice != null
+          ? (this.decimalPipe.transform(Math.ceil(row.totalPrice), '1.0-0') ?? '')
+          : '',
+      isSortable: true,
+    },
     { columnDef: 'status', header: 'Status', cell: (row) => row.status, isSortable: true },
   ];
 

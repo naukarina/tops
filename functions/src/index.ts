@@ -101,7 +101,9 @@ export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', a
   }
 });
 
-const KREOLA_API_URL = 'http://192.168.1.69:3100';
+// DEV server only — Google's cloud cannot reach a LAN IP (that caused the old 504s).
+// In laptop/WiFi mode the Angular app calls the API directly instead of via these proxies.
+const KREOLA_API_URL = 'https://api.kreola-dev.com';
 const KREOLA_CREDS = { email: 'admin@kreola-dev.com', password: 'secret' };
 
 async function getKreolaToken(): Promise<string> {
@@ -118,10 +120,7 @@ export const getRoomPricesProxy = onCall(async (request) => {
   try {
     const token = await getKreolaToken();
 
-    console.log('Proxying request to Kreola API with payload:', payload);
-
-    const response = await axios.get(`${KREOLA_API_URL}/merchants`, {
-      data: payload,
+    const response = await axios.post(`${KREOLA_API_URL}/erp/availability`, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -129,9 +128,55 @@ export const getRoomPricesProxy = onCall(async (request) => {
       },
     });
 
-    return { data: response.data, test: 'test' };
+    return response.data;
   } catch (error: any) {
     console.error('Proxy Error:', error.response?.data || error.message);
+    throw new HttpsError(
+      'internal',
+      error.response?.statusText || 'API Error',
+      error.response?.data,
+    );
+  }
+});
+
+export const getMerchantsProxy = onCall(async (_request) => {
+  try {
+    const token = await getKreolaToken();
+    const response = await axios.get(`${KREOLA_API_URL}/erp/merchants`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Merchants Proxy Error:', error.response?.data || error.message);
+    throw new HttpsError(
+      'internal',
+      error.response?.statusText || 'API Error',
+      error.response?.data,
+    );
+  }
+});
+
+export const getMerchantHotelListProxy = onCall(async (request) => {
+  const { externalMerchantId } = request.data;
+
+  try {
+    const token = await getKreolaToken();
+
+    // Now GET with a query param — was POST /merchants/hotel-list
+    const response = await axios.get(`${KREOLA_API_URL}/erp/hotel-list`, {
+      params: { externalMerchantId },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error('Hotel List Proxy Error:', error.response?.data || error.message);
     throw new HttpsError(
       'internal',
       error.response?.statusText || 'API Error',

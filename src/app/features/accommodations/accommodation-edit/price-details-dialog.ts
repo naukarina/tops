@@ -4,16 +4,22 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 
-export interface PriceDetailRow {
+export interface PriceBreakdownRow {
   date: string;
-  description: string;
-  price: number;
-  formula?: string;
+  originalRoomPrice: number;
+  roomPrice: number;
+  roomFormula?: string;
+  mealPlanName?: string | null;
+  mealPrice: number;
+  total: number;
 }
 
 export interface PriceDetailsData {
-  title: string;
-  rows: PriceDetailRow[];
+  offerName: string;
+  discountText?: string | null;
+  isDiscounted: boolean;
+  currency: string;
+  rows: PriceBreakdownRow[];
   total: number;
 }
 
@@ -22,28 +28,52 @@ export interface PriceDetailsData {
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatTableModule, DatePipe, DecimalPipe],
   template: `
-    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <h2 mat-dialog-title>Price Breakdown</h2>
     <mat-dialog-content>
+      <div class="offer-header">
+        <div class="offer-name"><strong>Offer:</strong> {{ data.offerName }}</div>
+        @if (data.isDiscounted && data.discountText) {
+        <span class="discount-badge">{{ data.discountText }}</span>
+        }
+      </div>
+
       <table mat-table [dataSource]="data.rows" class="w-100">
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef>Date</th>
-          <td mat-cell *matCellDef="let row">{{ row.date | date : 'dd MMM yyyy' }}</td>
+          <td mat-cell *matCellDef="let row">{{ row.date | date : 'dd.MM.yyyy' }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef>Description</th>
-          <td mat-cell *matCellDef="let row">
-            {{ row.description }}
-            @if (row.formula) {
-            <div class="formula-text">{{ row.formula }}</div>
+        <ng-container matColumnDef="roomPrice">
+          <th mat-header-cell *matHeaderCellDef class="text-end">Room Price</th>
+          <td mat-cell *matCellDef="let row" class="text-end">
+            @if (row.originalRoomPrice > row.roomPrice) {
+            <div class="original-price">
+              {{ data.currency }} {{ row.originalRoomPrice | number : '1.2-2' }}
+            </div>
+            }
+            <div class="final-price">{{ data.currency }} {{ row.roomPrice | number : '1.2-2' }}</div>
+            @if (row.roomFormula) {
+            <div class="formula-text">{{ row.roomFormula }}</div>
             }
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="price">
-          <th mat-header-cell *matHeaderCellDef class="text-end">Price</th>
+        <ng-container matColumnDef="mealPlan">
+          <th mat-header-cell *matHeaderCellDef class="text-center">Meal Plan(s)</th>
+          <td mat-cell *matCellDef="let row" class="text-center">
+            @if (row.mealPlanName) {
+            <span class="meal-name">{{ row.mealPlanName }}:</span>
+            <strong>{{ data.currency }} {{ row.mealPrice | number : '1.2-2' }}</strong>
+            } @else {
+            <span class="text-muted">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef class="text-end">Daily Total</th>
           <td mat-cell *matCellDef="let row" class="text-end">
-            {{ row.price | number : '1.2-2' }}
+            <strong>{{ data.currency }} {{ row.total | number : '1.2-2' }}</strong>
           </td>
         </ng-container>
 
@@ -52,7 +82,7 @@ export interface PriceDetailsData {
       </table>
 
       <div class="total-container">
-        <strong>Total: {{ data.total | number : '1.2-2' }}</strong>
+        <strong>Total: {{ data.currency }} {{ data.total | number : '1.0-0' }}</strong>
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -67,10 +97,48 @@ export interface PriceDetailsData {
       .text-end {
         text-align: right;
       }
+      .text-center {
+        text-align: center;
+      }
+      .text-muted {
+        color: #999;
+      }
+      .offer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .offer-name {
+        font-size: 1rem;
+        color: #333;
+      }
+      .discount-badge {
+        background: #2e7d32;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+      .original-price {
+        color: #999;
+        text-decoration: line-through;
+        font-size: 0.85em;
+      }
+      .final-price {
+        font-weight: 700;
+      }
       .formula-text {
-        font-size: 0.8em;
-        color: #666;
+        font-size: 0.75em;
+        color: #888;
         font-family: monospace;
+        margin-top: 2px;
+      }
+      .meal-name {
+        color: #555;
       }
       .total-container {
         margin-top: 16px;
@@ -83,6 +151,6 @@ export interface PriceDetailsData {
   ],
 })
 export class PriceDetailsDialogComponent {
-  displayedColumns = ['date', 'description', 'price'];
+  displayedColumns = ['date', 'roomPrice', 'mealPlan', 'total'];
   constructor(@Inject(MAT_DIALOG_DATA) public data: PriceDetailsData) {}
 }

@@ -97,8 +97,11 @@ export interface HotelOffer {
 
 export interface Accommodation extends BaseDocument {
   guestName: string;
+  fileRef?: string;
   hotelName: string;
-  hotelMarketId: number;
+  // externalHotelId string for new bookings; legacy docs stored a numeric catalog code
+  hotelMarketId: number | string;
+  externalMerchantId?: string;
   startDate: Timestamp;
   endDate: Timestamp;
   status: 'QUOTATION' | 'CONFIRMED' | 'CANCELLED';

@@ -229,6 +229,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'merchants',
+        loadComponent: () =>
+          import('./features/accommodations/merchant-hotel-list/merchant-hotel-list').then(
+            (m) => m.MerchantHotelListComponent,
+          ),
+        data: { breadcrumb: 'Merchants & Hotels' },
+      },
+      {
         path: 'new',
         loadComponent: () =>
           import('./features/accommodations/accommodation-edit/accommodation-edit').then(

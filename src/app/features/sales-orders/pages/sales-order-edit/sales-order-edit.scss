@@ -18,6 +18,18 @@
   padding-bottom: 8px;
 }
 
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  .section-header {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
 .guest-mode-toggle {
   margin-bottom: 1rem;
   display: flex;
@@ -27,4 +39,17 @@
 .form-divider {
   margin-top: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.reservation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.reservations-hint {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+  margin: 0 0 0.5rem;
 }

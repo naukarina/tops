@@ -28,6 +28,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Shared Components
 import { EditPageComponent } from '../../../../shared/components/edit-page/edit-page';
@@ -43,6 +44,19 @@ import {
 } from '../../../guests/guest-form.utils';
 import { GuestFormComponent } from '../../../guests/guest-form/guest-form';
 import { GuestService } from '@features/guests/services/guest.service';
+
+// --- Reservations ---
+import {
+  Reservation,
+  ReservationType,
+  RESERVATION_TYPE_LABELS,
+} from '../../../reservations/models/reservation.model';
+import { ReservationService } from '../../../reservations/services/reservation.service';
+import { ReservationTableComponent } from '../../../reservations/reservation-table/reservation-table';
+import {
+  ReservationDialogComponent,
+  ReservationDialogData,
+} from '../../../reservations/reservation-dialog/reservation-dialog';
 
 // Form Interface
 export interface SalesOrderForm {
@@ -87,7 +101,9 @@ export interface SalesOrderForm {
     SearchableSelectComponent,
     MatRadioModule,
     MatDividerModule,
+    MatDialogModule,
     GuestFormComponent, // <-- ADD NEW COMPONENT
+    ReservationTableComponent,
   ],
   templateUrl: './sales-order-edit.html',
   styleUrl: './sales-order-edit.scss',
@@ -97,6 +113,8 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
   private salesOrderService = inject(SalesOrderService);
   private partnerService = inject(PartnerService);
   private guestService = inject(GuestService);
+  private reservationService = inject(ReservationService);
+  private dialog = inject(MatDialog);
   private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -113,6 +131,25 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
 
   // Enums for template
   currencies = Object.values(CurrencyName);
+
+  // UI state
+  showGuestInfo = true;
+
+  // --- Reservations ---
+  reservations: Reservation[] = [];
+  private deletedReservationIds = new Set<string>();
+  ReservationType = ReservationType;
+  readonly reservationTypeButtons: { type: ReservationType; label: string }[] = [
+    { type: ReservationType.ARRIVAL, label: RESERVATION_TYPE_LABELS[ReservationType.ARRIVAL] },
+    { type: ReservationType.DEPARTURE, label: RESERVATION_TYPE_LABELS[ReservationType.DEPARTURE] },
+    { type: ReservationType.INTER, label: RESERVATION_TYPE_LABELS[ReservationType.INTER] },
+    { type: ReservationType.SHUTTLE, label: RESERVATION_TYPE_LABELS[ReservationType.SHUTTLE] },
+    { type: ReservationType.EXCURSION, label: RESERVATION_TYPE_LABELS[ReservationType.EXCURSION] },
+    {
+      type: ReservationType.ACCOMMODATION,
+      label: RESERVATION_TYPE_LABELS[ReservationType.ACCOMMODATION],
+    },
+  ];
 
   private _onDestroy = new Subject<void>();
 
@@ -181,7 +218,8 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
 
       // Totals
       currencyName: this.fb.control<CurrencyName | null>(null, Validators.required),
-      totalPrice: this.fb.control<number | null>(0, [Validators.required, Validators.min(0)]),
+      // Derived from the sum of reservation totals; display-only.
+      totalPrice: this.fb.control<number | null>({ value: 0, disabled: true }),
       remarks: this.fb.control<string | null>(null),
     });
 
@@ -326,10 +364,93 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
       }
 
       this.salesOrderForm.patchValue(formData);
+
+      // --- Load this order's reservations ---
+      this.reservations = (await firstValueFrom(this.reservationService.getBySalesOrder(id))) ?? [];
+      this.recomputeOrderTotal();
     } else {
       this.notificationService.showError('Sales Order not found!');
       this.router.navigate(['/sales-orders']);
     }
+  }
+
+  // --- Reservations ---
+
+  reservationsByType(type: ReservationType): Reservation[] {
+    return this.reservations.filter((r) => r.type === type);
+  }
+
+  /** Pulls guest/tour-operator/currency context from either the existing or new-guest path. */
+  private getGuestContext() {
+    const fv = this.salesOrderForm.getRawValue();
+    const ng = this.soFormControls.newGuestForm.getRawValue() as any;
+    const isExisting = fv.guestMode === 'existing';
+    return {
+      guestId: isExisting ? (fv.guestId ?? null) : null,
+      guestName: isExisting ? (fv.guestName ?? null) : (ng.name ?? null),
+      tourOperatorId: isExisting ? (fv.tourOperatorId ?? null) : (ng.tourOperatorId ?? null),
+      currencyName: fv.currencyName as CurrencyName | null,
+      arrivalDate: (isExisting ? fv.guestArrivalDate : ng.arrivalDate) as Date | null,
+      departureDate: (isExisting ? fv.guestDepartureDate : ng.departureDate) as Date | null,
+    };
+  }
+
+  get canAddReservations(): boolean {
+    const ctx = this.getGuestContext();
+    return !!ctx.currencyName;
+  }
+
+  async openReservationDialog(type: ReservationType, existing?: Reservation): Promise<void> {
+    const ctx = this.getGuestContext();
+    const hotels = (await firstValueFrom(this.hotels$)) ?? [];
+    const defaultDate =
+      type === ReservationType.DEPARTURE ? ctx.departureDate : ctx.arrivalDate;
+
+    const dialogData: ReservationDialogData = {
+      type,
+      tourOperatorId: ctx.tourOperatorId,
+      currencyName: (ctx.currencyName ?? CurrencyName.MUR) as CurrencyName,
+      guestId: ctx.guestId,
+      guestName: ctx.guestName,
+      defaultDate: defaultDate ?? null,
+      hotels,
+      reservation: existing ?? null,
+    };
+
+    const ref = this.dialog.open(ReservationDialogComponent, {
+      width: '700px',
+      maxHeight: '90vh',
+      data: dialogData,
+    });
+
+    ref
+      .afterClosed()
+      .pipe(first())
+      .subscribe((result: Reservation | undefined) => {
+        if (!result) return;
+        if (existing) {
+          const idx = this.reservations.indexOf(existing);
+          if (idx > -1) this.reservations[idx] = result;
+          else this.reservations.push(result);
+        } else {
+          this.reservations.push(result);
+        }
+        this.reservations = [...this.reservations];
+        this.recomputeOrderTotal();
+      });
+  }
+
+  removeReservation(reservation: Reservation): void {
+    if (reservation.id) {
+      this.deletedReservationIds.add(reservation.id);
+    }
+    this.reservations = this.reservations.filter((r) => r !== reservation);
+    this.recomputeOrderTotal();
+  }
+
+  private recomputeOrderTotal(): void {
+    const total = this.reservations.reduce((sum, r) => sum + (r.totalPrice || 0), 0);
+    this.soFormControls.totalPrice.setValue(Number(total.toFixed(2)), { emitEvent: false });
   }
 
   async onSubmit(): Promise<void> {
@@ -397,21 +518,62 @@ export class SalesOrderEditComponent implements OnInit, OnDestroy {
         soPayload.fileRef = formValue.fileRef ?? null;
       }
 
+      // Total is derived from reservations (disabled control; included via getRawValue).
+      soPayload.totalPrice = formValue.totalPrice ?? 0;
+
       // --- Step 3: Save Sales Order ---
+      let salesOrderId: string;
       if (this.isEditMode && this.soId) {
         await this.salesOrderService.update(this.soId, soPayload as SalesOrder);
-        this.notificationService.showSuccess('Sales Order updated successfully!');
+        salesOrderId = this.soId;
       } else {
         soPayload.status = SalesOrderStatus.DRAFT;
         soPayload.category = SalesOrderCategory.RESERVATIONS;
         soPayload.orderNumber = -1; // Placeholder for cloud function
-        await this.salesOrderService.add(soPayload as SalesOrder);
-        this.notificationService.showSuccess('Sales Order created successfully!');
+        const newRef = await this.salesOrderService.add(soPayload as SalesOrder);
+        salesOrderId = newRef.id;
       }
+
+      // --- Step 4: Persist reservations against this sales order ---
+      await this.persistReservations(salesOrderId, soPayload);
+
+      this.notificationService.showSuccess(
+        this.isEditMode ? 'Sales Order updated successfully!' : 'Sales Order created successfully!',
+      );
       this.router.navigate(['/sales-orders']);
     } catch (error: any) {
       console.error('Error saving sales order:', error);
       this.notificationService.showError(error.message || 'Failed to save sales order.');
     }
+  }
+
+  /** Adds/updates the in-memory reservations and deletes any removed ones. */
+  private async persistReservations(
+    salesOrderId: string,
+    soPayload: Partial<SalesOrder>,
+  ): Promise<void> {
+    for (const reservation of this.reservations) {
+      // Re-stamp with the latest order context in case guest/currency changed.
+      const stamped: Reservation = {
+        ...reservation,
+        salesOrderId,
+        guestId: soPayload.guestId ?? null,
+        guestName: soPayload.guestName ?? null,
+        tourOperatorId: soPayload.tourOperatorId ?? null,
+        currencyName: (soPayload.currencyName ?? reservation.currencyName) as CurrencyName,
+      };
+
+      if (reservation.id) {
+        const { id, ...rest } = stamped;
+        await this.reservationService.update(reservation.id, rest);
+      } else {
+        await this.reservationService.add(stamped);
+      }
+    }
+
+    for (const deletedId of this.deletedReservationIds) {
+      await this.reservationService.delete(deletedId);
+    }
+    this.deletedReservationIds.clear();
   }
 }

@@ -226,6 +226,15 @@ export class PricelistProductsDialogComponent implements OnInit {
     return murAmount;
   }
 
+  convertSelectedCurrencyToMur(amount: number): number {
+    const sourceCurrencyName = this.data.currencyName;
+    if (!sourceCurrencyName || sourceCurrencyName === CurrencyName.MUR) return amount;
+    const currencyObj = this.data.allCurrencies.find((c) => c.name === sourceCurrencyName);
+    if (currencyObj && currencyObj.exchangeRate)
+      return Number((amount * currencyObj.exchangeRate).toFixed(2));
+    return amount;
+  }
+
   getPricelistNetProfit(formPrice: number, originalMurCost: number): number {
     return formPrice - this.convertMurToSelectedCurrency(originalMurCost);
   }

@@ -6,7 +6,16 @@
                     [searchable]="true" optionValue="id" optionText="name"></app-searchable-select>
             </div>
 
-            <h4 class="section-header">Guest Information</h4>
+            <div class="section-header-row">
+                <h4 class="section-header">Guest Information</h4>
+                <button mat-icon-button type="button" (click)="showGuestInfo = !showGuestInfo"
+                    [attr.aria-label]="showGuestInfo ? 'Hide guest info' : 'Show guest info'"
+                    [attr.aria-expanded]="showGuestInfo">
+                    <mat-icon>{{ showGuestInfo ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+            </div>
+
+            @if (showGuestInfo) {
             <mat-radio-group formControlName="guestMode" class="guest-mode-toggle">
                 <mat-radio-button value="existing">Select Existing Guest</mat-radio-button>
                 <mat-radio-button value="new">Create New Guest</mat-radio-button>
@@ -25,6 +34,7 @@
                     [tourOperators$]="tourOperators$"></app-guest-form>
             </div>
             }
+            }
 
             <input type="hidden" formControlName="guestName" />
             <input type="hidden" formControlName="tourOperatorId" />
@@ -34,11 +44,33 @@
             <input type="hidden" formControlName="guestDepartureLocation" />
             <input type="hidden" formControlName="fileRef" />
 
+            <h4 class="section-header">Reservations</h4>
+            @if (!canAddReservations) {
+            <p class="reservations-hint">Select a currency (and guest / tour operator) to start adding
+                reservations.</p>
+            }
+            <div class="reservation-actions">
+                @for (btn of reservationTypeButtons; track btn.type) {
+                <button mat-stroked-button type="button" [disabled]="!canAddReservations"
+                    (click)="openReservationDialog(btn.type)">
+                    <mat-icon>add</mat-icon>
+                    <span>{{ btn.label }}</span>
+                </button>
+                }
+            </div>
+
+            @for (btn of reservationTypeButtons; track btn.type) {
+            <app-reservation-table [type]="btn.type" [reservations]="reservationsByType(btn.type)"
+                (edit)="openReservationDialog(btn.type, $event)" (remove)="removeReservation($event)">
+            </app-reservation-table>
+            }
+
             <h4 class="section-header">Financials</h4>
             <div class="form-row">
                 <mat-form-field appearance="outline">
-                    <mat-label>Total Price</mat-label>
-                    <input matInput formControlName="totalPrice" type="number" min="0" required />
+                    <mat-label>Order Total</mat-label>
+                    <input matInput formControlName="totalPrice" type="number" readonly />
+                    <mat-hint>Sum of all reservations</mat-hint>
                 </mat-form-field>
                 <mat-form-field appearance="outline">
                     <mat-label>Currency</mat-label>

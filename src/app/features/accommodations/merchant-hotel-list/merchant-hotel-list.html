@@ -1,0 +1,59 @@
+<app-list-page>
+    <div class="p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Merchants &amp; Hotels</h2>
+        </div>
+
+        @if (loading) {
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        }
+
+        <mat-accordion multi>
+            @for (row of rows; track row.merchant.id) {
+                <mat-expansion-panel (opened)="onExpand(row)">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <strong>{{ row.merchant.name }}</strong>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                            <mat-chip-set>
+                                <mat-chip>{{ row.merchant.externalMerchantId }}</mat-chip>
+                            </mat-chip-set>
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    @if (row.loading) {
+                        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    } @else if (row.hotels !== null) {
+                        @if (row.hotels.length === 0) {
+                            <p class="text-muted mt-2">No hotels found for this merchant.</p>
+                        } @else {
+                            <table class="table table-sm mt-2">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Hotel Name</th>
+                                        <th>Code (externalHotelId)</th>
+                                        <th>Town</th>
+                                        <th>Country</th>
+                                        <th>Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (hotel of row.hotels; track hotel.code) {
+                                        <tr>
+                                            <td>{{ hotel.name }}</td>
+                                            <td><code>{{ hotel.code }}</code></td>
+                                            <td>{{ hotel.town }}</td>
+                                            <td>{{ hotel.countryISOCode }}</td>
+                                            <td>{{ hotel.propertyCategory }}</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    }
+                </mat-expansion-panel>
+            }
+        </mat-accordion>
+    </div>
+</app-list-page>

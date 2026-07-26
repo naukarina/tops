@@ -1,7 +1,7 @@
 // src/app/shared/components/guest-form/guest-form.ts
 import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Partner } from '../../../features/partners/models/partner.model';
 import { GuestForm } from '../guest.form.model';
@@ -55,6 +55,19 @@ export class GuestFormComponent implements OnInit, OnDestroy {
       .subscribe((value) => {
         if (value !== 'Custom') {
           this.guestForm.controls.departureLocationCustom.reset();
+        }
+      });
+
+    // Keep the (disabled) tour operator name in sync with the selected id.
+    this.guestForm.controls.tourOperatorId.valueChanges
+      .pipe(takeUntil(this._onDestroy))
+      .subscribe(async (id) => {
+        if (id) {
+          const ops = await firstValueFrom(this.tourOperators$);
+          const selectedOp = ops.find((o) => o.id === id);
+          this.guestForm.controls.tourOperatorName.setValue(selectedOp ? selectedOp.name : null);
+        } else {
+          this.guestForm.controls.tourOperatorName.setValue(null);
         }
       });
 

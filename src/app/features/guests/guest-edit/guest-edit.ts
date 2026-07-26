@@ -2,7 +2,7 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Observable, Subject, firstValueFrom, map, takeUntil } from 'rxjs'; // Import takeUntil
+import { Observable, Subject, firstValueFrom, map } from 'rxjs';
 import { Guest } from '../models/guest.model';
 import { Partner, PartnerType } from '../../../features/partners/models/partner.model';
 import { PartnerService } from '../../partners/services/partner.service';
@@ -84,25 +84,8 @@ export class GuestEditComponent implements OnInit, OnDestroy {
     // --- USE UTILITY TO CREATE FORM ---
     this.guestForm = createGuestForm(this.fb);
 
-    // --- REMOVED valueChanges listeners (moved to GuestFormComponent) ---
-
-    // Update Tour Operator Name when ID changes (Keep this here as it's part of this component's data)
-    this.guestForm.controls.tourOperatorId.valueChanges
-      .pipe(takeUntil(this._onDestroy))
-      .subscribe(async (id) => {
-        // <-- made async
-        if (id) {
-          // --- FIX: Pass the observable to firstValueFrom ---
-          const ops = await firstValueFrom(this.tourOperators$);
-          const selectedOp = ops.find((o) => o.id === id);
-          if (selectedOp) {
-            this.guestForm.controls.tourOperatorName.setValue(selectedOp.name);
-          }
-        } else {
-          // --- ADDED: Clear name if ID is cleared ---
-          this.guestForm.controls.tourOperatorName.setValue(null);
-        }
-      });
+    // --- REMOVED valueChanges listeners (moved to GuestFormComponent),
+    //     including the tour-operator-name sync. ---
 
     if (this.isEditMode && this.guestId) {
       const [guestData, hotels] = await Promise.all([

@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+  apiUrl: 'https://api.kreola-dev.com',
+  apiCredentials: { email: 'admin@kreola-dev.com', password: 'secret' },
   firebase: {
     projectId: 'kreola-tops-new',
     appId: '1:121945248569:web:e078cb33abde50e3ffcee8',

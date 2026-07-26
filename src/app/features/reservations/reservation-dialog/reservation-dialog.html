@@ -1,0 +1,186 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <!-- Dates -->
+    @if (!isAccommodation) {
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input matInput [matDatepicker]="datePicker" formControlName="date" required />
+        <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+        <mat-datepicker #datePicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Pickup Time</mat-label>
+        <input matInput type="time" formControlName="pickupTime" />
+      </mat-form-field>
+    </div>
+    }
+
+    <!-- Flight (arrival / departure) -->
+    @if (showFlight) {
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Flight Number</mat-label>
+        <input matInput formControlName="flightNumber" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Flight Time</mat-label>
+        <input matInput type="time" formControlName="flightTime" />
+      </mat-form-field>
+    </div>
+    }
+
+    <!-- From location -->
+    @if (showFromLocation) {
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>From Location</mat-label>
+        <mat-select formControlName="fromLocationSelect">
+          <mat-option [value]="null">-- None --</mat-option>
+          <mat-option [value]="AIRPORT">Airport</mat-option>
+          <mat-option [value]="CUSTOM">-- Custom location --</mat-option>
+          @for (hotel of hotels; track hotel.id) {
+          <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (form.get('fromLocationSelect')?.value === CUSTOM) {
+      <mat-form-field appearance="outline">
+        <mat-label>Custom From Location</mat-label>
+        <input matInput formControlName="fromLocationCustom" />
+      </mat-form-field>
+      }
+    </div>
+    }
+
+    <!-- To location -->
+    @if (showToLocation) {
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ toLocationLabel }}</mat-label>
+        <mat-select formControlName="toLocationSelect">
+          <mat-option [value]="null">-- None --</mat-option>
+          <mat-option [value]="AIRPORT">Airport</mat-option>
+          <mat-option [value]="CUSTOM">-- Custom location --</mat-option>
+          @for (hotel of hotels; track hotel.id) {
+          <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (form.get('toLocationSelect')?.value === CUSTOM) {
+      <mat-form-field appearance="outline">
+        <mat-label>Custom {{ toLocationLabel }}</mat-label>
+        <input matInput formControlName="toLocationCustom" />
+      </mat-form-field>
+      }
+    </div>
+    }
+
+    <!-- Accommodation -->
+    @if (isAccommodation) {
+    <mat-form-field appearance="outline">
+      <mat-label>Hotel</mat-label>
+      <mat-select formControlName="hotelNameSelect" required>
+        <mat-option [value]="CUSTOM">-- Custom hotel --</mat-option>
+        @for (hotel of hotels; track hotel.id) {
+        <mat-option [value]="hotel.name">{{ hotel.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (form.get('hotelNameSelect')?.value === CUSTOM) {
+    <mat-form-field appearance="outline">
+      <mat-label>Custom Hotel</mat-label>
+      <input matInput formControlName="hotelNameCustom" />
+    </mat-form-field>
+    }
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate" required />
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate" required />
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+    }
+
+    <!-- Product (non-accommodation) -->
+    @if (showProduct) {
+    <app-searchable-select
+      label="Product"
+      formControlName="productId"
+      [options]="filteredProducts$"
+      [searchable]="true"
+      optionValue="id"
+      optionText="name"
+    ></app-searchable-select>
+    }
+
+    <!-- Pax -->
+    <div formGroupName="pax">
+      <h4 class="section-header">Pax</h4>
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Adults</mat-label>
+          <input matInput formControlName="adult" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Children</mat-label>
+          <input matInput formControlName="child" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Infants</mat-label>
+          <input matInput formControlName="infant" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Total</mat-label>
+          <input matInput formControlName="total" type="number" readonly />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <h4 class="section-header">Pricing ({{ data.currencyName }})</h4>
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Quantity</mat-label>
+        <input matInput formControlName="qty" type="number" min="1" required />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Unit Price</mat-label>
+        <input matInput formControlName="unitPrice" type="number" min="0" required />
+        @if (priceOverridden) {
+        <mat-hint>Manually overridden</mat-hint>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Total Price</mat-label>
+        <input matInput formControlName="totalPrice" type="number" readonly />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Remarks</mat-label>
+      <textarea matInput formControlName="remarks"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="onCancel()">
+    <mat-icon>cancel</mat-icon>
+    <span>Cancel</span>
+  </button>
+  <button mat-flat-button color="primary" type="button" (click)="onSave()">
+    <mat-icon>save</mat-icon>
+    <span>Save</span>
+  </button>
+</mat-dialog-actions>

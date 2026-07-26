@@ -2,7 +2,8 @@
     <app-data-table featureName="accommodations" [dataInput]="accommodations$" [columnDefinitions]="columnDefs"
         [displayedColumnsInput]="displayedColumns" [enableSelection]="true" [enableFilter]="true" [enableSort]="true"
         [enablePaginator]="true" [pageSizeOptions]="[10, 25, 50]" filterPlaceholder="Search bookings..."
-        [editRoute]="editRoute" [enableDelete]="true" (deleteAction)="onDelete($event)" title="Accommodations"
+        [editRoute]="editRoute" [enableDelete]="true" [editDisabled]="true" [deleteDisabled]="true"
+        (deleteAction)="onDelete($event)" title="Accommodations"
         newRoute="/accommodations/new" newButtonText="New Booking">
     </app-data-table>
 </app-list-page>

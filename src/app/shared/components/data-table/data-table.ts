@@ -96,6 +96,9 @@ export class DataTableComponent<T> implements OnInit, OnChanges, AfterViewInit, 
   @Input() viewRoute?: (item: T) => string | any[];
   @Input() editRoute?: (item: T) => string | any[];
   @Input() enableDelete = false;
+  // Show the edit/delete buttons greyed out for every access level
+  @Input() editDisabled = false;
+  @Input() deleteDisabled = false;
   @Input() dropdownFilters: DropdownFilter<T>[] = [];
   @Input() title = '';
   @Input() newRoute = '';

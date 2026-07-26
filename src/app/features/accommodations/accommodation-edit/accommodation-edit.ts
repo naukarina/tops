@@ -96,6 +96,15 @@ export class AccommodationEditComponent implements OnInit {
       this.filteredHotels = this.hotels.filter((h) => h.name.toLowerCase().includes(q));
     });
 
+    // Check-out can never be before check-in: the picker's [min] blocks the calendar,
+    // and this clears a check-out that a later check-in change has invalidated
+    this.form.get('startDate')!.valueChanges.subscribe((start) => {
+      const end = this.form.get('endDate')?.value;
+      if (start && end && new Date(end) < new Date(start)) {
+        this.form.patchValue({ endDate: null });
+      }
+    });
+
     if (this.isEditMode && this.bookingId) {
       // In edit mode: merchants must be ready before we can restore the selection
       this.loadMerchants().then(() => this.loadBooking());
@@ -621,9 +630,10 @@ export class AccommodationEditComponent implements OnInit {
       startDate: new Date(val.startDate).toISOString(),
       endDate: new Date(val.endDate).toISOString(),
       availDestinations: [{ type: 'HOT', code: val.hotelMarketId.toString() }],
+      // Same 1-based ids as the availability request in calculatePrice
       roomCandidates: val.rooms.map((r: any, rIndex: number) => ({
-        id: rIndex,
-        paxes: r.paxes.map((p: any, pIndex: number) => ({ id: pIndex, age: p.age })),
+        id: rIndex + 1,
+        paxes: r.paxes.map((p: any, pIndex: number) => ({ id: pIndex + 1, age: p.age })),
       })),
     };
 

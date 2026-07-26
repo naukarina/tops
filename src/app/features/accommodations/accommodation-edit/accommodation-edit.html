@@ -70,7 +70,8 @@
                 <mat-form-field appearance="outline">
                     <mat-label>Check-out</mat-label>
                     <mat-icon matPrefix>flight_takeoff</mat-icon>
-                    <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
+                    <input matInput [matDatepicker]="endPicker" formControlName="endDate"
+                        [min]="form.get('startDate')?.value" required>
                     <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
                     <mat-datepicker #endPicker></mat-datepicker>
                 </mat-form-field>
@@ -139,7 +140,8 @@
                 <div class="offer-card">
                     <!-- Column 1: Room type -->
                     <div class="oc-col oc-room">
-                        <div class="oc-col-label">Room {{ card.roomCandidateId + 1 }}</div>
+                        <!-- Request room ids are 1-based, so the API's roomCandidateId is already the display number -->
+                        <div class="oc-col-label">Room {{ card.roomCandidateId }}</div>
                         <strong>{{ card.roomName }}</strong>
                     </div>
 

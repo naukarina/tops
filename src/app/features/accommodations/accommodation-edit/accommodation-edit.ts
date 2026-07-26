@@ -187,8 +187,9 @@ export class AccommodationEditComponent implements OnInit {
 
   private initForm() {
     this.form = this.fb.group({
+      // Required to save a booking, but not to search for offers (see calculatePrice)
       guestName: ['', Validators.required],
-      fileRef: [''],
+      fileRef: ['', Validators.required],
       hotelMarketId: [null, Validators.required],
       startDate: [null, Validators.required],
       endDate: [null, Validators.required],
@@ -404,8 +405,11 @@ export class AccommodationEditComponent implements OnInit {
   }
 
   async calculatePrice() {
-    if (this.form.invalid) {
-      this.notification.showError('Please fill all required fields');
+    // Searching only needs hotel, dates and rooms — guest name / file ref are save-time fields
+    const searchControls = ['hotelMarketId', 'startDate', 'endDate', 'rooms'];
+    if (searchControls.some((c) => this.form.get(c)?.invalid)) {
+      searchControls.forEach((c) => this.form.get(c)?.markAllAsTouched());
+      this.notification.showError('Please select hotel, dates and room occupancy');
       return;
     }
     if (!this.selectedMerchant?.externalMerchantId || !this.form.value.hotelMarketId) {

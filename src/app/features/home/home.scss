@@ -1,11 +1,12 @@
 .dashboard-container {
     padding: 2rem;
     background-color: #f4f7fa;
+    min-height: 100%;
 }
 
 mat-card {
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 mat-card-header {
@@ -18,46 +19,153 @@ mat-card-title {
     color: #333;
 }
 
-canvas {
-    max-height: 200px;
+.chart-wrap {
+    position: relative;
+    height: 260px;
 }
 
-.info-card {
-    background: #ffffff;
-}
-
-.data-prominent {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 5px;
-    color: #3f51b5;
-}
-
-.data-sub {
+/* ---- Stat tiles ---- */
+.stat-tile .stat-label {
     font-size: 13px;
+    font-weight: 600;
     color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
 }
 
-.data-sub span {
-    font-weight: 500;
-}
-
-.info-label {
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.info-value {
+.stat-tile .stat-value {
     font-size: 28px;
     font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+}
+
+.stat-tile .stat-sub {
+    font-size: 13px;
+    color: #898781;
+    margin-bottom: 0;
+}
+
+/* ---- Status breakdown ---- */
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-top: 0.5rem;
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 14px;
     color: #333;
 }
 
-.info-icon {
-    font-size: 36px;
-    color: green;
+.status-name {
+    flex: 1 1 auto;
 }
 
-mat-icon.info-icon:first-child {
-    color: red;
+.status-count {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.status-bar-track {
+    height: 6px;
+    border-radius: 3px;
+    background: #f0efec;
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+}
+
+.status-bar {
+    height: 100%;
+    border-radius: 3px;
+}
+
+/* ---- Upcoming check-ins ---- */
+.checkin-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkin-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.25rem;
+    border-bottom: 1px solid #f0efec;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: #f5f5f5;
+    }
+}
+
+.checkin-date {
+    flex: 0 0 56px;
+    font-weight: 600;
+    color: #52514e;
+    font-variant-numeric: tabular-nums;
+}
+
+.checkin-guest {
+    flex: 1 1 30%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.checkin-hotel {
+    flex: 1 1 40%;
+    color: #6c757d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.checkin-status {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 13px;
+    color: #52514e;
+}
+
+.checkin-price {
+    flex: 0 0 auto;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Empty / loading ---- */
+.dash-empty {
+    color: #898781;
+    font-size: 14px;
+    margin: 0.5rem 0;
+}
+
+.dash-empty-card {
+    max-width: 420px;
+
+    button {
+        margin-top: 0.5rem;
+    }
 }

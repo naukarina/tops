@@ -1,103 +1,137 @@
 <div class="container-fluid dashboard-container">
+
+    @if (loading) {
+    <div class="dash-empty">Loading dashboard…</div>
+    } @else if (stats.total === 0) {
+    <mat-card class="dash-empty-card">
+        <mat-card-content>
+            <p class="dash-empty">No accommodation bookings yet.</p>
+            <button mat-flat-button color="primary" routerLink="/accommodations/new">
+                <mat-icon>add</mat-icon> New Booking
+            </button>
+        </mat-card-content>
+    </mat-card>
+    } @else {
+
+    <!-- Stat tiles -->
     <div class="row">
-        <!-- First Row of Cards -->
-        <div class="col-lg-6 mb-4">
-            <mat-card>
-                <mat-card-header>
-                    <mat-card-title>Sales Trends</mat-card-title>
-                </mat-card-header>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <mat-card class="stat-tile">
                 <mat-card-content>
-                    <canvas id="salesTrendsChart"></canvas>
+                    <p class="stat-label">Bookings</p>
+                    <p class="stat-value">{{ stats.total | number:'1.0-0' }}</p>
+                    <p class="stat-sub">{{ stats.cancelled | number:'1.0-0' }} cancelled</p>
                 </mat-card-content>
             </mat-card>
         </div>
-        <div class="col-lg-3 mb-4">
-            <mat-card>
-                <mat-card-header>
-                    <mat-card-title>Sales-cycles</mat-card-title>
-                </mat-card-header>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <mat-card class="stat-tile">
                 <mat-card-content>
-                    <canvas id="salesCyclesChart"></canvas>
+                    <p class="stat-label">Confirmed value</p>
+                    <p class="stat-value">{{ currency }} {{ stats.confirmedValue | number:'1.0-0' }}</p>
+                    <p class="stat-sub">{{ stats.confirmed | number:'1.0-0' }} confirmed bookings</p>
                 </mat-card-content>
             </mat-card>
         </div>
-        <div class="col-lg-3 mb-4">
-            <mat-card class="info-card h-100">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <mat-card class="stat-tile">
+                <mat-card-content>
+                    <p class="stat-label">Quotation pipeline</p>
+                    <p class="stat-value">{{ currency }} {{ stats.pipelineValue | number:'1.0-0' }}</p>
+                    <p class="stat-sub">{{ stats.quotations | number:'1.0-0' }} open quotations</p>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <mat-card class="stat-tile">
+                <mat-card-content>
+                    <p class="stat-label">Check-ins next 30 days</p>
+                    <p class="stat-value">{{ stats.upcoming | number:'1.0-0' }}</p>
+                    <p class="stat-sub">excluding cancelled</p>
+                </mat-card-content>
+            </mat-card>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <mat-card>
                 <mat-card-header>
-                    <mat-card-title>New Users</mat-card-title>
+                    <mat-card-title>Booking value by check-in month</mat-card-title>
                 </mat-card-header>
                 <mat-card-content>
-                    <p class="data-prominent">1,400K</p>
-                    <p class="data-sub"><span>Tomorrow:</span> 450 Esimated</p>
-                    <p class="data-prominent">3,13.00K</p>
-                    <p class="data-sub"><span>Progress:</span> 6% Esimated</p>
+                    <div class="chart-wrap">
+                        <canvas id="monthlyValueChart"></canvas>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <mat-card class="h-100">
+                <mat-card-header>
+                    <mat-card-title>Bookings by status</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div class="status-list">
+                        @for (row of statusRows; track row.label) {
+                        <div class="status-row">
+                            <span class="status-dot" [style.background]="row.color"></span>
+                            <span class="status-name">{{ row.label }}</span>
+                            <span class="status-count">{{ row.count | number:'1.0-0' }}</span>
+                        </div>
+                        <div class="status-bar-track">
+                            <div class="status-bar" [style.width.%]="row.share * 100"
+                                [style.background]="row.color"></div>
+                        </div>
+                        }
+                    </div>
                 </mat-card-content>
             </mat-card>
         </div>
     </div>
 
     <div class="row">
-        <!-- Second Row of Cards -->
         <div class="col-lg-6 mb-4">
-            <mat-card>
+            <mat-card class="h-100">
                 <mat-card-header>
-                    <mat-card-title>New Tickets</mat-card-title>
+                    <mat-card-title>Top hotels by booking value</mat-card-title>
                 </mat-card-header>
                 <mat-card-content>
-                    <canvas id="newTicketsChart"></canvas>
-                </mat-card-content>
-            </mat-card>
-        </div>
-        <div class="col-lg-3 mb-4">
-            <mat-card>
-                <mat-card-header>
-                    <mat-card-title>New Users</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <canvas id="newUsersChart"></canvas>
-                </mat-card-content>
-            </mat-card>
-        </div>
-        <div class="col-lg-3 mb-4">
-            <mat-card class="info-card h-100">
-                <mat-card-header>
-                    <mat-card-title>Pending Orders</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <p class="data-prominent">8.0.4K</p>
-                    <p class="data-sub"><span>Sales:</span> Hillioth</p>
-                    <div class="d-flex justify-content-around mt-4">
-                        <button mat-raised-button color="primary">Settle</button>
-                        <button mat-stroked-button color="primary">Cancel</button>
+                    <div class="chart-wrap">
+                        <canvas id="topHotelsChart"></canvas>
                     </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <mat-card class="h-100">
+                <mat-card-header>
+                    <mat-card-title>Upcoming check-ins</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    @if (upcomingCheckIns.length === 0) {
+                    <p class="dash-empty">No upcoming check-ins.</p>
+                    } @else {
+                    <div class="checkin-list">
+                        @for (b of upcomingCheckIns; track b.id) {
+                        <a class="checkin-row" [routerLink]="['/accommodations', 'edit', b.id]">
+                            <span class="checkin-date">{{ b.startDate.toDate() | date:'dd MMM' }}</span>
+                            <span class="checkin-guest">{{ b.guestName }}</span>
+                            <span class="checkin-hotel">{{ b.hotelName }}</span>
+                            <span class="checkin-status">
+                                <span class="status-dot" [style.background]="statusColor(b.status)"></span>
+                                {{ b.status === 'CONFIRMED' ? 'Confirmed' : 'Quotation' }}
+                            </span>
+                            <span class="checkin-price">{{ currency }} {{ b.totalPrice | number:'1.0-0' }}</span>
+                        </a>
+                        }
+                    </div>
+                    }
                 </mat-card-content>
             </mat-card>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Third Row of Cards -->
-        <div class="col-lg-6 mb-4">
-            <mat-card class="info-card">
-                <mat-card-content class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="info-label">Total Revenue</p>
-                        <p class="info-value">5151</p>
-                    </div>
-                    <mat-icon class="info-icon">arrow_upward</mat-icon>
-                </mat-card-content>
-            </mat-card>
-        </div>
-        <div class="col-lg-6 mb-4">
-            <mat-card class="info-card">
-                <mat-card-content class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="info-label">Total Revenue</p>
-                        <p class="info-value">200K</p>
-                    </div>
-                    <mat-icon class="info-icon">arrow_downward</mat-icon>
-                </mat-card-content>
-            </mat-card>
-        </div>
-    </div>
+    }
 </div>

@@ -25,9 +25,10 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(MatSnackBarModule),
     provideFunctions(() => {
       const functions = getFunctions();
-      if (!environment.production) {
-        connectFunctionsEmulator(functions, 'localhost', 5001);
-      }
+      // TEMP: use deployed functions from localhost. Restore the emulator block when done.
+      // if (!environment.production) {
+      //   connectFunctionsEmulator(functions, 'localhost', 5001);
+      // }
       return functions;
     }),
 

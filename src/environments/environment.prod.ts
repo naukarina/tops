@@ -1,8 +1,7 @@
-// Production build (deployed Firebase site): DEV API, real cloud functions (no emulator)
+// Production build (deployed Firebase site): PROD API (via cloud functions), real cloud functions (no emulator)
 export const environment = {
   production: true,
-  apiUrl: 'https://api.kreola-dev.com',
-  apiCredentials: { email: 'admin@kreola-dev.com', password: 'secret' },
+  apiUrl: 'https://api.kreola.mu',
   firebase: {
     projectId: 'kreola-tops-new',
     appId: '1:121945248569:web:e078cb33abde50e3ffcee8',

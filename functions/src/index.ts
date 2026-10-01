@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 // --- ADDED ---
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import axios from 'axios';
+import { defineSecret } from 'firebase-functions/params';
 // --- END ADD ---
 
 admin.initializeApp();
@@ -101,20 +102,23 @@ export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', a
   }
 });
 
-// DEV server only — Google's cloud cannot reach a LAN IP (that caused the old 504s).
-// In laptop/WiFi mode the Angular app calls the API directly instead of via these proxies.
-const KREOLA_API_URL = 'https://api.kreola-dev.com';
-const KREOLA_CREDS = { email: 'admin@kreola-dev.com', password: 'secret' };
+// Kreola ERP API (production). Credentials live in Firebase secrets, never in source:
+//   firebase functions:secrets:set KREOLA_EMAIL
+//   firebase functions:secrets:set KREOLA_PASSWORD
+const KREOLA_API_URL = 'https://api.kreola.mu'; // no trailing slash: paths are appended as `/auth/...`
+const KREOLA_EMAIL = defineSecret('KREOLA_EMAIL');
+const KREOLA_PASSWORD = defineSecret('KREOLA_PASSWORD');
+const kreolaOpts = { secrets: [KREOLA_EMAIL, KREOLA_PASSWORD] };
 
 async function getKreolaToken(): Promise<string> {
-  const res = await axios.post<{ access_token: string }>(
-    `${KREOLA_API_URL}/auth/sign-in`,
-    KREOLA_CREDS,
-  );
+  const res = await axios.post<{ access_token: string }>(`${KREOLA_API_URL}/auth/sign-in`, {
+    email: KREOLA_EMAIL.value(),
+    password: KREOLA_PASSWORD.value(),
+  });
   return res.data.access_token;
 }
 
-export const getRoomPricesProxy = onCall(async (request) => {
+export const getRoomPricesProxy = onCall(kreolaOpts, async (request) => {
   const { payload } = request.data;
 
   try {
@@ -139,7 +143,7 @@ export const getRoomPricesProxy = onCall(async (request) => {
   }
 });
 
-export const getMerchantsProxy = onCall(async (_request) => {
+export const getMerchantsProxy = onCall(kreolaOpts, async (_request) => {
   try {
     const token = await getKreolaToken();
     const response = await axios.get(`${KREOLA_API_URL}/erp/merchants`, {
@@ -159,7 +163,29 @@ export const getMerchantsProxy = onCall(async (_request) => {
   }
 });
 
-export const getMerchantHotelListProxy = onCall(async (request) => {
+export const getMerchantHotelsProxy = onCall(kreolaOpts, async (request) => {
+  const { merchantId } = request.data;
+
+  try {
+    const token = await getKreolaToken();
+    const response = await axios.get(`${KREOLA_API_URL}/erp/merchants/${merchantId}/hotels`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Merchant Hotels Proxy Error:', error.response?.data || error.message);
+    throw new HttpsError(
+      'internal',
+      error.response?.statusText || 'API Error',
+      error.response?.data,
+    );
+  }
+});
+
+export const getMerchantHotelListProxy = onCall(kreolaOpts, async (request) => {
   const { externalMerchantId } = request.data;
 
   try {

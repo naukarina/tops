@@ -22,4 +22,9 @@ export interface UserProfile extends BaseDocument {
   roles: string[];
   isActive: boolean;
   permissions?: FeaturePermissions; // <-- ADD THIS
+  // B2B partner accounts: bound to one Kreola merchant and limited to the B2B pricing module.
+  // Set by the createUser cloud function; the b2b* proxies read the binding from this doc.
+  b2bMerchantId?: number | null;
+  b2bExternalMerchantId?: string | null;
+  b2bMerchantName?: string | null;
 }

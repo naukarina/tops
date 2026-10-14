@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth-guard';
+import { authGuard, b2bGuard } from './core/auth/auth-guard';
 import { featureGuard } from '@core/auth/feature.guard';
 
 export const routes: Routes = [
@@ -38,6 +38,13 @@ export const routes: Routes = [
       showHeader: false,
       showSidenav: false,
     },
+  },
+  {
+    path: 'b2b-pricing',
+    canActivate: [authGuard, b2bGuard],
+    loadComponent: () =>
+      import('./features/b2b-pricing/b2b-pricing').then((m) => m.B2bPricingComponent),
+    data: { breadcrumb: 'Accommodation Prices' },
   },
   {
     path: 'partners',
@@ -310,7 +317,8 @@ export const routes: Routes = [
   },
   {
     path: 'admin/import',
-    // You can add a canActivate: [adminGuard] here
+    // authGuard also keeps B2B partner accounts out; add an adminGuard here if needed
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/migration/migration-page/migration-page').then(
         (m) => m.MigrationPageComponent,

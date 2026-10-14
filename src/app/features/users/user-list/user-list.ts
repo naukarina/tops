@@ -31,7 +31,7 @@ export class UserListComponent implements OnInit {
   users$!: Observable<UserProfile[]>;
 
   // Define the columns to display (matching your existing ones)
-  columnsForTable = ['displayName', 'email', 'companyName'];
+  columnsForTable = ['displayName', 'email', 'companyName', 'partner'];
 
   // Define how the data table should read and display the data
   columnDefs: ColumnDefinition<UserProfile>[] = [
@@ -46,6 +46,12 @@ export class UserListComponent implements OnInit {
       columnDef: 'companyName',
       header: 'Company',
       cell: (u) => u.companyName || '',
+      isSortable: true,
+    },
+    {
+      columnDef: 'partner',
+      header: 'B2B Partner',
+      cell: (u) => u.b2bMerchantName || '',
       isSortable: true,
     },
   ];

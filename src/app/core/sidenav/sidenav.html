@@ -1,5 +1,11 @@
 <div class="sidenav-container">
     <mat-nav-list>
+        @if (isB2b$ | async) {
+        <a mat-list-item routerLink="/b2b-pricing" routerLinkActive="active-link">
+            <mat-icon matListItemIcon>hotel</mat-icon>
+            <span matListItemTitle>Accommodation Prices</span>
+        </a>
+        } @else {
         <a mat-list-item routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
             <mat-icon matListItemIcon>dashboard</mat-icon>
             <span matListItemTitle>Dashboard</span>
@@ -12,6 +18,7 @@
             <mat-icon matListItemIcon>{{ item.icon || 'extension' }}</mat-icon>
             <span matListItemTitle>{{ item.label }}</span>
         </a>
+        }
         }
         }
 

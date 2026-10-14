@@ -11,6 +11,7 @@ import { HasAccessDirective } from '@shared/directives/has-access.directive';
 import { AppFeatureService } from '../services/app-feature.service';
 import { AppFeature } from '../models/app-feature.model';
 import { Observable, map } from 'rxjs';
+import { UserProfileService } from '../auth/user-profile.service';
 
 @Component({
   selector: 'app-sidenav',
@@ -21,6 +22,11 @@ import { Observable, map } from 'rxjs';
 })
 export class SidenavComponent {
   private featureService = inject(AppFeatureService);
+
+  // B2B partner accounts only get the B2B pricing module in the menu
+  isB2b$: Observable<boolean> = inject(UserProfileService).userProfile$.pipe(
+    map((profile) => profile?.b2bMerchantId != null),
+  );
 
   // Fetch active features and sort them by the 'order' property
   navItems$: Observable<AppFeature[]> = this.featureService

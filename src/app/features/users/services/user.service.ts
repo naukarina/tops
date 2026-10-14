@@ -13,7 +13,7 @@ export class UserService extends BaseService<UserProfile> {
     super('users');
   }
 
-  async createNewUser(userData: any, company: any): Promise<void> {
+  async createNewUser(userData: any, company: any, b2bMerchant?: any): Promise<void> {
     const createUserFn = httpsCallable(this.functions, 'createUser');
 
     // This single call handles both Auth and Firestore securely on the backend
@@ -21,10 +21,13 @@ export class UserService extends BaseService<UserProfile> {
       email: userData.email,
       password: userData.password,
       displayName: userData.displayName,
-      companyId: company.id,
-      companyName: company.name,
-      companyType: company.type,
-      permissions: userData.permissions,
+      companyId: company?.id ?? null,
+      companyName: company?.name ?? null,
+      companyType: company?.type ?? null,
+      permissions: b2bMerchant ? {} : userData.permissions,
+      b2bMerchant: b2bMerchant
+        ? { id: b2bMerchant.id, externalMerchantId: b2bMerchant.externalMerchantId, name: b2bMerchant.name }
+        : null,
       isActive: userData.isActive,
     });
   }

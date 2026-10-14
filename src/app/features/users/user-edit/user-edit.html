@@ -16,9 +16,36 @@
             </div>
 
             <div class="form-row">
+                <mat-slide-toggle formControlName="isB2b">B2B partner account (accommodation prices only)
+                </mat-slide-toggle>
+            </div>
+
+            @if (userForm.get('isB2b')?.value) {
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Partner (merchant)</mat-label>
+                    <mat-select formControlName="b2bMerchant" [compareWith]="compareMerchants" required>
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="merchantSearchCtrl"
+                                placeholderLabel="Search partners..." noEntriesFoundLabel="No partners found">
+                            </ngx-mat-select-search>
+                        </mat-option>
+                        @if (merchantsLoading) {
+                        <mat-option disabled>Loading...</mat-option>
+                        }
+                        @for (merchant of filteredMerchants; track merchant.id) {
+                        <mat-option [value]="merchant">{{ merchant.name }}</mat-option>
+                        }
+                    </mat-select>
+                    <mat-hint>This account will only see this partner's hotels.</mat-hint>
+                </mat-form-field>
+            </div>
+            }
+
+            <div class="form-row">
                 <mat-form-field appearance="outline">
                     <mat-label>Company</mat-label>
-                    <mat-select formControlName="companyId" required>
+                    <mat-select formControlName="companyId" [required]="!userForm.get('isB2b')?.value">
                         @for (company of companies$ | async; track company.id) {
                         <mat-option [value]="company.id">{{ company.name }}</mat-option>
                         }
@@ -26,6 +53,7 @@
                 </mat-form-field>
             </div>
 
+            @if (!userForm.get('isB2b')?.value) {
             <mat-divider class="my-4"></mat-divider>
 
             <h3 class="mat-h3 mb-3">Feature Access & Permissions</h3>
@@ -46,6 +74,7 @@
                 </div>
                 }
             </div>
+            }
         </form>
         } @else {
         <div class="p-4 text-center">Loading user details...</div>

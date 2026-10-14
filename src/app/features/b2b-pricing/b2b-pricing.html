@@ -1,0 +1,172 @@
+<div class="b2b-page">
+
+    <header class="page-header">
+        <div>
+            <h1>Accommodation Prices</h1>
+            <p class="subtitle">Check live rates for your hotels</p>
+        </div>
+        @if (authService.userProfileState$ | async; as user) {
+        @if (user.b2bMerchantName) {
+        <div class="partner-badge">
+            <mat-icon>business</mat-icon>
+            <span>{{ user.b2bMerchantName }}</span>
+        </div>
+        }
+        }
+    </header>
+
+    <!-- Search -->
+    <section class="b2b-card search-card">
+        @if (searching) {
+        <mat-progress-bar mode="indeterminate" class="card-progress"></mat-progress-bar>
+        }
+        <form [formGroup]="form" (ngSubmit)="search()">
+            <div class="form-row">
+                <mat-form-field appearance="outline" class="field-hotel">
+                    <mat-label>Hotel</mat-label>
+                    <mat-icon matPrefix>hotel</mat-icon>
+                    <mat-select formControlName="externalHotelId" required [disabled]="hotels.length === 0">
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="hotelSearchCtrl" placeholderLabel="Search hotels..."
+                                noEntriesFoundLabel="No hotels found"></ngx-mat-select-search>
+                        </mat-option>
+                        @if (hotelsLoading) {
+                        <mat-option disabled>Loading hotels...</mat-option>
+                        }
+                        @for (hotel of filteredHotels; track hotel.externalHotelId) {
+                        <mat-option [value]="hotel.externalHotelId">{{ hotel.name }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Check-in</mat-label>
+                    <mat-icon matPrefix>flight_land</mat-icon>
+                    <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
+                    <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #startPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Check-out</mat-label>
+                    <mat-icon matPrefix>flight_takeoff</mat-icon>
+                    <input matInput [matDatepicker]="endPicker" formControlName="endDate"
+                        [min]="form.get('startDate')?.value" required>
+                    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+
+            <div class="rooms-head">
+                <h3>Rooms &amp; guests</h3>
+                <button mat-stroked-button color="primary" type="button" (click)="addRoom()">
+                    <mat-icon>add</mat-icon> Add room
+                </button>
+            </div>
+
+            <div formArrayName="rooms" class="rooms">
+                @for (room of roomsArray.controls; track room; let i = $index) {
+                <div [formGroupName]="i" class="room-row">
+                    <span class="room-label"><mat-icon>bed</mat-icon> Room {{ i + 1 }}</span>
+                    <div formArrayName="paxes" class="pax-row">
+                        @for (pax of getPaxArray(i).controls; track pax; let j = $index) {
+                        <div [formGroupName]="j" class="pax-item">
+                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="pax-field">
+                                <mat-label>Guest {{ j + 1 }} age</mat-label>
+                                <input matInput type="number" min="0" formControlName="age" required>
+                            </mat-form-field>
+                            <button mat-icon-button type="button" title="Remove guest" (click)="removePax(i, j)">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+                        }
+                        <button mat-button type="button" (click)="addPax(i)">
+                            <mat-icon>person_add</mat-icon> Add guest
+                        </button>
+                    </div>
+                    @if (roomsArray.length > 1) {
+                    <button mat-icon-button type="button" title="Remove room" (click)="removeRoom(i)">
+                        <mat-icon>delete_outline</mat-icon>
+                    </button>
+                    }
+                </div>
+                }
+            </div>
+
+            <div class="actions">
+                <button mat-flat-button color="primary" type="submit" [disabled]="searching" class="search-btn">
+                    <mat-icon>{{ searching ? 'hourglass_top' : 'search' }}</mat-icon>
+                    {{ searching ? 'Searching…' : 'Get prices' }}
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Loading state -->
+    @if (searching) {
+    <section class="b2b-card loading-card">
+        <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
+        <div>
+            <strong>Fetching live prices…</strong>
+            <p>This can take a few seconds while we check availability.</p>
+        </div>
+    </section>
+    }
+
+    <!-- Results -->
+    @if (!searching && results.length > 0) {
+    <section class="results">
+        <div class="results-head">
+            <div>
+                <h2>{{ searched?.hotel }}</h2>
+                @if (searched) {
+                <p class="summary">
+                    {{ searched.start | date:'d MMM y' }} – {{ searched.end | date:'d MMM y' }}
+                    · {{ searched.nights }} night{{ searched.nights === 1 ? '' : 's' }}
+                    · {{ searched.rooms }} room{{ searched.rooms === 1 ? '' : 's' }}
+                </p>
+                }
+            </div>
+            <mat-button-toggle-group [value]="mealPlanFilter" hideSingleSelectionIndicator aria-label="Meal plan"
+                (change)="mealPlanFilter = $event.value">
+                @for (plan of availableMealPlans; track plan) {
+                <mat-button-toggle [value]="plan">{{ plan }}</mat-button-toggle>
+                }
+            </mat-button-toggle-group>
+        </div>
+
+        @for (card of offerCards; track card.key) {
+        <article class="b2b-card offer-card">
+            <div class="oc-room">
+                <span class="oc-label">Room {{ card.roomCandidateId }}</span>
+                <strong>{{ card.roomName }}</strong>
+            </div>
+            <div class="oc-options">
+                @for (offer of card.options; track offer) {
+                <div class="oc-option" [class.promo]="offer.isDiscounted">
+                    <div class="oc-promo">
+                        <span>{{ offer.isDiscounted ? offer.promotion : 'Standard rate' }}</span>
+                        @if (offer.isDiscounted && offer.discount != null) {
+                        <span class="chip">−{{ offer.discount }}%</span>
+                        }
+                        @if (offer.isDiscounted) {
+                        <button mat-icon-button type="button" title="Promotion details"
+                            (click)="openPromotionInfo(offer)">
+                            <mat-icon>info_outline</mat-icon>
+                        </button>
+                        }
+                    </div>
+                    <div class="oc-price">
+                        <strong>{{ offer.price | number:'1.0-0' }}</strong> <span class="cur">{{ currency }}</span>
+                    </div>
+                    <button mat-icon-button type="button" title="Price breakdown" (click)="openDetails(offer)">
+                        <mat-icon>receipt_long</mat-icon>
+                    </button>
+                </div>
+                }
+            </div>
+        </article>
+        }
+    </section>
+    }
+</div>

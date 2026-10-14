@@ -44,7 +44,7 @@ export class LoginComponent {
       const { email, password } = this.loginForm.value;
       try {
         await this.authService.login(email!, password!);
-        this.router.navigate(['/']);
+        this.router.navigate(['/']); // authGuard sends B2B partner accounts on to /b2b-pricing
       } catch (error) {
         console.error('Login failed:', error);
       }

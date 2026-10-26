@@ -115,8 +115,14 @@
 
             <!-- Actions -->
             <div class="action-bar">
-                <button mat-flat-button color="accent" type="button" (click)="calculatePrice()">
-                    <mat-icon>search</mat-icon> Get Available Offers
+                <button mat-flat-button color="accent" type="button" (click)="calculatePrice()"
+                    [disabled]="pricesLoading">
+                    @if (pricesLoading) {
+                    <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+                    } @else {
+                    <mat-icon>search</mat-icon>
+                    }
+                    {{ pricesLoading ? 'Getting offers...' : 'Get Available Offers' }}
                 </button>
             </div>
 

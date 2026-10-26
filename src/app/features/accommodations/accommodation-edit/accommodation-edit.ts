@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import {
   FormArray,
@@ -21,6 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // App Components
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
@@ -48,6 +49,7 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     MatIconModule,
     MatDialogModule,
     MatButtonToggleModule,
+    MatProgressSpinnerModule,
     EditPageComponent,
     NgxMatSelectSearchModule,
   ],
@@ -63,6 +65,7 @@ export class AccommodationEditComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
   private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
   form!: FormGroup;
   isEditMode = false;
   bookingId: string | null = null;
@@ -79,6 +82,7 @@ export class AccommodationEditComponent implements OnInit {
   filteredHotels: any[] = [];
   hotelSearchCtrl = new FormControl('');
   hotelsLoading = false;
+  pricesLoading = false;
   selectedHotel: any = null;
   // One chosen offer per room candidate (a radio group spans all room-type
   // cards of the same candidate, so you pick room type + promotion in one go)
@@ -418,8 +422,9 @@ export class AccommodationEditComponent implements OnInit {
       return;
     }
 
+    if (this.pricesLoading) return;
+    this.pricesLoading = true;
     try {
-      this.notification.showSuccess('Fetching available offers...');
       const val = this.form.value;
       const results = await this.service.getAvailability({
         externalMerchantId: this.selectedMerchant.externalMerchantId,
@@ -441,6 +446,10 @@ export class AccommodationEditComponent implements OnInit {
     } catch (e) {
       console.error('Availability error:', e);
       this.notification.showError('Failed to fetch available offers.');
+    } finally {
+      this.pricesLoading = false;
+      // The Firebase callable resolves outside Angular's zone, so refresh the view explicitly
+      this.cdr.detectChanges();
     }
   }
 

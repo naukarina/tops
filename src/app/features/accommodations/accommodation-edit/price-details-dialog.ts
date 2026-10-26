@@ -11,6 +11,7 @@ export interface PriceBreakdownRow {
   roomFormula?: string;
   mealPlanName?: string | null;
   mealPrice: number;
+  mandatoryMeals?: { name: string; price: number }[];
   total: number;
 }
 
@@ -61,10 +62,18 @@ export interface PriceDetailsData {
         <ng-container matColumnDef="mealPlan">
           <th mat-header-cell *matHeaderCellDef class="text-center">Meal Plan(s)</th>
           <td mat-cell *matCellDef="let row" class="text-center">
+            @for (m of row.mandatoryMeals; track m.name) {
+            <div>
+              <span class="meal-name">{{ m.name }}:</span>
+              <strong>{{ data.currency }} {{ m.price | number : '1.2-2' }}</strong>
+            </div>
+            }
             @if (row.mealPlanName) {
-            <span class="meal-name">{{ row.mealPlanName }}:</span>
-            <strong>{{ data.currency }} {{ row.mealPrice | number : '1.2-2' }}</strong>
-            } @else {
+            <div>
+              <span class="meal-name">{{ row.mealPlanName }}:</span>
+              <strong>{{ data.currency }} {{ row.mealPrice | number : '1.2-2' }}</strong>
+            </div>
+            } @else if (!row.mandatoryMeals?.length) {
             <span class="text-muted">—</span>
             }
           </td>

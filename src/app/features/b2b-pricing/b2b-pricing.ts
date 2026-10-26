@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import {
   FormArray,
@@ -54,6 +54,7 @@ export class B2bPricingComponent implements OnInit {
   private service = inject(B2bPricingService);
   private notification = inject(NotificationService);
   private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
   authService = inject(AuthService);
 
   form!: FormGroup;
@@ -104,6 +105,7 @@ export class B2bPricingComponent implements OnInit {
       this.notification.showError('Could not load your hotels.');
     } finally {
       this.hotelsLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -182,6 +184,8 @@ export class B2bPricingComponent implements OnInit {
       this.notification.showError('Failed to fetch prices.');
     } finally {
       this.searching = false;
+      // The Firebase callable resolves outside Angular's zone, so refresh the view explicitly
+      this.cdr.detectChanges();
     }
   }
 

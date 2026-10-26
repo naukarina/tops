@@ -15,6 +15,9 @@ export function parseOffers(offers: any[]): any[] {
           0,
         );
 
+        const mandatory = normalizeMandatory(room.mandatoryMealPlans);
+        const mandatoryTotal = sumMandatory(mandatory);
+
         room.mealPlans.forEach((plan: any) => {
           // Sum up the meal plan price across all days (safeguard in case mealRates is missing)
           const baseMealPrice = plan.mealRates
@@ -22,7 +25,7 @@ export function parseOffers(offers: any[]): any[] {
             : 0;
 
           // Quoted prices are rounded up to whole units
-          const grandTotal = Math.ceil(baseRoomPrice + baseMealPrice);
+          const grandTotal = Math.ceil(baseRoomPrice + baseMealPrice + mandatoryTotal);
 
           results.push({
             roomCandidateId: room.roomCandidateId,
@@ -37,6 +40,7 @@ export function parseOffers(offers: any[]): any[] {
               plan.mealRates,
               undefined,
               plan.name,
+              mandatory,
             ),
           });
         });
@@ -49,6 +53,13 @@ export function parseOffers(offers: any[]): any[] {
           const discountedRoomPrice = promoPricing.roomPricesPerDays
             ? promoPricing.roomPricesPerDays.reduce((sum: number, day: any) => sum + day.price, 0)
             : 0;
+
+          const mandatory = normalizeMandatory(
+            promoPricing.mandatoryMealPlansWithPricesPerDays?.length
+              ? promoPricing.mandatoryMealPlansWithPricesPerDays
+              : room.mandatoryMealPlans,
+          );
+          const mandatoryTotal = sumMandatory(mandatory);
 
           // Loop through the array of promotional meal plans
           if (
@@ -64,7 +75,7 @@ export function parseOffers(offers: any[]): any[] {
                   )
                 : 0;
 
-              const grandTotal = Math.ceil(discountedRoomPrice + mealPrice);
+              const grandTotal = Math.ceil(discountedRoomPrice + mealPrice + mandatoryTotal);
 
               // The promotion details now live on the pricing entry itself.
               // Prefer the "full" fields, which reflect combined promotions
@@ -102,6 +113,7 @@ export function parseOffers(offers: any[]): any[] {
                   promoPlan.mealPlanPricesPerDays,
                   room.regularRoomPricesPerDays,
                   promoPlan.name,
+                  mandatory,
                 ),
               });
             });
@@ -119,6 +131,7 @@ function createBreakdown(
   mealPrices?: any[],
   originalRoomPrices?: any[],
   mealPlanName?: string,
+  mandatory: MandatoryPlan[] = [],
 ) {
   if (!roomPrices) return [];
 
@@ -126,6 +139,10 @@ function createBreakdown(
     const mealPrice = mealPrices ? mealPrices[index] : null;
     const original = originalRoomPrices ? originalRoomPrices[index] : null;
     const mealPerDay = mealPrice ? mealPrice.pricePerDay : 0;
+    const mandatoryMeals = mandatory
+      .map((m) => ({ name: m.name, price: priceForDay(m.days, rp.date) }))
+      .filter((m) => m.price > 0);
+    const mandatoryPerDay = mandatoryMeals.reduce((sum, m) => sum + m.price, 0);
 
     return {
       date: rp.date,
@@ -135,7 +152,41 @@ function createBreakdown(
       roomFormula: rp.formula,
       mealPlanName: mealPlanName ?? null,
       mealPrice: mealPerDay,
-      total: rp.price + mealPerDay,
+      mandatoryMeals,
+      total: rp.price + mealPerDay + mandatoryPerDay,
     };
   });
+}
+
+interface MandatoryPlan {
+  name: string;
+  days: any[];
+}
+
+// Compulsory meal plans (e.g. a gala dinner) are charged on top of the selected meal plan.
+// Accepts both the room-level shape (mealRates) and the promotion shape (mealPlanPricesPerDays).
+function normalizeMandatory(plans?: any[]): MandatoryPlan[] {
+  if (!Array.isArray(plans)) return [];
+  return plans.map((p) => ({
+    name: p.name,
+    days: Array.isArray(p.mealPlanPricesPerDays)
+      ? p.mealPlanPricesPerDays
+      : Array.isArray(p.mealRates)
+        ? p.mealRates
+        : [],
+  }));
+}
+
+// Compulsory plans only list the days they apply to, so match strictly by calendar date.
+function priceForDay(days: any[], date: string): number {
+  const day = String(date).slice(0, 10);
+  const match = days.find((d) => String(d.date).slice(0, 10) === day);
+  return match?.pricePerDay ?? 0;
+}
+
+function sumMandatory(plans: MandatoryPlan[]): number {
+  return plans.reduce(
+    (sum, p) => sum + p.days.reduce((s: number, d: any) => s + (d.pricePerDay ?? 0), 0),
+    0,
+  );
 }

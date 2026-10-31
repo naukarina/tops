@@ -25,10 +25,17 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(MatSnackBarModule),
     provideFunctions(() => {
       const functions = getFunctions();
-      // TEMP: use deployed functions from localhost. Restore the emulator block when done.
-      // if (!environment.production) {
-      //   connectFunctionsEmulator(functions, 'localhost', 5001);
-      // }
+      // Deployed functions by default. To test local functions, run the emulator and set
+      // localStorage.useFunctionsEmulator = '1' in the browser console (remove it to switch back).
+      let useEmulator = false;
+      try {
+        useEmulator = !environment.production && localStorage.getItem('useFunctionsEmulator') === '1';
+      } catch {
+        // storage unavailable: stay on deployed functions
+      }
+      if (useEmulator) {
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+      }
       return functions;
     }),
 

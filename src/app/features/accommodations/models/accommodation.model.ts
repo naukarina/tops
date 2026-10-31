@@ -102,6 +102,10 @@ export interface Accommodation extends BaseDocument {
   // externalHotelId string for new bookings; legacy docs stored a numeric catalog code
   hotelMarketId: number | string;
   externalMerchantId?: string;
+  // Country picked for a merchant that operates in several countries
+  merchantCountryCode?: string;
+  // Kreola API the quote was priced against; missing on older bookings (= prod)
+  kreolaEnvironment?: 'prod' | 'dev';
   startDate: Timestamp;
   endDate: Timestamp;
   status: 'QUOTATION' | 'CONFIRMED' | 'CANCELLED';

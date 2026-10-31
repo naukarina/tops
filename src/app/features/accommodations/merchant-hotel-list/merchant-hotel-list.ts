@@ -5,6 +5,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { AccommodationService } from '../services/accommodation.service';
+import { KreolaEnvToggleComponent } from '../kreola-env-toggle/kreola-env-toggle';
 import { ListPageComponent } from '../../../shared/components/list-page/list-page';
 
 interface MerchantRow {
@@ -23,6 +24,7 @@ interface MerchantRow {
     MatIconModule,
     MatChipsModule,
     ListPageComponent,
+    KreolaEnvToggleComponent,
   ],
   templateUrl: './merchant-hotel-list.html',
 })
@@ -32,7 +34,12 @@ export class MerchantHotelListComponent implements OnInit {
   rows: MerchantRow[] = [];
   loading = false;
 
-  async ngOnInit() {
+  ngOnInit() {
+    return this.loadMerchants();
+  }
+
+  async loadMerchants() {
+    this.rows = [];
     this.loading = true;
     try {
       const merchants = await this.service.getMerchants();

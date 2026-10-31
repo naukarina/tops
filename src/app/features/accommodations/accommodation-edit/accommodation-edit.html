@@ -16,7 +16,10 @@
                 </mat-form-field>
             </div>
 
-            <div class="section-label">Trip Details</div>
+            <div class="section-label">
+                Trip Details
+                <app-kreola-env-toggle (changed)="onEnvironmentChanged()"></app-kreola-env-toggle>
+            </div>
 
             <!-- Merchant & Hotel -->
             <div class="form-row">
@@ -37,6 +40,17 @@
                         }
                     </mat-select>
                 </mat-form-field>
+
+                @if (merchantCountries.length > 1) {
+                <mat-form-field appearance="outline">
+                    <mat-label>Country</mat-label>
+                    <mat-select [formControl]="countryCtrl" (selectionChange)="onCountrySelected($event.value)">
+                        @for (country of merchantCountries; track country) {
+                        <mat-option [value]="country">{{country}}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                }
 
                 <mat-form-field appearance="outline">
                     <mat-label>Hotel</mat-label>
@@ -164,7 +178,7 @@
                                 <mat-icon>info_outline</mat-icon>
                             </button>
                             }
-                            <span class="oc-promo-price">{{ offer.price | number:'1.0-0' }}</span>
+                            <span class="oc-promo-price">{{ currency }} {{ offer.price | number:'1.0-0' }}</span>
                         </label>
                         }
                     </div>
@@ -173,7 +187,7 @@
                     <div class="oc-col oc-total">
                         <div class="oc-col-label">Total</div>
                         @if (selectedOfferForRoom(card.roomCandidateId, card.roomId); as sel) {
-                        <span class="oc-total-value">{{ sel.price | number:'1.0-0' }}</span>
+                        <span class="oc-total-value">{{ currency }} {{ sel.price | number:'1.0-0' }}</span>
                         } @else {
                         <span class="text-muted">—</span>
                         }
@@ -199,7 +213,7 @@
                 <div class="selected-total">
                     <span class="label">Selected Total</span>
                     <mat-form-field appearance="outline" style="width: 160px;">
-                        <mat-icon matPrefix>euro</mat-icon>
+                        <span matTextPrefix>{{ currency }}&nbsp;</span>
                         <input matInput type="number" formControlName="totalPrice">
                     </mat-form-field>
                 </div>

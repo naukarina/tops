@@ -159,30 +159,48 @@ export const generateOrderNumber = onDocumentCreated('sales-orders/{orderId}', a
   }
 });
 
-// Kreola ERP API (production). Credentials live in Firebase secrets, never in source:
+// Kreola ERP API (prod and dev, same API shape, separate credentials).
+// Credentials live in Firebase secrets, never in source:
 //   firebase functions:secrets:set KREOLA_EMAIL
 //   firebase functions:secrets:set KREOLA_PASSWORD
-const KREOLA_API_URL = 'https://api.kreola.mu'; // no trailing slash: paths are appended as `/auth/...`
+//   firebase functions:secrets:set KREOLA_DEV_EMAIL
+//   firebase functions:secrets:set KREOLA_DEV_PASSWORD
+type KreolaEnv = 'prod' | 'dev';
+const KREOLA_URLS: Record<KreolaEnv, string> = {
+  prod: 'https://api.kreola.mu', // no trailing slash: paths are appended as `/auth/...`
+  dev: 'https://api.kreola-dev.com',
+};
 const KREOLA_EMAIL = defineSecret('KREOLA_EMAIL');
 const KREOLA_PASSWORD = defineSecret('KREOLA_PASSWORD');
-const kreolaOpts = { secrets: [KREOLA_EMAIL, KREOLA_PASSWORD] };
+const KREOLA_DEV_EMAIL = defineSecret('KREOLA_DEV_EMAIL');
+const KREOLA_DEV_PASSWORD = defineSecret('KREOLA_DEV_PASSWORD');
+const kreolaOpts = {
+  secrets: [KREOLA_EMAIL, KREOLA_PASSWORD, KREOLA_DEV_EMAIL, KREOLA_DEV_PASSWORD],
+};
 
-async function getKreolaToken(): Promise<string> {
-  const res = await axios.post<{ access_token: string }>(`${KREOLA_API_URL}/auth/sign-in`, {
-    email: KREOLA_EMAIL.value(),
-    password: KREOLA_PASSWORD.value(),
-  });
+// Internal staff choose the environment per call; anything else means prod.
+function getKreolaEnv(data: any): KreolaEnv {
+  return data?.environment === 'dev' ? 'dev' : 'prod';
+}
+
+async function getKreolaToken(env: KreolaEnv): Promise<string> {
+  const creds =
+    env === 'dev'
+      ? { email: KREOLA_DEV_EMAIL.value(), password: KREOLA_DEV_PASSWORD.value() }
+      : { email: KREOLA_EMAIL.value(), password: KREOLA_PASSWORD.value() };
+  const res = await axios.post<{ access_token: string }>(`${KREOLA_URLS[env]}/auth/sign-in`, creds);
   return res.data.access_token;
 }
 
 export const getRoomPricesProxy = onCall(kreolaOpts, async (request) => {
   await assertInternalUser(request);
+  const env = getKreolaEnv(request.data);
   const { payload } = request.data;
 
   try {
-    const token = await getKreolaToken();
+    const token = await getKreolaToken(env);
 
-    const response = await axios.post(`${KREOLA_API_URL}/erp/availability`, payload, {
+    const response = await axios.post(`${KREOLA_URLS[env]}/erp/availability`, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -203,9 +221,10 @@ export const getRoomPricesProxy = onCall(kreolaOpts, async (request) => {
 
 export const getMerchantsProxy = onCall(kreolaOpts, async (request) => {
   await assertInternalUser(request);
+  const env = getKreolaEnv(request.data);
   try {
-    const token = await getKreolaToken();
-    const response = await axios.get(`${KREOLA_API_URL}/erp/merchants`, {
+    const token = await getKreolaToken(env);
+    const response = await axios.get(`${KREOLA_URLS[env]}/erp/merchants`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
@@ -224,11 +243,14 @@ export const getMerchantsProxy = onCall(kreolaOpts, async (request) => {
 
 export const getMerchantHotelsProxy = onCall(kreolaOpts, async (request) => {
   await assertInternalUser(request);
-  const { merchantId } = request.data;
+  const env = getKreolaEnv(request.data);
+  const { merchantId, countryCode } = request.data;
 
   try {
-    const token = await getKreolaToken();
-    const response = await axios.get(`${KREOLA_API_URL}/erp/merchants/${merchantId}/hotels`, {
+    const token = await getKreolaToken(env);
+    const response = await axios.get(`${KREOLA_URLS[env]}/erp/merchants/${merchantId}/hotels`, {
+      // Only sent for merchants that operate in several countries
+      params: countryCode ? { countryCode } : undefined,
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
@@ -247,13 +269,14 @@ export const getMerchantHotelsProxy = onCall(kreolaOpts, async (request) => {
 
 export const getMerchantHotelListProxy = onCall(kreolaOpts, async (request) => {
   await assertInternalUser(request);
+  const env = getKreolaEnv(request.data);
   const { externalMerchantId } = request.data;
 
   try {
-    const token = await getKreolaToken();
+    const token = await getKreolaToken(env);
 
     // Now GET with a query param — was POST /merchants/hotel-list
-    const response = await axios.get(`${KREOLA_API_URL}/erp/hotel-list`, {
+    const response = await axios.get(`${KREOLA_URLS[env]}/erp/hotel-list`, {
       params: { externalMerchantId },
       headers: {
         Authorization: `Bearer ${token}`,
@@ -276,8 +299,8 @@ export const getMerchantHotelListProxy = onCall(kreolaOpts, async (request) => {
 // The merchant is never taken from the request: it comes from the caller's users/{uid} doc,
 // so a partner can only ever see the hotels and prices of their own merchant.
 async function getB2bHotels(merchantId: number): Promise<any[]> {
-  const token = await getKreolaToken();
-  const response = await axios.get(`${KREOLA_API_URL}/erp/merchants/${merchantId}/hotels`, {
+  const token = await getKreolaToken('prod');
+  const response = await axios.get(`${KREOLA_URLS.prod}/erp/merchants/${merchantId}/hotels`, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
   });
   return (response.data as any[]).filter((h) => h.active !== false);
@@ -308,9 +331,9 @@ export const b2bGetPricesProxy = onCall(kreolaOpts, async (request) => {
       throw new HttpsError('permission-denied', 'Hotel not available for this partner.');
     }
 
-    const token = await getKreolaToken();
+    const token = await getKreolaToken('prod');
     const response = await axios.post(
-      `${KREOLA_API_URL}/erp/availability`,
+      `${KREOLA_URLS.prod}/erp/availability`,
       // Merchant is forced from the account binding, never from the client
       { externalMerchantId, externalHotelId, startDate, endDate, roomCandidates },
       {

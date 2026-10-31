@@ -27,6 +27,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { EditPageComponent } from '../../../shared/components/edit-page/edit-page';
 import { AccommodationService } from '../services/accommodation.service';
 import { parseOffers } from '../services/offer-parser';
+import { KreolaEnvService, KreolaEnv } from '../services/kreola-env.service';
+import { KreolaEnvToggleComponent } from '../kreola-env-toggle/kreola-env-toggle';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Accommodation } from '../models/accommodation.model';
 import { PriceDetailsDialogComponent } from './price-details-dialog';
@@ -52,6 +54,7 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     MatProgressSpinnerModule,
     EditPageComponent,
     NgxMatSelectSearchModule,
+    KreolaEnvToggleComponent,
   ],
   templateUrl: './accommodation-edit.html',
   styleUrls: ['./accommodation-edit.scss'],
@@ -65,6 +68,7 @@ export class AccommodationEditComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
   private http = inject(HttpClient);
+  kreolaEnv = inject(KreolaEnvService);
   private cdr = inject(ChangeDetectorRef);
   form!: FormGroup;
   isEditMode = false;
@@ -78,6 +82,9 @@ export class AccommodationEditComponent implements OnInit {
   merchantCtrl = new FormControl(null);
   merchantsLoading = false;
   selectedMerchant: any = null;
+  // Only filled when the selected merchant operates in more than one country
+  merchantCountries: string[] = [];
+  countryCtrl = new FormControl<string | null>(null);
   hotels: any[] = [];
   filteredHotels: any[] = [];
   hotelSearchCtrl = new FormControl('');
@@ -96,6 +103,11 @@ export class AccommodationEditComponent implements OnInit {
 
     this.initForm();
 
+    this.merchantSearchCtrl.valueChanges.subscribe((search) => {
+      const q = (search ?? '').toLowerCase();
+      this.filteredMerchants = this.merchants.filter((m) => m.name.toLowerCase().includes(q));
+    });
+
     this.hotelSearchCtrl.valueChanges.subscribe((search) => {
       const q = (search ?? '').toLowerCase();
       this.filteredHotels = this.hotels.filter((h) => h.name.toLowerCase().includes(q));
@@ -112,7 +124,12 @@ export class AccommodationEditComponent implements OnInit {
 
     if (this.isEditMode && this.bookingId) {
       // In edit mode: merchants must be ready before we can restore the selection
-      this.loadMerchants().then(() => this.loadBooking());
+      // A booking is priced against one API: switch to it before loading merchants
+      firstValueFrom(this.service.get(this.bookingId)).then(async (booking) => {
+        if (booking) this.kreolaEnv.set(booking.kreolaEnvironment ?? 'prod');
+        await this.loadMerchants();
+        await this.loadBooking(booking);
+      });
     } else {
       this.loadMerchants();
       this.addRoom();
@@ -125,10 +142,6 @@ export class AccommodationEditComponent implements OnInit {
       const raw = await this.service.getMerchants();
       this.merchants = raw.sort((a, b) => a.name.localeCompare(b.name));
       this.filteredMerchants = this.merchants;
-      this.merchantSearchCtrl.valueChanges.subscribe((search) => {
-        const q = (search ?? '').toLowerCase();
-        this.filteredMerchants = this.merchants.filter((m) => m.name.toLowerCase().includes(q));
-      });
     } catch {
       this.merchants = [];
       this.filteredMerchants = [];
@@ -137,16 +150,60 @@ export class AccommodationEditComponent implements OnInit {
     }
   }
 
+  // Prod/dev switch: merchants, hotels and prices all belong to one API, so start over
+  async onEnvironmentChanged() {
+    this.selectedMerchant = null;
+    this.selectedHotel = null;
+    this.merchantCountries = [];
+    this.countryCtrl.setValue(null, { emitEvent: false });
+    this.merchantCtrl.setValue(null, { emitEvent: false });
+    this.merchantSearchCtrl.setValue('', { emitEvent: false });
+    this.setHotels([]);
+    this.form.patchValue({ hotelMarketId: null });
+    this.clearResults();
+    await this.loadMerchants();
+  }
+
   async onMerchantSelected(merchant: any) {
     this.selectedMerchant = merchant;
     this.merchantCtrl.setValue(merchant, { emitEvent: false });
     this.selectedHotel = null;
-    this.hotels = [];
+    this.setHotels([]);
     this.form.patchValue({ hotelMarketId: null });
     this.clearResults();
+    this.merchantCountries = this.getMerchantCountries(merchant);
+    this.countryCtrl.setValue(null, { emitEvent: false });
+    // A multi-country merchant's hotels are fetched per country, once one is picked
+    if (this.merchantCountries.length > 1) return;
+    await this.reloadMerchantHotels();
+  }
+
+  async onCountrySelected(countryCode: string) {
+    this.countryCtrl.setValue(countryCode, { emitEvent: false });
+    this.selectedHotel = null;
+    this.setHotels([]);
+    this.form.patchValue({ hotelMarketId: null });
+    this.clearResults();
+    await this.reloadMerchantHotels();
+  }
+
+  // Multi-country merchants may carry their merchant ID on the country entry instead
+  private getExternalMerchantId(): string | undefined {
+    const entry = (this.selectedMerchant?.countries ?? []).find(
+      (c: any) => c?.country === this.countryCtrl.value,
+    );
+    return this.selectedMerchant?.externalMerchantId ?? entry?.externalMerchantId;
+  }
+
+  private getMerchantCountries(merchant: any): string[] {
+    const codes = (merchant?.countries ?? []).map((c: any) => c?.country).filter(Boolean);
+    return [...new Set<string>(codes)].sort();
+  }
+
+  private async reloadMerchantHotels() {
     this.hotelsLoading = true;
     try {
-      await this.loadMerchantHotels(merchant.id);
+      await this.loadMerchantHotels(this.selectedMerchant.id);
     } catch {
       this.setHotels([]);
     } finally {
@@ -157,12 +214,35 @@ export class AccommodationEditComponent implements OnInit {
   // /erp/availability only accepts the externalHotelId from /erp/merchants/{id}/hotels,
   // so expose that as the option value (code) instead of the hotel-list catalog code.
   private async loadMerchantHotels(merchantId: number): Promise<void> {
-    const hotels = await this.service.getMerchantHotels(merchantId);
+    const countryCode = this.merchantCountries.length > 1 ? this.countryCtrl.value : null;
+    const data: any = await this.service.getMerchantHotels(merchantId, countryCode);
+    const hotels: any[] = Array.isArray(data) ? data : (data?.result ?? []);
     this.setHotels(
-      (hotels ?? [])
+      hotels
         .filter((h: any) => h.active !== false)
-        .map((h: any) => ({ code: h.externalHotelId, name: h.name }))
+        .map((h: any) => ({
+          code: h.externalHotelId,
+          name: h.name,
+          // The hotel's price market for the chosen country (multi-country merchants only)
+          marketId: countryCode ? this.findMarket(h, countryCode)?.id : undefined,
+          marketCurrency: countryCode ? this.findMarket(h, countryCode)?.currency : undefined,
+        }))
+        // No market in the chosen country = the hotel is not sold there
+        .filter((h: any) => !countryCode || h.marketId != null)
         .sort((a: any, b: any) => a.name.localeCompare(b.name)),
+    );
+  }
+
+  // The chosen hotel market's currency wins; otherwise what availability returned
+  get currency(): string {
+    const hotelCode = this.form?.get('hotelMarketId')?.value;
+    const marketCurrency = this.hotels.find((h) => h.code === hotelCode)?.marketCurrency;
+    return marketCurrency || this.rawValuationResult[0]?.currency || 'EUR';
+  }
+
+  private findMarket(hotel: any, countryCode: string): any {
+    return (hotel.hotelMarkets ?? []).find(
+      (m: any) => m.active !== false && m.country === countryCode,
     );
   }
 
@@ -337,9 +417,9 @@ export class AccommodationEditComponent implements OnInit {
     this.getPaxArray(roomIndex).removeAt(paxIndex);
   }
 
-  async loadBooking() {
+  async loadBooking(prefetched?: Accommodation) {
     if (!this.bookingId) return;
-    const data = await firstValueFrom(this.service.get(this.bookingId));
+    const data = prefetched ?? (await firstValueFrom(this.service.get(this.bookingId)));
     if (!data) return;
 
     console.log(
@@ -358,9 +438,12 @@ export class AccommodationEditComponent implements OnInit {
       if (merchant) {
         this.selectedMerchant = merchant;
         this.merchantCtrl.setValue(merchant, { emitEvent: false });
+        this.merchantCountries = this.getMerchantCountries(merchant);
+        this.countryCtrl.setValue(data.merchantCountryCode ?? null, { emitEvent: false });
       }
       try {
-        if (merchant) {
+        // A multi-country merchant without a stored country has nothing to restore yet
+        if (merchant && (this.merchantCountries.length <= 1 || this.countryCtrl.value)) {
           await this.loadMerchantHotels(merchant.id);
         } else {
           this.setHotels([]);
@@ -417,17 +500,27 @@ export class AccommodationEditComponent implements OnInit {
       this.notification.showError('Please select hotel, dates and room occupancy');
       return;
     }
-    if (!this.selectedMerchant?.externalMerchantId || !this.form.value.hotelMarketId) {
-      this.notification.showError('Please select a merchant and a hotel');
+    const externalMerchantId = this.getExternalMerchantId();
+    // getRawValue: form.value drops the hotel while its select is disabled
+    const hotelMarketId = this.form.getRawValue().hotelMarketId;
+    if (!externalMerchantId || !hotelMarketId) {
+      console.warn('[calculatePrice] missing selection', {
+        merchant: this.selectedMerchant,
+        country: this.countryCtrl.value,
+        hotelMarketId,
+      });
+      this.notification.showError(
+        !externalMerchantId ? 'The selected merchant has no merchant ID' : 'Please select a hotel',
+      );
       return;
     }
 
     if (this.pricesLoading) return;
     this.pricesLoading = true;
     try {
-      const val = this.form.value;
+      const val = this.form.getRawValue();
       const results = await this.service.getAvailability({
-        externalMerchantId: this.selectedMerchant.externalMerchantId,
+        externalMerchantId,
         externalHotelId: String(val.hotelMarketId),
         startDate: this.toApiDate(val.startDate),
         endDate: this.toApiDate(val.endDate),
@@ -436,8 +529,12 @@ export class AccommodationEditComponent implements OnInit {
           paxes: r.paxes.map((p: any, pIndex: number) => ({ id: pIndex + 1, age: p.age })),
         })),
       });
-      this.rawValuationResult = results;
-      this.processResults(results);
+      // Availability returns one entry per hotel market; keep only the chosen country's
+      const marketId = this.hotels.find((h) => h.code === val.hotelMarketId)?.marketId;
+      const marketResults =
+        marketId != null ? (results ?? []).filter((r: any) => r.hotelMarketId === marketId) : results;
+      this.rawValuationResult = marketResults;
+      this.processResults(marketResults);
       if (this.valuationResults.length > 0) {
         this.notification.showSuccess('Offers retrieved successfully!');
       } else {
@@ -488,7 +585,7 @@ export class AccommodationEditComponent implements OnInit {
         offerName: offer.isDiscounted ? offer.promotion : 'No promotion',
         discountText: offer.isDiscounted ? `discount: ${offer.discountText}` : null,
         isDiscounted: offer.isDiscounted,
-        currency: this.rawValuationResult[0]?.currency || 'EUR',
+        currency: this.currency,
         rows: offer.breakdown,
         total: offer.price,
       },
@@ -520,7 +617,11 @@ export class AccommodationEditComponent implements OnInit {
     const docData: Partial<Accommodation> = {
       guestName: val.guestName,
       fileRef: val.fileRef || '',
-      externalMerchantId: this.selectedMerchant?.externalMerchantId ?? '',
+      externalMerchantId: this.getExternalMerchantId() ?? '',
+      ...(this.merchantCountries.length > 1 && this.countryCtrl.value
+        ? { merchantCountryCode: this.countryCtrl.value }
+        : {}),
+      kreolaEnvironment: this.kreolaEnv.env(),
       hotelName:
         this.hotels.find((h) => h.code === val.hotelMarketId)?.name ||
         this.rawValuationResult[0]?.name ||
@@ -530,7 +631,7 @@ export class AccommodationEditComponent implements OnInit {
       endDate: Timestamp.fromDate(val.endDate),
       status: 'QUOTATION',
       totalPrice: val.totalPrice,
-      currency: this.rawValuationResult[0]?.currency || 'EUR',
+      currency: this.currency,
       valuationRequest: requestData as any,
       valuationResult: this.stripNestedArrays(this.rawValuationResult) as any,
     };

@@ -1,9 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
+export interface B2bHotelMarket {
+  id: number;
+  country: string;
+  currency: string;
+}
+
 export interface B2bHotel {
   externalHotelId: string;
   name: string;
+  markets: B2bHotelMarket[];
+}
+
+export interface B2bHotelsResponse {
+  // Country codes the partner's merchant operates in
+  countries: string[];
+  hotels: B2bHotel[];
 }
 
 // The merchant is resolved server-side from the signed-in partner account,
@@ -12,10 +25,10 @@ export interface B2bHotel {
 export class B2bPricingService {
   private functions = inject(Functions);
 
-  async getHotels(): Promise<B2bHotel[]> {
+  async getHotels(): Promise<B2bHotelsResponse> {
     const fn = httpsCallable(this.functions, 'b2bGetHotelsProxy');
     const result = await fn({});
-    return result.data as B2bHotel[];
+    return result.data as B2bHotelsResponse;
   }
 
   async getPrices(payload: {

@@ -306,11 +306,35 @@ async function getB2bHotels(merchantId: number): Promise<any[]> {
   return (response.data as any[]).filter((h) => h.active !== false);
 }
 
+// Country codes the merchant operates in, from /erp/merchants (countries: [{ country: 'GB' }])
+async function getB2bCountries(merchantId: number): Promise<string[]> {
+  const token = await getKreolaToken('prod');
+  const response = await axios.get(`${KREOLA_URLS.prod}/erp/merchants`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+  });
+  const merchant = (response.data as any[]).find((m) => Number(m.id) === Number(merchantId));
+  const codes: string[] = (merchant?.countries ?? []).map((c: any) => c?.country).filter(Boolean);
+  return [...new Set(codes)].sort();
+}
+
 export const b2bGetHotelsProxy = onCall(kreolaOpts, async (request) => {
   const { merchantId } = await getB2bBinding(request);
   try {
-    const hotels = await getB2bHotels(merchantId);
-    return hotels.map((h) => ({ externalHotelId: h.externalHotelId, name: h.name }));
+    const [hotels, countries] = await Promise.all([
+      getB2bHotels(merchantId),
+      getB2bCountries(merchantId),
+    ]);
+    return {
+      countries,
+      hotels: hotels.map((h) => ({
+        externalHotelId: h.externalHotelId,
+        name: h.name,
+        // Each market prices the hotel for one country, in its own currency
+        markets: (h.hotelMarkets ?? [])
+          .filter((m: any) => m.active !== false)
+          .map((m: any) => ({ id: m.id, country: m.country, currency: m.currency })),
+      })),
+    };
   } catch (error: any) {
     console.error('B2B Hotels Error:', error.response?.data || error.message);
     throw new HttpsError('internal', error.response?.statusText || 'API Error');

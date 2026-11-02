@@ -73,6 +73,11 @@
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 16px;
+
+  // Country codes are short: a narrow column ahead of the hotel
+  &.with-country {
+    grid-template-columns: 170px 2fr 1fr 1fr;
+  }
 }
 
 .rooms-head {
@@ -268,7 +273,8 @@
 }
 
 @media (max-width: 720px) {
-  .form-row {
+  .form-row,
+  .form-row.with-country {
     grid-template-columns: 1fr;
   }
 

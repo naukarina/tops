@@ -58,8 +58,15 @@ export class B2bPricingComponent implements OnInit {
   authService = inject(AuthService);
 
   form!: FormGroup;
+  // All of the partner's hotels; `hotels` is the subset sold in the chosen country
+  private allHotels: B2bHotel[] = [];
   hotels: B2bHotel[] = [];
   filteredHotels: B2bHotel[] = [];
+  // Multi-country merchants price per country: hotels and offers are narrowed to its market
+  private filterByCountry = false;
+  // Merchant countries that at least one hotel has a market in
+  countries: string[] = [];
+  countryCtrl = new FormControl<string | null>(null);
   hotelSearchCtrl = new FormControl('');
   hotelsLoading = false;
   searching = false;
@@ -90,6 +97,10 @@ export class B2bPricingComponent implements OnInit {
       }
     });
     this.form.get('externalHotelId')!.valueChanges.subscribe(() => this.clearResults());
+    this.countryCtrl.valueChanges.subscribe(() => {
+      this.form.patchValue({ externalHotelId: null });
+      this.applyCountry();
+    });
 
     this.loadHotels();
   }
@@ -97,9 +108,16 @@ export class B2bPricingComponent implements OnInit {
   private async loadHotels() {
     this.hotelsLoading = true;
     try {
-      const hotels = await this.service.getHotels();
-      this.hotels = [...hotels].sort((a, b) => a.name.localeCompare(b.name));
-      this.filteredHotels = this.hotels;
+      const { hotels, countries } = await this.service.getHotels();
+      this.allHotels = [...(hotels ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+      this.filterByCountry = (countries ?? []).length > 1;
+      const marketCountries = new Set(this.allHotels.flatMap((h) => (h.markets ?? []).map((m) => m.country)));
+      this.countries = this.filterByCountry ? countries.filter((c) => marketCountries.has(c)) : [];
+      // A single country with hotels needs no choice: pick it for the partner
+      if (this.countries.length === 1) {
+        this.countryCtrl.setValue(this.countries[0], { emitEvent: false });
+      }
+      this.applyCountry();
     } catch (e) {
       console.error('Failed to load hotels', e);
       this.notification.showError('Could not load your hotels.');
@@ -107,6 +125,27 @@ export class B2bPricingComponent implements OnInit {
       this.hotelsLoading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  // The country field is only shown when there is a real choice to make
+  get isMultiCountry(): boolean {
+    return this.countries.length > 1;
+  }
+
+  // Multi-country partners pick a country first; only hotels with a market there are listed
+  private applyCountry() {
+    const country = this.countryCtrl.value;
+    if (!this.filterByCountry) {
+      this.hotels = this.allHotels;
+    } else {
+      this.hotels = country ? this.allHotels.filter((h) => this.findMarket(h, country)) : [];
+    }
+    this.filteredHotels = this.hotels;
+    this.hotelSearchCtrl.setValue('', { emitEvent: false });
+  }
+
+  private findMarket(hotel: B2bHotel | undefined, country: string | null) {
+    return country ? hotel?.markets?.find((m) => m.country === country) : undefined;
   }
 
   get roomsArray() {
@@ -145,12 +184,19 @@ export class B2bPricingComponent implements OnInit {
   }
 
   async search() {
+    if (this.filterByCountry && !this.countryCtrl.value) {
+      this.countryCtrl.markAsTouched();
+      this.notification.showError('Please select a country');
+      return;
+    }
     if (this.form.invalid || this.roomsArray.length === 0) {
       this.form.markAllAsTouched();
       this.notification.showError('Please select hotel, dates and room occupancy');
       return;
     }
     const val = this.form.value;
+    const hotel = this.hotels.find((h) => h.externalHotelId === val.externalHotelId);
+    const market = this.filterByCountry ? this.findMarket(hotel, this.countryCtrl.value) : undefined;
     this.searching = true;
     this.clearResults();
     try {
@@ -163,12 +209,14 @@ export class B2bPricingComponent implements OnInit {
           paxes: r.paxes.map((p: any, pIndex: number) => ({ id: pIndex + 1, age: p.age })),
         })),
       });
-      this.currency = raw?.[0]?.currency || 'EUR';
-      this.results = parseOffers(raw);
+      // Availability returns one entry per hotel market; keep only the chosen country's
+      const marketRaw = market ? (raw ?? []).filter((r: any) => r.hotelMarketId === market.id) : raw;
+      this.currency = market?.currency || marketRaw?.[0]?.currency || 'EUR';
+      this.results = parseOffers(marketRaw);
       const start = new Date(val.startDate);
       const end = new Date(val.endDate);
       this.searched = {
-        hotel: this.hotels.find((h) => h.externalHotelId === val.externalHotelId)?.name ?? '',
+        hotel: hotel?.name ?? '',
         start,
         end,
         nights: Math.round((end.getTime() - start.getTime()) / 86400000),

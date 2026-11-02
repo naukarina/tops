@@ -21,7 +21,19 @@
         <mat-progress-bar mode="indeterminate" class="card-progress"></mat-progress-bar>
         }
         <form [formGroup]="form" (ngSubmit)="search()">
-            <div class="form-row">
+            <div class="form-row" [class.with-country]="isMultiCountry">
+                @if (isMultiCountry) {
+                <mat-form-field appearance="outline" class="field-country">
+                    <mat-label>Country</mat-label>
+                    <mat-icon matPrefix>public</mat-icon>
+                    <mat-select [formControl]="countryCtrl" required>
+                        @for (country of countries; track country) {
+                        <mat-option [value]="country">{{ country }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                }
+
                 <mat-form-field appearance="outline" class="field-hotel">
                     <mat-label>Hotel</mat-label>
                     <mat-icon matPrefix>hotel</mat-icon>
